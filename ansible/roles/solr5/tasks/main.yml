@@ -1,0 +1,71 @@
+- include: ../../common/tasks/setfacts.yml
+  tags:
+    - solr5
+    
+- name: get solr package   
+  get_url: url={{solr_tgz_url}} dest="/tmp/solr-{{version}}.tgz" 
+  tags:
+    - solr5
+  
+- name: extract install script   
+  command: "tar xzf solr-{{version}}.tgz solr-{{version}}/bin/install_solr_service.sh --strip-components=2" 
+  args:
+    chdir: "/tmp/"
+  tags:
+    - solr5
+
+- name: install solr
+  command: "/tmp/install_solr_service.sh solr-{{version}}.tgz -d {{data_dir}}/solr -u {{solr_user}}"
+  ignore_errors: True
+  args:
+    chdir: "/tmp/"
+  notify:
+    - restart solr5
+  tags:
+    - solr5
+
+- name: add JTS jar
+  copy: src=libs/{{item}} dest=/opt/solr/server/solr-webapp/webapp/WEB-INF/lib/{{item}}
+  with_items:
+    - jts-1.12.jar
+  notify:
+    - restart solr5
+  tags:
+    - solr5
+    
+- name: update solr settings
+  lineinfile: dest={{data_dir}}/solr/solr.in.sh line="SOLR_JAVA_MEM=\"{{solr_java_opts_override}}\""
+  notify:
+    - restart solr5
+  tags:
+    - solr5_config
+    - solr5
+
+- name: ensure target directories exist [data subdirectories etc.
+  file: path={{item}} state=directory owner={{solr_user}}  group={{solr_user}}
+  with_items:
+    - "{{data_dir}}/solr/data/biocache/conf"
+    - "{{data_dir}}/solr/data/bie/conf"
+  notify:
+    - restart solr5
+  tags:
+    - solr5_config
+    - solr5
+
+- name: copy SOLR config
+  copy: src=solr dest={{data_dir}} owner={{solr_user}}  group={{solr_user}}
+  notify:
+    - restart solr5
+  tags:
+    - solr5_config
+    - solr5
+
+- name: set data ownership [all data is owned by solr]
+  file: path={{data_dir}}/{{item}} owner={{solr_user}} group={{solr_user}} recurse=true
+  with_items:
+    - solr
+  notify:
+    - restart solr5
+  tags:
+    - solr5_config
+    - solr5

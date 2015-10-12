@@ -32,5 +32,13 @@
 
 - name: download from maven repo
   get_url: url={{ war_url }} dest="{{ tomcat_deploy_dir }}/{{ war_filename }}.war" force=true
+  ignore_errors: True
+  register: get_war
+  notify:
+    - restart tomcat
+    
+- name: download from local repo (maven repo failed)
+  copy: src="{{ installer_local_repo_dir }}/repository/{{groupId | replace('.','/') }}/{{artifactId | default('')}}/{{version | default('')}}/{{artifactId | default('')}}-{{version | default('')}}.{{packaging | default('war')}}" dest="{{ tomcat_deploy_dir }}/{{ war_filename }}.war" force=true
+  when: get_war|failed and installer_local_repo_dir is defined
   notify:
     - restart tomcat

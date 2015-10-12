@@ -1,0 +1,2 @@
+- name: restart solr5
+  service: name={{solr5}} state=restarted

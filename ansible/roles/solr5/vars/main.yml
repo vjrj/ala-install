@@ -1,0 +1,7 @@
+#solr_war_url: "http://search.maven.org/remotecontent?filepath=org/apache/solr/solr/4.10.0/solr-4.10.0.war"
+#artifactId: "solr"
+version: "5.3.1"
+solr_tgz_url: "http://apache.mirror.digitalpacific.com.au/lucene/solr/5.3.1/solr-5.3.1.tgz"
+solr_java_opts_override: "-Xmx2g -Xms2g"
+solr_user: "solr"
+solr5: solr
