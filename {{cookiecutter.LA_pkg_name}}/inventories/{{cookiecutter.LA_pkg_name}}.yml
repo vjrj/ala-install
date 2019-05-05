@@ -56,8 +56,7 @@ biocache_hub_hostname = {{cookiecutter.LA_ala_hub_hostname}}
 biocache_hub_url = {{cookiecutter.LA_urls_prefix}}{{cookiecutter.LA_ala_hub_hostname}}{{cookiecutter.LA_ala_hub_path}}
 biocache_hub_base_url = {{cookiecutter.LA_urls_prefix}}{{cookiecutter.LA_ala_hub_hostname}}
 biocache_hub_context_path = {{cookiecutter.LA_ala_hub_path}}
-# FIXME
-userdetails_url = {{cookiecutter.LA_urls_prefix}}{{cookiecutter.LA_cas_hostname}}/userdetails/userDetails
+userdetails_url = https://{{cookiecutter.LA_cas_hostname}}/userdetails/userDetails
 
 google_apikey = AIzaSyAJDtEeoy7Sc9pij2TAoVnmTwA34Q-2VHk
 
@@ -83,14 +82,14 @@ skin_fluid_layout = true
 
 use_ala_image_service = true
 image_service_url = {{cookiecutter.LA_urls_prefix}}{{cookiecutter.LA_images_hostname}}{{cookiecutter.LA_images_path}}
-image_service_viewer_url = {{cookiecutter.LA_urls_prefix}}{{cookiecutter.LA_images_hostname}}{{cookiecutter.LA_images_path}}image/viewer?imageId=
-image_service_metadata_url = {{cookiecutter.LA_urls_prefix}}{{cookiecutter.LA_images_hostname}}{{cookiecutter.LA_images_path}}image/details?imageId=
+image_service_viewer_url = {{cookiecutter.LA_urls_prefix}}{{cookiecutter.LA_images_hostname}}{{cookiecutter.LA_images_path}}/image/viewer?imageId=
+image_service_metadata_url = {{cookiecutter.LA_urls_prefix}}{{cookiecutter.LA_images_hostname}}{{cookiecutter.LA_images_path}}/image/details?imageId=
 alwaysshow_imagetab = true
 
 use_download_plugin=true
-downloads_indexed_download_url={{cookiecutter.LA_urls_prefix}}{{cookiecutter.LA_biocache_service_hostname}}{{cookiecutter.LA_biocache_service_path}}occurrences/offline/download
-downloads_checklist_download_url={{cookiecutter.LA_urls_prefix}}{{cookiecutter.LA_biocache_service_hostname}}{{cookiecutter.LA_biocache_service_path}}occurrences/facets/download
-downloads_indexed_fields_url={{cookiecutter.LA_urls_prefix}}{{cookiecutter.LA_biocache_service_hostname}}{{cookiecutter.LA_biocache_service_path}}index/fields
+downloads_indexed_download_url={{cookiecutter.LA_urls_prefix}}{{cookiecutter.LA_biocache_service_hostname}}{{cookiecutter.LA_biocache_service_path}}/occurrences/offline/download
+downloads_checklist_download_url={{cookiecutter.LA_urls_prefix}}{{cookiecutter.LA_biocache_service_hostname}}{{cookiecutter.LA_biocache_service_path}}/occurrences/facets/download
+downloads_indexed_fields_url={{cookiecutter.LA_urls_prefix}}{{cookiecutter.LA_biocache_service_hostname}}{{cookiecutter.LA_biocache_service_path}}/index/fields
 downloads_fieldguide_download_url =
 downloads_static_downloads_url =
 downloads_terms_of_use =
@@ -100,7 +99,7 @@ download_solr_only = true
 
 collectory_hostname = {{cookiecutter.LA_collectory_hostname}}
 collectory_url = {{cookiecutter.LA_urls_prefix}}{{cookiecutter.LA_collectory_hostname}}{{cookiecutter.LA_collectory_path}}
-collectory_service_url = {{cookiecutter.LA_urls_prefix}}{{cookiecutter.LA_collectory_hostname}}{{cookiecutter.LA_collectory_path}}ws
+collectory_service_url = {{cookiecutter.LA_urls_prefix}}{{cookiecutter.LA_collectory_hostname}}{{cookiecutter.LA_collectory_path}}/ws
 collectory_base_url = {{cookiecutter.LA_urls_prefix}}{{cookiecutter.LA_collectory_hostname}}
 collectory_context_path = {{cookiecutter.LA_collectory_path}}
 collectory_db_host_address = localhost
@@ -115,7 +114,6 @@ api_key = dummy-registry-api-key
 # Google maps
 google_apikey = AIzaSyAJDtEeoy7Sc9pij2TAoVnmTwA34Q-2VHk
 
-# FIXME DUP
 orgNameLong = {{cookiecutter.LA_project_name}}
 orgNameShort = {{cookiecutter.LA_project_name}}
 
@@ -137,9 +135,8 @@ collections_map_lon = -3.7038
 collections_map_zoom = 5
 
 # Project name
-# FIXME DUP
-orgNameLong = {{cookiecutter.LA_project_name}}
 orgNameShort = {{cookiecutter.LA_project_name}}
+orgNameLong = {{cookiecutter.LA_project_name}}
 region = Spain
 
 # EML config
@@ -161,14 +158,13 @@ api_key_check_enabled = false
 gbifApiUrl = http://api.gbif.org/v1
 
 # Logger URL
-logger_webservice_url = {{cookiecutter.LA_urls_prefix}}{{cookiecutter.LA_logger_hostname}}{{cookiecutter.LA_logger_path}}service
+logger_webservice_url = {{cookiecutter.LA_urls_prefix}}{{cookiecutter.LA_logger_hostname}}{{cookiecutter.LA_logger_path}}/service
 
 # Species list tool
 species_list_tool_url = {{cookiecutter.LA_urls_prefix}}{{cookiecutter.LA_lists_hostname}}{{cookiecutter.LA_lists_path}}
 
 ####################### SOLR #######################
 
-# FIXME
 solr_hostname = {{cookiecutter.LA_solr_hostname}}
 solr_url = {{cookiecutter.LA_urls_prefix}}{{cookiecutter.LA_solr_hostname}}:8983/solr/biocache
 solr_base_url = {{cookiecutter.LA_urls_prefix}}{{cookiecutter.LA_solr_hostname}}:8983
@@ -196,8 +192,8 @@ logger_db_hostname = localhost
 
 ############### Auth Server #########
 
-auth_base_url = {{cookiecutter.LA_urls_prefix}}{{cookiecutter.LA_cas_hostname}}
-auth_cas_url = {{cookiecutter.LA_urls_prefix}}{{cookiecutter.LA_cas_hostname}}/cas
+auth_base_url = https://{{cookiecutter.LA_cas_hostname}}
+auth_cas_url = https://{{cookiecutter.LA_cas_hostname}}/cas
 
 ####### When near the GBIF building (e.g. in Europe) the GBIF nexus will likely be fastest #########
 
