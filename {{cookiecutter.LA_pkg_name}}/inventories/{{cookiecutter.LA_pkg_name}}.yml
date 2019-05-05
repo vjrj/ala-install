@@ -8,7 +8,7 @@
 # You'll need to replace "12.12.12.12" with the IP address of your newly created
 # Ubuntu 16 instance. For this demo to run well, we recommend a machine of 16GB RAM, 4 CPUs.
 #
-# ansible-playbook --private-key ~/.ssh/MyKey.pem -u ubuntu -s -i ansible/inventories/{{cookiecutter.LA_pkg_name}} ansible/ala-demo.yml
+# ansible-playbook --private-key ~/.ssh/MyKey.pem -u ubuntu -s -i {{cookiecutter.LA_pkg_name}}/inventories/{{cookiecutter.LA_pkg_name}}.yml ansible/ala-demo.yml
 #
 ########################################################################################################################
 
