@@ -3,13 +3,50 @@
   "LA_repo_name": "{{ cookiecutter.LA_project_name | replace(' ', '-') }}",
   "LA_pkg_name": "{{ cookiecutter.LA_repo_name | lower | replace(' ', '-')  }}",
   "LA_domain": "{{ cookiecutter.LA_pkg_name }}.org",
+
   "LA_collectory_uses_subdomain": "yes",
-  "LA_collectory_host": "{{ '%s.%s'|format('collectory', cookiecutter.LA_domain) if cookiecutter.LA_collectory_uses_subdomain == 'yes' else '%s'|format(cookiecutter.LA_domain) }}",
-  "LA_collectory_context": "{{ '' if cookiecutter.LA_collectory_uses_subdomain == 'yes' else '/collectory' }}",
-  "enable_ssl": "no",
-  "use_CAS": "no",
-  "use_regions": "no",
-  "use_spatial": "no",
-  "use_especies": "no",
-  "use_species_lists": "no"
+  "LA_collectory_hostname": "{{ '%s.%s'|format('collectory', cookiecutter.LA_domain) if cookiecutter.LA_collectory_uses_subdomain == 'yes' else '%s'|format(cookiecutter.LA_domain) }}",
+  "LA_collectory_path": "{{ '/' if cookiecutter.LA_collectory_uses_subdomain == 'yes' else '/collectory' }}",
+
+  "LA_ala_hub_uses_subdomain": "yes",
+  "LA_ala_hub_hostname": "{{ '%s.%s'|format('biocache', cookiecutter.LA_domain) if cookiecutter.LA_ala_hub_uses_subdomain == 'yes' else '%s'|format(cookiecutter.LA_domain) }}",
+  "LA_ala_hub_path": "{{ '/' if cookiecutter.LA_ala_hub_uses_subdomain == 'yes' else '/ala-hub' }}",
+
+  "LA_biocache_service_uses_subdomain": "yes",
+  "LA_biocache_service_hostname": "{{ '%s.%s'|format('biocache-ws', cookiecutter.LA_domain) if cookiecutter.LA_biocache_service_uses_subdomain == 'yes' else '%s'|format(cookiecutter.LA_domain) }}",
+  "LA_biocache_service_path": "{{ '/' if cookiecutter.LA_biocache_service_uses_subdomain == 'yes' else '/biocache-service' }}",
+
+  "LA_ala_bie_uses_subdomain": "yes",
+  "LA_ala_bie_hostname": "{{ '%s.%s'|format('bie', cookiecutter.LA_domain) if cookiecutter.LA_ala_bie_uses_subdomain == 'yes' else '%s'|format(cookiecutter.LA_domain) }}",
+  "LA_ala_bie_path": "{{ '/' if cookiecutter.LA_ala_bie_uses_subdomain == 'yes' else '/ala-bie' }}",
+
+  "LA_bie_index_uses_subdomain": "yes",
+  "LA_bie_index_hostname": "{{ '%s.%s'|format('bie-ws', cookiecutter.LA_domain) if cookiecutter.LA_bie_index_uses_subdomain == 'yes' else '%s'|format(cookiecutter.LA_domain) }}",
+  "LA_bie_index_path": "{{ '/' if cookiecutter.LA_bie_index_uses_subdomain == 'yes' else '/bie-index' }}",
+
+  "LA_lists_uses_subdomain": "yes",
+  "LA_lists_hostname": "{{ '%s.%s'|format('lists', cookiecutter.LA_domain) if cookiecutter.LA_lists_uses_subdomain == 'yes' else '%s'|format(cookiecutter.LA_domain) }}",
+  "LA_lists_path": "{{ '/' if cookiecutter.LA_lists_uses_subdomain == 'yes' else '/specieslists' }}",
+
+  "LA_images_uses_subdomain": "yes",
+  "LA_images_hostname": "{{ '%s.%s'|format('images', cookiecutter.LA_domain) if cookiecutter.LA_images_uses_subdomain == 'yes' else '%s'|format(cookiecutter.LA_domain) }}",
+  "LA_images_path": "{{ '/' if cookiecutter.LA_images_uses_subdomain == 'yes' else '/images' }}",
+
+  "LA_logger_uses_subdomain": "yes",
+  "LA_logger_hostname": "{{ '%s.%s'|format('logger', cookiecutter.LA_domain) if cookiecutter.LA_logger_uses_subdomain == 'yes' else '%s'|format(cookiecutter.LA_domain) }}",
+  "LA_logger_path": "{{ '/' if cookiecutter.LA_logger_uses_subdomain == 'yes' else '/logger' }}",
+
+  "LA_solr_uses_subdomain": "yes",
+  "LA_solr_hostname": "{{ '%s.%s'|format('index', cookiecutter.LA_domain) if cookiecutter.LA_solr_uses_subdomain == 'yes' else '%s'|format(cookiecutter.LA_domain) }}",
+  "LA_solr_path": "{{ '' if cookiecutter.LA_solr_uses_subdomain == 'yes' else '/solr' }}",
+
+  "LA_cas_hostname": "{{ '%s.%s'|format('auth', cookiecutter.LA_domain) }}",
+
+  "LA_enable_ssl": "no",
+  "LA_urls_prefix": "{{ 'https://' if cookiecutter.LA_enable_ssl == 'yes' else 'http://' }}",
+
+  "LA_use_CAS": "no",
+  "LA_use_regions": "no",
+  "LA_use_spatial": "no",
+  "LA_use_species_lists": "no"
 }
