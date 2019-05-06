@@ -41,7 +41,7 @@ With access to this machine/s you can run ansible:
 #  For this demo to run well, we recommend a machine of 16GB RAM, 4 CPUs.
 ansible-playbook --private-key ~/.ssh/MyKey.pem -u ubuntu -s -i inventories/{{cookiecutter.LA_pkg_name}}.yml ../ansible/ala-demo.yml
 {% if cookiecutter.LA_use_spatial == 'yes' %}
-ansible-playbook --private-key ~/.ssh/MyKey.pem -u ubuntu -s -i inventories/workshop/spatial-{{cookiecutter.LA_domain}}.yml ../ansible/spatial.yml
+ansible-playbook --private-key ~/.ssh/MyKey.pem -u ubuntu -s -i inventories/spatial.{{cookiecutter.LA_pkg_name}}.yml ../ansible/spatial.yml
 {% endif %}
 ```
 
