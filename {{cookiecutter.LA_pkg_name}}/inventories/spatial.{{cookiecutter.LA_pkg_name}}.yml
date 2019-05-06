@@ -8,7 +8,7 @@
 #
 # To use this, run the following command.
 #
-# ansible-playbook --private-key ~/.ssh/MyKey.pem -u ubuntu -s -i {{cookiecutter.LA_pkg_name}}/inventories/workshop/spatial-livingatlas.yml ansible/spatial.yml
+# ansible-playbook --private-key ~/.ssh/MyKey.pem -u ubuntu -s -i {{cookiecutter.LA_pkg_name}}/inventories/spatial.{{cookiecutter.LA_pkg_name}}.yml ansible/spatial.yml
 #
 ########################################################################################################################
 
