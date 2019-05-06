@@ -8,7 +8,8 @@ These are some generated inventories to use to set up some machines on EC2 or ot
 To use this, add the following into your `/etc/hosts` (of your working machine, and new service machine/s) and/or in your {{cookiecutter.LA_domain}} `DNS`. So these hostname should be accessible from your local working machine but also remotely between each machine/s so the hostname should resolve correctly.
 
 ```
-12.12.12.12  {{cookiecutter.LA_pkg_name}} {{cookiecutter.LA_domain}}
+12.12.12.11  {{cookiecutter.LA_pkg_name}} {{cookiecutter.LA_domain}}
+{% if cookiecutter.LA_use_spatial == 'yes' %}12.12.12.12  spatial.{{cookiecutter.LA_domain}}{% endif %}
 {% if cookiecutter.LA_collectory_uses_subdomain == 'yes' %}12.12.12.13  {{cookiecutter.LA_collectory_hostname}}{% endif %}
 {% if cookiecutter.LA_ala_hub_uses_subdomain == 'yes' %}12.12.12.14  {{cookiecutter.LA_ala_hub_hostname}}{% endif %}
 {% if cookiecutter.LA_biocache_service_uses_subdomain == 'yes' %}12.12.12.15  {{cookiecutter.LA_biocache_service_hostname}}{% endif %}
@@ -38,7 +39,9 @@ With access to this machine/s you can run ansible:
 
 ```
 ansible-playbook --private-key ~/.ssh/MyKey.pem -u ubuntu -s -i inventories/{{cookiecutter.LA_pkg_name}}.yml ../ansible/ala-demo.yml
-
+{% if cookiecutter.LA_use_spatial == 'yes' %}
+ansible-playbook --private-key ~/.ssh/MyKey.pem -u ubuntu -s -i inventories/workshop/spatial-{{cookiecutter.LA_domain}}.yml ../ansible/spatial.yml
+{% endif %}
 ```
 
 ### TODO
