@@ -32,6 +32,10 @@
   "LA_images_hostname": "{{ '%s.%s'|format('images', cookiecutter.LA_domain) if cookiecutter.LA_images_uses_subdomain == 'yes' else '%s'|format(cookiecutter.LA_domain) }}",
   "LA_images_path": "{{ '' if cookiecutter.LA_images_uses_subdomain == 'yes' else '/images' }}",
 
+  "LA_regions_uses_subdomain": "no",
+  "LA_regions_hostname": "{{ '%s.%s'|format('regions', cookiecutter.LA_domain) if cookiecutter.LA_regions_uses_subdomain == 'yes' else '%s'|format(cookiecutter.LA_domain) }}",
+  "LA_regions_path": "{{ '' if cookiecutter.LA_regions_uses_subdomain == 'yes' else '/regions' }}",
+
   "LA_logger_uses_subdomain": "no",
   "LA_logger_hostname": "{{ '%s.%s'|format('logger', cookiecutter.LA_domain) if cookiecutter.LA_logger_uses_subdomain == 'yes' else '%s'|format(cookiecutter.LA_domain) }}",
   "LA_logger_path": "{{ '' if cookiecutter.LA_logger_uses_subdomain == 'yes' else '/logger-service' }}",

@@ -50,8 +50,9 @@ ansible-playbook --private-key ~/.ssh/MyKey.pem -u ubuntu -s -i inventories/work
 - [x] Add basic services (`collectory`, `ala-hub`, etc).
 - [x] Add domain/context and service subdomains support
 - [x] Add `http`/`https` urls support (this does **not** include `ssl` certificates management)
-- [ ] Add `regions` service
-- [ ] Add `species-list` service
-- [ ] Add `spatial` service
+- [X] Add `regions` service
+- [X] Add `species-list` service
+- [X] Add `spatial` service
+- [ ] Add `regions` role to playbook
 - [ ] Add `CAS` 5 service
 - [ ] Disable caches when using the same host for collectory & biocache
