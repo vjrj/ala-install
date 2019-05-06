@@ -203,6 +203,19 @@ use_gbif_nexus = false
 ####### Disable SDS checks for the demo #######
 
 sds_enabled = false
+{% if cookiecutter.LA_collectory_uses_subdomain == 'no' and cookiecutter.LA_ala_hub_uses_subdomain == 'no' %}
+
+# Disabled caches - the collections cache is problematic when collectory + biocache on same server
+
+caches_auth_enabled=false
+caches_log_enabled=false
+caches_collections_enabled=false
+caches_layers_enabled=false
+{% endif %}
+
+webserver_nginx=true
+ssl={{cookiecutter.LA_enable_ssl}}
+nginx_vhost_fragments_to_clear=["{{cookiecutter.LA_domain}}"]
 
 ############### Biocache CLI options ###############
 

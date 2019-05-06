@@ -55,4 +55,4 @@ ansible-playbook --private-key ~/.ssh/MyKey.pem -u ubuntu -s -i inventories/spat
 - [X] Add `spatial` service
 - [ ] Add `regions` role to playbook
 - [ ] Add `CAS` 5 service
-- [ ] Disable caches when using the same host for collectory & biocache
+- [x] Disable caches when using the same host for collectory & biocache
