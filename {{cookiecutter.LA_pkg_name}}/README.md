@@ -5,7 +5,7 @@ These are some generated inventories to use to set up some machines on EC2 or ot
 
 ### Initial Setup
 
-To use this, add the following into your `/etc/hosts` and/or in your {{cookiecutter.LA_domain}} `DNS`:
+To use this, add the following into your `/etc/hosts` (of your working machine, and new service machine/s) and/or in your {{cookiecutter.LA_domain}} `DNS`. So these hostname should be accessible from your local working machine but also remotely between each machine/s so the hostname should resolve correctly.
 
 ```
 12.12.12.12  {{cookiecutter.LA_pkg_name}} {{cookiecutter.LA_domain}}
