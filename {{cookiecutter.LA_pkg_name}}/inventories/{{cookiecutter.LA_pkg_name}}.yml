@@ -16,6 +16,7 @@
 {{cookiecutter.LA_domain}}
 
 [ala-demo:vars]
+is_vagrant=false
 # Mounted storage is usually /mnt on EC2. Create a symlink to /mnt -> /data
 data_dir=/data
 
@@ -268,3 +269,15 @@ images_context_path = {{cookiecutter.LA_images_path}}
 images_hostname = {{cookiecutter.LA_images_hostname}}
 images_db_password = images
 images_db_username = images
+
+##### Copied from workshop, should be in living-atlas inventory
+
+postgresql_username=postgres
+postgresql_password=postgres
+postgis_version=9.6
+pg_service=postgresql-9.6
+pg_version=9.6
+postgis_version=2.4
+# Needed for installing on Ubuntu-18.04
+# https://github.com/AtlasOfLivingAustralia/biocache-service/issues/363
+tomcat=tomcat7
