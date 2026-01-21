@@ -1,0 +1,75 @@
+services:
+  # Certificate initialization service (only if using Docker image certs) to allow demo sites using SSL from test
+  # domain l-a.site
+  # if not using this, mount your own certs from <inventories_dir>/certs/ into <ssl_certificate_server_dir>
+{% if use_la_site_certs %}
+  certs-init:
+    image: livingatlases/l-a-site-certs:latest
+    container_name: la_certs-init
+    entrypoint: /bin/sh
+    command: -c 'mkdir -p /out/l-a.site && cp /certs/fullchain.pem /out/l-a.site/fullchain.pem && cp /certs/privkey.pem /out/l-a.site/privkey.pem && cp /certs/chain.pem /out/l-a.site/chain.pem 2>/dev/null || true && ls -la /out/l-a.site/ && echo "✓ Certificates extracted"'
+    volumes:
+      - la-site-certs:/out
+    networks:
+      default: {}
+      {{ docker_network | default('internal') }}:
+{% endif %}
+
+  # Certificate validator service - validates SSL certificates before nginx starts
+  # Checks: file existence, PEM format, expiration, and cert/key match
+  cert-validator:
+    image: alpine:latest
+    container_name: la_cert-validator
+    entrypoint: /bin/sh
+    command: /scripts/cert-validator.sh
+    volumes:
+{% if use_la_site_certs %}
+      - la-site-certs:/etc/letsencrypt/live:ro
+{% else %}
+      - "{{ inventory_dir }}/certs/:{{ ssl_certificate_server_dir }}:ro"
+{% endif %}
+      - ../cert-validator:/scripts:ro
+    networks:
+      default: {}
+      {{ docker_network | default('internal') }}:
+    restart: "no"
+
+  # Nginx reverse proxy
+  nginx:
+    container_name: la_nginx
+    image: {% if docker_registry and docker_registry != '' %}{{ docker_registry }}/{% endif %}{% if docker_nginx_debug | default(false) %}nginx-debug{% else %}nginx{% endif %}:{{ docker_nginx_version | default('latest') }}
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ../nginx/conf.d:/etc/nginx/conf.d:ro
+      - ../nginx/sites-enabled:/etc/nginx/sites-enabled:ro
+      - ../nginx/sites-available:/etc/nginx/sites-available:ro
+{% if use_la_site_certs %}
+      - la-site-certs:/etc/letsencrypt/live:ro
+{% else %}
+      - "{{ inventory_dir }}/certs/:{{ ssl_certificate_server_dir }}:ro"
+{% endif %}
+    depends_on:
+{% if use_la_site_certs %}
+      certs-init:
+        condition: service_completed_successfully
+{% endif %}
+      cert-validator:
+        condition: service_completed_successfully
+    networks:
+      default: {}
+      {{ docker_network | default('internal') }}:
+        aliases:
+          - {{ nginx_docker_internal_aliases | join('\n          - ') }}
+          # These aliases allow services to reach nginx on the internal network using vhost hostnames
+          # Example: service can resolve auth-es.l-a.site to nginx container internally
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    environment:
+      TZ: {{ server_tz | default('UTC') }}

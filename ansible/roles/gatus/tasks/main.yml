@@ -4,12 +4,26 @@
     - properties
     - gatus
 
-- name: Ensure data directory exists
+- name: Ensure data directory exists (container mode)
+  file:
+    path: "{{ data_dir }}/{{ item }}"
+    state: directory
+    mode: '0755'
+    owner: "{{ docker_default_user | default(ansible_user_id) }}"
+    group: "{{ docker_default_user | default(ansible_user_id) }}"
+  with_items:
+    - "gatus"
+  when: deployment_type == 'container'
+  tags:
+    - gatus
+
+- name: Ensure data directory exists (non-container mode)
   file:
     path: /srv/{{ gatus_url }}/www/{{ item }}
     state: directory
   with_items:
     - "{{ gatus_path }}"
+  when: deployment_type != 'container' or deployment_type != 'swarm'
   tags:
     - gatus
 
@@ -51,8 +65,9 @@
     - gatus
   when: webserver_nginx | bool 
 
-- name: Deploy gatus stack
+- name: Deploy gatus stack (Docker Swarm mode)
   import_tasks: ../../docker-common/tasks/stack-create.yml
   vars:
     stack: la_gatus
     docker_compose_data_dir: "{{ gatus_docker_dir }}"
+  when: deployment_type == 'swarm'

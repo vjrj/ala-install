@@ -1,0 +1,826 @@
+---
+# Generate docker-compose.yml from templates
+# Using existing ala-install variables
+
+- name: Set docker facts for all services
+  set_fact:
+    docker_default_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(ansible_user_id) }}"
+    # Core user variables for all services
+    tomcat_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(ansible_user_id) }}"
+    nginx_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(ansible_user_id) }}"
+    cas_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(ansible_user_id) }}"
+    collectory_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(ansible_user_id) }}"
+    userdetails_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(ansible_user_id) }}"
+    apikey_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(ansible_user_id) }}"
+    namematching_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(ansible_user_id) }}"
+    sensitive_data_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(ansible_user_id) }}"
+    # CAS MongoDB flags
+    cas_add_mongo_users: "{{ cas_add_mongo_users | default(true) }}"
+
+- name: Set nginx Docker resolver configuration
+  set_fact:
+    nginx_docker_internal_resolver: "{{ (deployment_type in ['swarm', 'container']) | bool }}"
+
+- name: Set docker service container names (used in proxy_pass for nginx)
+  set_fact:
+    # Convention: la_<service> - these are the container service names in docker-compose
+    # Only used when deployment_type is 'container' or 'swarm'
+    # Can be overridden in inventory for custom naming
+    cas_docker_host: "{{ cas_docker_host | default('la_auth_cas', true) }}"
+    cas_management_docker_host: "{{ cas_management_docker_host | default('la_auth_cas_management', true) }}"
+    apikey_docker_host: "{{ apikey_docker_host | default('la_auth_apikey', true) }}"
+    userdetails_docker_host: "{{ userdetails_docker_host | default('la_auth_userdetails', true) }}"
+    species_list_docker_host: "{{ species_list_docker_host | default('la_species_list', true) }}"
+    collectory_docker_host: "{{ collectory_docker_host | default('la_collectory', true) }}"
+    biocache_service_docker_host: "{{ biocache_service_docker_host | default('la_biocache_service', true) }}"
+    bie_hub_docker_host: "{{ bie_hub_docker_host | default('la_bie_hub', true) }}"
+    bie_index_docker_host: "{{ bie_index_docker_host | default('la_bie_index', true) }}"
+    biocache_hub_docker_host: "{{ biocache_hub_docker_host | default('la_biocache_hub', true) }}"
+    image_service_docker_host: "{{ image_service_docker_host | default('la_image_service', true) }}"
+    logger_service_docker_host: "{{ logger_service_docker_host | default('la_logger_service', true) }}"
+    namematching_service_docker_host: "{{ namematching_service_docker_host | default('la_namematching_service', true) }}"
+    doi_service_docker_host: "{{ doi_service_docker_host | default('la_doi_service', true) }}"
+    sensitive_data_service_docker_host: "{{ sensitive_data_service_docker_host | default('la_sensitive_data_service', true) }}"
+    gatus_docker_host: "{{ gatus_docker_host | default('la_gatus', true) }}"
+
+- name: Debug - Docker user configuration
+  debug:
+    msg: |
+      Docker users - tomcat: {{ tomcat_user }}, nginx: {{ nginx_user }}, cas: {{ cas_user }}, collectory: {{ collectory_user }}, userdetails: {{ userdetails_user }}, apikey: {{ apikey_user }}
+      Nginx Docker Internal Resolver: {{ nginx_docker_internal_resolver }}
+      Deployment Type: {{ deployment_type }}
+
+- name: Ensure output directory exists
+  file:
+    path: "{{ data_dir }}"
+    state: directory
+    mode: '0755'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+
+- name: Ensure cert-validator directory exists
+  file:
+    path: "{{ data_dir }}/cert-validator"
+    state: directory
+    mode: '0755'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+
+- name: Copy cert-validator script
+  template:
+    src: cert-validator.sh
+    dest: "{{ data_dir }}/cert-validator/cert-validator.sh"
+    mode: '0755'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+
+- name: Include services descriptions
+  include_vars:
+    file: docker-services-desc.yaml
+
+- name: Set docker_services_desc as a clean variable
+  set_fact:
+    docker_services_desc: "{{ docker_services_desc }}"
+
+- name: Determine Java versions for services
+  include_tasks: determine-java-versions.yml
+
+# Create clean dictionaries for easy access to software and Java versions
+# Uses version_variable from docker_services_desc dynamically
+- name: Build service versions dictionary from docker_services_desc
+  set_fact:
+    service_versions_dict: "{{ service_versions_dict | default({}) | combine({item.key: vars[item.value.version_variable] | default('develop')}) }}"
+  loop: "{{ docker_services_desc | dict2items }}"
+  when: item.value.version_variable is defined
+  loop_control:
+    label: "{{ item.key }}"
+
+- name: Build Java versions dictionary from determined java versions
+  set_fact:
+    service_java_dict: >-
+      {{
+        service_java_dict | default({}) | combine({
+          item.key: vars.get(item.key.replace('-', '_') + '_java_version', item.value.get('java_version', '11'))
+        })
+      }}
+  loop: "{{ docker_services_desc | dict2items }}"
+  when:
+    - vars.get(item.key.replace('-', '_') + '_java_version') is defined or item.value.get('java_version') is defined
+  loop_control:
+    label: "{{ item.key }}"
+
+- name: Fetch latest ala-i18n version from apt.gbif.es repository
+  block:
+    - name: Download Packages.gz and extract version
+      shell: |
+        curl -s https://apt.gbif.es/dists/unstable/main/binary-amd64/Packages.gz | \
+        gunzip | \
+        awk '/^Package: ala-i18n$/{p=1; next} p && /^Version:/{print $2; p=0}' | \
+        sort -V | \
+        tail -1 | \
+        sed 's/~.*//' | \
+        sed 's/+.*//'
+      register: gbif_i18n_version
+      changed_when: false
+      failed_when: false
+
+    - name: Set i18n_version from apt.gbif.es
+      set_fact:
+        i18n_version: "{{ gbif_i18n_version.stdout | trim }}"
+      when: gbif_i18n_version.stdout | length > 0
+
+    - name: Display fetched i18n version
+      debug:
+        msg: "Latest ala-i18n version from apt.gbif.es: {{ i18n_version | default('unable to fetch') }}"
+
+- name: Detect enabled services from optional flag and use_* inventory variables
+  set_fact:
+    services_enabled: "{{ services_enabled | default([]) + ([item.key] if (
+      (not item.value.optional | default(true)) or 
+      (item.value.isSubService | default(false) and vars.get('use_' + docker_services_desc[item.value.parentService].nameInt, false) | bool) or
+      (not item.value.isSubService | default(false) and vars.get('use_' + item.value.nameInt, false) | bool)
+    ) else []) }}"
+  loop: "{{ docker_services_desc | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+
+# Debug after detecting services
+- name: "DEBUG: Show services_enabled after detection"
+  debug:
+    msg: |
+      Services detected after Detect enabled services task:
+      {{ services_enabled }}
+
+- name: "DEBUG: Check use_gatus variable"
+  debug:
+    msg: |
+      use_gatus variable: {{ use_gatus | default('NOT SET - will use default true') }}
+      use_gatus | default(true) | bool: {{ use_gatus | default(true) | bool }}
+
+# Always add nginx and ensure unique services
+- name: Add nginx and ensure unique services list
+  set_fact:
+    services_enabled: "{{ (['nginx'] + services_enabled) | unique }}"
+
+- name: Debug - Show services configuration
+  debug:
+    msg: "Services enabled: {{ services_enabled }}"
+
+# Create nginx directories BEFORE any role tries to use nginx_vhost
+- name: Ensure nginx config directory exists
+  file:
+    path: "{{ nginx_conf_dir }}"
+    state: directory
+    mode: '0755'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+  when: "'nginx' in services_enabled"
+
+- name: Ensure nginx conf.d directory exists
+  file:
+    path: "{{ nginx_conf_dir }}/conf.d"
+    state: directory
+    mode: '0755'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+  when: "'nginx' in services_enabled"
+
+- name: Ensure nginx sites-enabled directory exists
+  file:
+    path: "{{ nginx_conf_dir }}/sites-enabled"
+    state: directory
+    mode: '0755'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+  when: "'nginx' in services_enabled"
+
+- name: Load common role variables
+  include_vars:
+    file: "{{ playbook_dir }}/roles/common/vars/main.yml"
+  tags:
+    - always
+
+
+
+- name: Run gatus configuration generation
+  include_role:
+    name: gatus
+  vars:
+    deployment_type: container
+  when: "'gatus' in services_enabled or use_gatus | default(true) | bool"
+  tags:
+    - gatus
+    - config
+
+- name: Run cas configuration generation
+  include_role:
+    name: cas5
+  vars:
+    deployment_type: container
+  when:
+    - "'cas' in services_enabled"
+  tags:
+    - cas
+    - config
+
+- name: Run userdetails configuration generation
+  include_role:
+    name: userdetails
+  vars:
+    deployment_type: container
+  when:
+    - "'userdetails' in services_enabled"
+  tags:
+    - userdetails
+    - config
+
+- name: Run apikey configuration generation
+  include_role:
+    name: apikey
+  vars:
+    deployment_type: container
+  when:
+    - "'apikey' in services_enabled"
+  tags:
+    - apikey
+    - config
+
+- name: Run cas-management configuration generation
+  include_role:
+    name: cas-management
+  vars:
+    deployment_type: container
+  when:
+    - "'cas_management' in services_enabled"
+  tags:
+    - cas-management
+    - config
+
+- name: Load collectory role variables if needed
+  include_vars:
+    file: "{{ playbook_dir }}/roles/collectory/vars/main.yml"
+
+# Ensure database password variables have values (from inventory or defaults)
+# These are critical for docker-compose .env generation
+- name: Ensure database password variables are set
+  set_fact:
+    mysql_root_password: "{{ mysql_root_password | default('generated_mysql_password') }}"
+    collectory_db_password: "{{ collectory_db_password | default('generated_collectory_password') }}"
+    mongodb_root_password: "{{ mongodb_root_password | default('generated_mongodb_password') }}"
+    mongodb_root_username: "{{ mongodb_root_username | default('admin') }}"
+    postgresql_password: "{{ postgresql_password | default('generated_postgres_password') }}"
+
+# Create common directories BEFORE any role tries to use them
+- name: Run common directory and config setup
+  include_tasks: common.yml
+
+# Now run collectory and other services
+- name: Run collectory configuration generation (asset copy, config templates)
+  include_role:
+    name: collectory
+  vars:
+    deployment_type: container
+  when: "'collectory' in services_enabled"
+  tags:
+    - collectory
+    - config
+
+- name: Ensure database init directories exist with correct permissions
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+  loop:
+    - "{{ data_dir }}/mysql/init"
+    - "{{ data_dir }}/mongodb/init"
+    - "{{ data_dir }}/var-log-atlas/cas"
+    - "{{ data_dir }}/var-log-atlas/cas-management"
+    - "{{ data_dir }}/var-log-atlas/apikey"
+    - "{{ data_dir }}/var-log-atlas/userdetails"
+    - "{{ data_dir }}/var-log-atlas/image-service"
+
+- name: Set CAS database variables from inventories for MongoDB initialization
+  set_fact:
+    cas_tickets_username: "{{ cas_tickets_username | default('cas-ticket-user') }}"
+    cas_tickets_password: "{{ cas_tickets_password | default(lookup('password', '/dev/null length=20')) }}"
+    cas_tickets_db: "{{ cas_tickets_db | default('cas-ticket-registry') }}"
+    cas_services_username: "{{ cas_services_username | default('cas-services-user') }}"
+    cas_services_password: "{{ cas_services_password | default(lookup('password', '/dev/null length=20')) }}"
+    cas_services_db: "{{ cas_services_db | default('cas-service-registry') }}"
+    cas_audit_username: "{{ cas_audit_username | default('cas-audit-user') }}"
+    cas_audit_password: "{{ cas_audit_password | default(lookup('password', '/dev/null length=20')) }}"
+    cas_audit_db: "{{ cas_audit_db | default('cas-audit-repository') }}"
+    cas_spring_session_username: "{{ cas_spring_session_username | default('cas-session-user') }}"
+    cas_spring_session_password: "{{ cas_spring_session_password | default(lookup('password', '/dev/null length=20')) }}"
+    spring_session_mongo_collection: "{{ spring_session_mongo_collection | default('spring-sessions') }}"
+  when: "'cas' in services_enabled"
+
+
+# Build JAVA_OPTS for each service from inventory variables
+- name: Build JAVA_OPTS strings for each service
+  set_fact:
+    temp_java_opts: "{{ temp_java_opts | default({}) | combine({
+      item: '-Djava.awt.headless=true -Xmx' +
+            (vars.get(item.replace('-', '_') + '_max_memory', '2g')) +
+            ' -Xms' +
+            (vars.get(item.replace('-', '_') + '_min_memory', '1g')) +
+            ' ' +
+            (vars.get('java_security_opts', '-Dlog4j2.formatMsgNoLookups=true'))
+    }) }}"
+  loop: "{{ services_enabled | difference(['nginx', 'gatus', 'mysql', 'mongodb']) }}"
+
+# Build service_extra_params dict for templates
+- name: Build extra_params dict for services
+  set_fact:
+    service_extra_params: "{{ service_extra_params | default({}) | combine({
+      item: docker_services_desc.get(item, {}).get('extra_params', [])
+    }) }}"
+  loop: "{{ services_enabled | difference(['nginx', 'gatus', 'mysql', 'mongodb']) }}"
+
+- name: Set service_java_opts_dict from temp_java_opts
+  set_fact:
+    service_java_opts_dict: "{{ temp_java_opts }}"
+
+- name: Debug - Show service_extra_params (extra JVM parameters defined per service)
+  debug:
+    msg: |
+      Services with extra_params that will be concatenated in .env:
+      {% for service, extras in service_extra_params.items() %}
+      {% if extras %}
+        {{ service }}: {{ extras | map(attribute='key') | list | join(', ') }}
+      {% endif %}
+      {% endfor %}
+
+- name: Debug - Show generated JAVA_OPTS for services (BASE - extras added in template)
+  debug:
+    msg: "{{ service_java_opts_dict }}"
+
+- name: Generate .env file with database passwords from inventories
+  template:
+    src: docker-compose.env.j2
+    dest: "{{ data_dir }}/.env"
+    mode: '0644'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+
+- name: Validate nginx_docker_internal_aliases is configured
+  assert:
+    that:
+      - nginx_docker_internal_aliases is defined
+      - nginx_docker_internal_aliases | length > 0
+    fail_msg: |
+      ERROR: nginx_docker_internal_aliases is not properly configured!
+      
+      This list must contain all vhost hostnames that nginx should resolve internally.
+      Add to your inventory file (e.g., la-test-local-extras.ini):
+      
+      nginx_docker_internal_aliases=[
+        "colecciones-es.l-a.site",
+        "auth-es.l-a.site",
+        "listas-es.l-a.site",
+        "registros-es.l-a.site",
+        # ... add all service vhost hostnames
+      ]
+  tags:
+    - docker-compose
+    - validate
+
+- name: Generate docker-compose.yml
+  template:
+    src: docker-compose/base.yml.j2
+    dest: "{{ data_dir }}/docker-compose.yml"
+    mode: '0644'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+
+# Create subdirectories for organized service files
+- name: Create infrastructure directory for docker-compose files
+  file:
+    path: "{{ data_dir }}/infrastructure"
+    state: directory
+    mode: '0755'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+
+- name: Create services directory for docker-compose files
+  file:
+    path: "{{ data_dir }}/services"
+    state: directory
+    mode: '0755'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+
+# Create logs directories for all services
+- name: Create main logs directory
+  file:
+    path: "{{ data_dir }}/logs"
+    state: directory
+    mode: '0755'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+
+- name: Create service-specific logs directories
+  file:
+    path: "{{ data_dir }}/logs/{{ item }}"
+    state: directory
+    mode: '0755'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+  loop:
+    - cas
+    - userdetails
+    - apikey
+    - cas-management
+    - collectory
+    - species-list
+
+# Generate infrastructure service files
+- name: Generate i18n.yml if enabled
+  template:
+    src: docker-compose/infrastructure/i18n.yml.j2
+    dest: "{{ data_dir }}/infrastructure/i18n.yml"
+    mode: '0644'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+  when: i18n.enabled and i18n.strategy == 'volume' and i18n.volume.source == 'init-container'
+
+- name: Generate nginx.yml
+  template:
+    src: docker-compose/infrastructure/nginx.yml.j2
+    dest: "{{ data_dir }}/infrastructure/nginx.yml"
+    mode: '0644'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+  when: "'nginx' in services_enabled"
+
+- name: Generate mongodb.yml
+  template:
+    src: docker-compose/infrastructure/mongodb.yml.j2
+    dest: "{{ data_dir }}/infrastructure/mongodb.yml"
+    mode: '0644'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+  when: "'cas' in services_enabled or groups['cas-servers'] is defined"
+
+- name: Generate mysql.yml
+  template:
+    src: docker-compose/infrastructure/mysql.yml.j2
+    dest: "{{ data_dir }}/infrastructure/mysql.yml"
+    mode: '0644'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+  when: "'collectory' in services_enabled or 'cas' in services_enabled or groups['cas-servers'] is defined"
+
+- name: Generate postgres.yml
+  template:
+    src: docker-compose/infrastructure/postgres.yml.j2
+    dest: "{{ data_dir }}/infrastructure/postgres.yml"
+    mode: '0644'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+
+- name: Generate db-backup.yml
+  template:
+    src: docker-compose/infrastructure/db-backup.yml.j2
+    dest: "{{ data_dir }}/infrastructure/db-backup.yml"
+    mode: '0644'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+
+- name: Generate gatus.yml
+  template:
+    src: docker-compose/infrastructure/gatus.yml.j2
+    dest: "{{ data_dir }}/infrastructure/gatus.yml"
+    mode: '0644'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+  when: "'gatus' in services_enabled or gatus_enabled | default(true)"
+
+# Generate service files
+- name: Generate cas.yml
+  template:
+    src: docker-compose/services/cas.yml.j2
+    dest: "{{ data_dir }}/services/cas.yml"
+    mode: '0644'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+  when: "'cas' in services_enabled or groups['cas-servers'] is defined"
+
+- name: Generate userdetails.yml
+  template:
+    src: docker-compose/services/userdetails.yml.j2
+    dest: "{{ data_dir }}/services/userdetails.yml"
+    mode: '0644'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+  when: "'cas' in services_enabled or groups['cas-servers'] is defined"
+
+- name: Generate apikey.yml
+  template:
+    src: docker-compose/services/apikey.yml.j2
+    dest: "{{ data_dir }}/services/apikey.yml"
+    mode: '0644'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+  when: "'cas' in services_enabled or groups['cas-servers'] is defined"
+
+- name: Generate cas-management.yml
+  template:
+    src: docker-compose/services/cas-management.yml.j2
+    dest: "{{ data_dir }}/services/cas-management.yml"
+    mode: '0644'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+  when: "'cas' in services_enabled or groups['cas-servers'] is defined"
+
+- name: Generate species-list.yml
+  template:
+    src: docker-compose/services/species-list.yml.j2
+    dest: "{{ data_dir }}/services/species-list.yml"
+    mode: '0644'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+  when: "'species-list' in services_enabled or groups['species-list'] is defined"
+
+- name: Generate collectory.yml
+  template:
+    src: docker-compose/services/collectory.yml.j2
+    dest: "{{ data_dir }}/services/collectory.yml"
+    mode: '0644'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+  when: "'collectory' in services_enabled"
+
+- name: Fix docker-compose build paths in base file (relative to docker-compose-output/)
+  replace:
+    path: "{{ data_dir }}/docker-compose.yml"
+    regexp: 'context: \./docker/'
+    replace: 'context: ../docker/'
+  when: data_dir is defined
+
+# Note: service_versions is now dynamically built from docker_services_desc
+# via service_versions_dict and service_java_dict
+
+# Create directories for enabled services with build tools
+- name: Create directories for Dockerfile generation
+  file:
+    path: "{{ playbook_dir | dirname }}/docker/{{ docker_services_desc[item].role }}"
+    state: directory
+    mode: '0755'
+  loop: "{{ services_enabled }}"
+  when:
+    - item in docker_services_desc
+    - docker_services_desc[item].get('buildTool') in ['gradle', 'maven']
+
+# Generate Gradle Dockerfiles using already-determined Java versions
+- name: Generate Gradle Dockerfiles
+  template:
+    src: "Dockerfile.gradle.j2"
+    dest: "{{ playbook_dir | dirname }}/docker/{{ docker_services_desc[item].role }}/Dockerfile"
+    mode: '0644'
+  loop: "{{ services_enabled }}"
+  vars:
+    service_name: "{{ item }}"
+    description: "{{ docker_services_desc[item].desc }}"
+    artifact_id: "{{ docker_services_desc[item].artifacts }}"
+    # Java version from service_java_dict
+    java_version: "{{ service_java_dict.get(item, '11') }}"
+    repo: "{{ docker_services_desc[item].repository | default('') }}"
+    branch: "develop"
+    port: "8080"
+    service_classifier: "{{ docker_services_desc[item].get('classifier') | default('') }}"
+    # Version from service_versions_dict
+    service_version: "{{ service_versions_dict.get(item, 'develop') }}"
+    log_dir: "{{ docker_services_desc[item].get('log_dir') }}"
+  when:
+    - item in docker_services_desc
+    - docker_services_desc[item].get('buildTool') == 'gradle'
+    - docker_services_desc[item].get('artifacts') is defined
+    - docker_services_desc[item].get('role') is defined
+
+# Generate Maven Dockerfiles using already-determined Java versions
+- name: Generate Maven Dockerfiles
+  template:
+    src: "Dockerfile.maven.j2"
+    dest: "{{ playbook_dir | dirname }}/docker/{{ docker_services_desc[item].role }}/Dockerfile"
+    mode: '0644'
+  loop: "{{ services_enabled }}"
+  vars:
+    service_name: "{{ item }}"
+    description: "{{ docker_services_desc[item].desc }}"
+    artifact_id: "{{ docker_services_desc[item].artifacts }}"
+    # Java version from service_java_dict
+    java_version: "{{ service_java_dict.get(item) }}"
+    repo: "{{ docker_services_desc[item].repository | default('') }}"
+    branch: "develop"
+    port: "8080"
+    service_classifier: "{{ docker_services_desc[item].get('classifier') | default('') }}"
+    # Version from service_versions_dict
+    service_version: "{{ service_versions_dict.get(item, 'develop') }}"
+    log_dir: "{{ docker_services_desc[item].get('log_dir') }}"
+  when:
+    - item in docker_services_desc
+    - docker_services_desc[item].get('buildTool') == 'maven'
+    - docker_services_desc[item].get('artifacts') is defined
+    - docker_services_desc[item].get('role') is defined
+
+# Generate entrypoint.sh scripts for Maven/Gradle services only
+- name: Generate entrypoint.sh for services
+  template:
+    src: "entrypoint.sh.j2"
+    dest: "{{ playbook_dir | dirname }}/docker/{{ docker_services_desc[item].role }}/entrypoint.sh"
+    mode: '0755'
+  loop: "{{ services_enabled }}"
+  vars:
+    service_name: "{{ item }}"
+    artifact_id: "{{ docker_services_desc[item].artifacts }}"
+  when:
+    - item in docker_services_desc
+    - docker_services_desc[item].get('buildTool') in ['maven', 'gradle']
+    - docker_services_desc[item].get('artifacts') is defined
+    - docker_services_desc[item].get('role') is defined
+
+- name: Display generated Dockerfiles with versions and Java
+  debug:
+    msg: |
+      ✅ Generated Dockerfiles:
+      {% for service in services_enabled %}
+      {% if service in docker_services_desc and docker_services_desc[service].get('build_tool') in ['gradle', 'maven'] %}
+      {% set svc_version = (
+        collectory_version if service == 'collectory' else
+        cas_version if service == 'cas' else
+        user_details_version if service == 'userdetails' else
+        apikey_version if service == 'apikey' else
+        cas_management_version if service == 'cas-management' else
+        species_list_version if service == 'species-lists' else
+        bie_hub_version if service == 'ala-bie' else
+        spatial_hub_version if service == 'spatial' else
+        regions_version if service == 'regions' else
+        bie_index_version if service == 'species' else
+        image_service_version if service == 'images' else
+        alerts_version if service == 'alerts' else
+        doi_service_version if service == 'doi' else
+        dashboard_version if service == 'dashboard' else
+        sds_version if service == 'sds' else
+        biocollect_version if service == 'biocollect' else
+        ala_namematching_service_version if service == 'namematching' else
+        ala_sensitive_data_service_version if service == 'sensitive-data' else
+        data_quality_filter_service_version if service == 'data-quality' else
+        'develop'
+      ) | default('develop') %}
+      {% set svc_java = vars[service.replace('-', '_') + '_java_version'] | default(docker_services_desc[service].java_version) %}
+      - docker/{{ service }}/Dockerfile ({{ docker_services_desc[service].build_tool }}) v{{ svc_version }} (Java {{ svc_java }})
+      {% endif %}
+      {% endfor %}
+
+- name: Remove old docker-bake.hcl to force regeneration
+  file:
+    path: "{{ data_dir }}/docker-bake.hcl"
+    state: absent
+  when: build_images | default(false)
+
+- name: Generate docker-bake.hcl for optimized builds
+  template:
+    src: docker-bake.hcl.j2
+    dest: "{{ data_dir }}/docker-bake.hcl"
+    mode: '0644'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+  when: build_images | default(false)
+
+- name: Include build-images tasks
+  include_tasks: build-images.yml
+  when: build_images | default(false)
+
+# ============================================================================
+# Final Validation and Health Checks (AFTER all generation)
+# ============================================================================
+
+- name: "Ensure database volumes exist (external)"
+  include_tasks: ensure-db-volumes.yml
+  tags:
+    - validate
+    - docker-volumes
+
+- name: "Validate docker-compose generation"
+  include_tasks: validate-docker-compose.yml
+  tags:
+    - validate
+    - docker-compose
+
+- name: "Display generated compose file location"
+  debug:
+    msg: |
+      ✅ Docker Compose configuration successfully generated and validated!
+      Location: {{ data_dir }}/
+      
+      Files created:
+        ✓ docker-compose.yml (v3.8)
+        ✓ .env (with database credentials)
+        ✓ infrastructure/ directory with all services
+        ✓ services/ directory with service configs
+        ✓ logs/ directory with service subdirectories
+        ✓ External volumes created (mysql-data, postgres-data, mongodb-data)
+      
+      Next steps:
+        1. Review configuration: cat {{ data_dir }}/docker-compose.yml
+        2. Start services: docker-compose -f {{ data_dir }}/docker-compose.yml up -d
+        3. Access Gatus monitoring: http://your-domain/gatus/
+
+- name: "SSL Certificates: Start nginx to validate local certificates"
+  shell: |
+    cd "{{ data_dir }}" && docker compose up -d nginx 2>&1 || true
+  environment:
+    DOCKER_HOST: "{{ docker_socket }}"
+  when: not use_la_site_certs | bool
+  tags:
+    - docker-compose
+    - nginx-validation
+
+- name: "SSL Certificates: Wait briefly and check nginx is running"
+  shell: |
+    sleep 5 && docker ps | grep -q la_nginx && echo "nginx running"
+  when: not use_la_site_certs | bool
+  register: nginx_check
+  tags:
+    - docker-compose
+    - nginx-validation
+
+- name: "SSL Certificates: Verify certificate file exists in host"
+  stat:
+    path: "{{ inventory_dir }}/certs/letsencrypt/live/l-a.site/{{ ssl_cert_file }}"
+  register: cert_file_stat
+  when: not use_la_site_certs | bool
+  tags:
+    - docker-compose
+    - nginx-validation
+
+- name: "SSL Certificates: Assert certificate file exists"
+  assert:
+    that:
+      - cert_file_stat.stat.exists
+    fail_msg: "Certificate file not found: {{ inventory_dir }}/certs/letsencrypt/live/l-a.site/{{ ssl_cert_file }}"
+    success_msg: "Certificate file exists: {{ ssl_cert_file }}"
+  when: not use_la_site_certs | bool
+  tags:
+    - docker-compose
+    - nginx-validation
+
+- name: "SSL Certificates: Verify key file exists in host"
+  stat:
+    path: "{{ inventory_dir }}/certs/letsencrypt/live/l-a.site/{{ ssl_key_file }}"
+  register: key_file_stat
+  when: not use_la_site_certs | bool
+  tags:
+    - docker-compose
+    - nginx-validation
+
+- name: "SSL Certificates: Assert key file exists"
+  assert:
+    that:
+      - key_file_stat.stat.exists
+    fail_msg: "Key file not found: {{ inventory_dir }}/certs/letsencrypt/live/l-a.site/{{ ssl_key_file }}"
+    success_msg: "Key file exists: {{ ssl_key_file }}"
+  when: not use_la_site_certs | bool
+  tags:
+    - docker-compose
+    - nginx-validation
+
+- name: "SSL Certificates: Display validation success for local certs"
+  debug:
+    msg: |
+      ✅ SSL Local Certificates Validated Successfully!
+      
+      Configuration:
+      - Source: Local inventory directory
+      - Certificate directory: {{ ssl_certificate_server_dir }}
+      - Certificate file: {{ ssl_cert_file }}
+      - Key file: {{ ssl_key_file }}
+      
+      Status:
+      ✓ Certificate file found in nginx
+      ✓ Key file found in nginx
+      ✓ Nginx container running with SSL enabled
+  when: not use_la_site_certs | bool
+  tags:
+    - docker-compose
+    - nginx-validation
+
+- name: "SSL Certificates: Display info for Docker image certs"
+  debug:
+    msg: |
+      ℹ️  Using Docker Image Certificates
+      
+      Configuration:
+      - Source: Docker image livingatlases/l-a-site-certs:latest
+      - Certificates will be provided by the Docker image
+      - Configure ssl_certificate_server_dir to match image certificate location
+      
+      Note: Certificate validation skipped (using Docker image source)
+  when: use_la_site_certs | bool
+  tags:
+    - docker-compose
+    - nginx-validation
+

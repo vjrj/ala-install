@@ -1,0 +1,67 @@
+---
+# Docker Compose Deployment Playbook
+# POC for Living Atlas Container Migration
+
+- name: Generate Docker Compose configuration
+  hosts: docker_compose
+  connection: local
+  become: false
+  vars:
+    # User for docker operations (uses current user or 'ubuntu' for VM)
+    docker_default_user: "{{ docker_user | default(ansible_user_id) }}"
+
+    # Skip handlers as we're generating docker-compose files, not deploying to VMs
+    skip_handlers: true
+    # Note: services_enabled is determined by docker-common role based on inventory variables
+    # (not hardcoded here - allow generate-compose.yml to build it from use_* variables)
+    # i18n configuration
+    i18n:
+      enabled: true
+      strategy: volume
+      volume:
+        name: ala-i18n-data
+        source: init-container
+    # Docker Compose deployment type
+    deployment_type: container
+
+  tasks:
+    - name: Load variables from collectory group
+      include_vars:
+        file: "{{ playbook_dir }}/roles/collectory/vars/main.yml"
+      when: "'collectory' in groups"
+      tags:
+        - always
+
+    - name: Load variables from cas group
+      include_vars:
+        file: "{{ playbook_dir }}/roles/cas5/vars/main.yml"
+      when: "'cas-servers' in groups"
+      tags:
+        - always
+
+    - name: Calculate collectory_app based on version
+      set_fact:
+        collectory_app: "{{ 'collectory' if collectory_version is version('3', '>=') else 'ala-collectory' }}"
+      when: "'collectory' in groups and collectory_version is defined"
+      tags:
+        - always
+
+    - name: Include docker-common role to generate docker-compose
+      include_role:
+        name: docker-common
+        tasks_from: generate-compose
+      when: deployment_type == 'container'
+
+    - name: Initialize CAS5 and related databases in Docker Compose containers
+      include_role:
+        name: docker-common
+        tasks_from: generate-db-init-scripts
+      vars:
+        data_dir: "{{ data_dir }}"
+      when:
+        - deployment_type == 'container'
+        - db_init_enabled | default(true) | bool
+      tags:
+        - db-init
+        - cas-dbs
+

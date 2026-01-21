@@ -3,6 +3,13 @@
 *.DS_Store
 *.pyc
 
+# Sensitive files - DO NOT COMMIT
+.env
+.env.local
+docker-compose-output/.env
+*.swp
+*.swo
+
 # Package Files #
 *.ear
 
@@ -38,3 +45,13 @@ vagrant/centos/.vagrant/machines/default/virtualbox/id
 
 ansible/roles/alerts/tasks/main.yml
 utils/docopts
+
+# Docker Compose generated files and runtime data
+docker-compose-output/
+
+# Keep docker/ directory (Dockerfiles and configs are versioned)
+# but ignore any local build artifacts
+docker/*/build/
+docker/*/.gradle/
+docker/docopts
+docopts

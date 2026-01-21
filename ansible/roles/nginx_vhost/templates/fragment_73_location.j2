@@ -126,7 +126,8 @@
         proxy_set_header Connection "";
     {% endif %}
   {% else %}
-      {% if nginx_docker_swarm_resolver is defined and nginx_docker_swarm_resolver | bool == true %}
+      {% if nginx_docker_internal_resolver is defined and nginx_docker_internal_resolver | bool == true %}
+        {# Dynamic DNS resolution for Docker services (container/swarm deployment) #}
         resolver 127.0.0.11 ipv6=off;
         {% set proto = item.proxy_pass.split('://')[0] %}
         {% set rest_url = item.proxy_pass.split('://')[1] %}
