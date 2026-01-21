@@ -325,18 +325,6 @@ cmd_config() {
     ansible-playbook $inventories_arg "$PLAYBOOK" $extra_vars || error "Failed to generate configuration"
     success "Configuration generated"
 
-    # Fix build context paths in docker-compose.yml
-    # Change ./docker/SERVICE to ../docker/SERVICE (relative from docker-compose-output/)
-    if [[ -f "$DATA_DIR/docker-compose.yml" ]]; then
-        step "Fixing docker-compose build paths..."
-        chmod 644 "$DATA_DIR/docker-compose.yml" 2>/dev/null || true
-        # Use mktemp to avoid permission issues
-        local TEMP_FILE=$(mktemp)
-        sed 's|context: \./docker/|context: ../docker/|g' "$DATA_DIR/docker-compose.yml" > "$TEMP_FILE"
-        mv "$TEMP_FILE" "$DATA_DIR/docker-compose.yml"
-        success "Build paths fixed"
-    fi
-
     # Create required docker subdirectories for volumes/configs
     step "Preparing docker subdirectories..."
     # Set umask to ensure proper permissions (777 - 022 = 755)
