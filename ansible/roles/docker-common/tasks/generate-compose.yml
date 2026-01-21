@@ -16,6 +16,7 @@
     sensitive_data_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(ansible_user_id) }}"
     # CAS MongoDB flags
     cas_add_mongo_users: "{{ cas_add_mongo_users | default(true) }}"
+    nginx_conf_dir: "{{ data_dir }}/nginx"
 
 - name: Set nginx Docker resolver configuration
   set_fact:
@@ -256,6 +257,17 @@
     - cas-management
     - config
 
+- name: Run branding configuration generation
+  include_role:
+    name: branding
+  vars:
+    deployment_type: container
+  when:
+    - use_branding | bool
+  tags:
+    - branding
+    - config
+
 - name: Load collectory role variables if needed
   include_vars:
     file: "{{ playbook_dir }}/roles/collectory/vars/main.yml"
@@ -454,6 +466,103 @@
     owner: "{{ ansible_user_id }}"
     group: "{{ ansible_user_gid }}"
   when: "'nginx' in services_enabled"
+
+# Branding preparation and generation
+- name: Check if branding is enabled
+  set_fact:
+    use_branding: "{{ use_branding | default(false) }}"
+  tags:
+    - branding
+
+- name: Detect if branding_source is a git URL
+  set_fact:
+    branding_is_git_url: "{{ branding_source is defined and branding_source is match('^(https?://|git@).*') }}"
+    branding_build_source: "{{ 'git' if (branding_source is defined and branding_source is match('^(https?://|git@).*')) else 'local' }}"
+  when: use_branding | bool
+  tags:
+    - branding
+
+- name: Set branding source path for local builds
+  set_fact:
+    branding_source_path: "{{ branding_source if not (branding_is_git_url | default(false)) else '/tmp/branding-git-checkout' }}"
+  when: use_branding | bool
+  tags:
+    - branding
+
+- name: Ensure branding build directory exists
+  file:
+    path: "{{ data_dir }}/branding-build"
+    state: directory
+    mode: '0755'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+  when: use_branding | bool
+  tags:
+    - branding
+
+- name: Clone branding from git repository (if git URL)
+  git:
+    repo: "{{ branding_source }}"
+    dest: "{{ branding_source_path }}"
+    version: "{{ branding_git_ref | default('master') }}"
+    update: yes
+    force: yes
+  delegate_to: localhost
+  become: false
+  when: use_branding | bool and branding_is_git_url | bool
+  tags:
+    - branding
+
+- name: Copy branding source to build directory
+  synchronize:
+    src: "{{ branding_source_path }}/"
+    dest: "{{ data_dir }}/branding-build/"
+    delete: no
+    recursive: yes
+    rsync_opts:
+      - "--exclude=node_modules"
+      - "--exclude=.git"
+      - "--exclude=public"
+      - "--exclude=dist"
+  when: use_branding | bool
+  tags:
+    - branding
+
+- name: Copy branding Dockerfile to build directory
+  copy:
+    src: "{{ playbook_dir | dirname }}/docker/branding/Dockerfile"
+    dest: "{{ data_dir }}/branding-build/Dockerfile"
+    mode: '0644'
+  when: use_branding | bool
+  tags:
+    - branding
+
+- name: Copy branding nginx.conf
+  copy:
+    src: "{{ playbook_dir | dirname }}/docker/branding/nginx.conf"
+    dest: "{{ data_dir }}/branding-build/nginx.conf"
+    mode: '0644'
+  when: use_branding | bool
+  tags:
+    - branding
+
+- name: Generate branding.yml
+  template:
+    src: docker-compose/infrastructure/branding.yml.j2
+    dest: "{{ data_dir }}/infrastructure/branding.yml"
+    mode: '0644'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+  when: use_branding | bool
+  tags:
+    - branding
+
+- name: Add branding hostname to nginx_docker_internal_aliases
+  set_fact:
+    nginx_docker_internal_aliases: "{{ nginx_docker_internal_aliases | default([]) | union([branding_hostname]) | unique }}"
+  when: use_branding | bool and branding_hostname is defined
+  tags:
+    - branding
 
 - name: Generate mongodb.yml
   template:

@@ -111,6 +111,33 @@
   delay: 10
   when: services_enabled | length > 0 and builders_exist.rc != 0
 
+- name: Check if builder build failed
+  fail:
+    msg: |
+      ❌ Builder images build FAILED!
+      
+      Exit code: {{ build_result.rc }}
+      
+      Check the build log for details:
+        tail -100 /tmp/docker-build-builders.log
+      
+      The gradle/maven builder images are required for building services.
+      Fix the issues and re-run the playbook.
+  when:
+    - services_enabled | length > 0
+    - builders_exist.rc != 0
+    - build_result.rc is defined
+    - build_result.rc != 0
+
+- name: Display builder build success
+  debug:
+    msg: "✅ Builder images (gradle/maven) built successfully!"
+  when:
+    - services_enabled | length > 0
+    - builders_exist.rc != 0
+    - build_result.rc is defined
+    - build_result.rc == 0
+
 - name: Stop monitoring
   async_status:
     jid: "{{ monitor_builders.ansible_job_id }}"
@@ -178,6 +205,39 @@
   retries: 360
   delay: 10
   when: services_enabled | length > 0
+
+- name: Check if service build failed
+  fail:
+    msg: |
+      ❌ Service build FAILED!
+      
+      Exit code: {{ services_result.rc }}
+      
+      Check the build log for details:
+        tail -100 /tmp/docker-build-services.log
+      
+      Common issues:
+        - Dockerfile syntax errors
+        - Missing dependencies
+        - Network issues downloading packages
+        - Out of disk space
+  when:
+    - services_enabled | length > 0
+    - services_result.rc is defined
+    - services_result.rc != 0
+
+- name: Display build success message
+  debug:
+    msg: |
+      ✅ Service images built successfully!
+      
+      Built services: {{ services_enabled | join(', ') }}
+      
+      Next step: Start services with docker compose up -d
+  when:
+    - services_enabled | length > 0
+    - services_result.rc is defined
+    - services_result.rc == 0
 
 - name: Stop service monitoring
   async_status:

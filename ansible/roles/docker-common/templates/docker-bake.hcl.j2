@@ -166,6 +166,33 @@ target "ala-i18n" {
 }
 {% endif %}
 
+{% if use_branding | default(false) %}
+target "branding" {
+  dockerfile = "Dockerfile"
+  context = "branding-build"
+  args = {
+    BUILD_SOURCE = "{{ branding_build_source | default('local') }}"
+{% if branding_build_source == 'git' %}
+    GIT_URL = "{{ branding_source }}"
+    GIT_REF = "{{ branding_git_ref | default('master') }}"
+{% endif %}
+    NODE_VERSION = "{{ branding_node_version | default('18') }}"
+    TARGET = "production"
+  }
+{% if docker_registry and docker_registry != '' %}
+  tags = ["{{ docker_registry }}/branding:{{ branding_version | default('latest') }}", "{{ docker_registry }}/branding:latest"]
+  cache-from = [
+    "type=registry,ref={{ docker_registry }}/branding:buildcache",
+    "type=registry,ref={{ docker_registry }}/branding:latest"
+  ]
+{% else %}
+  tags = ["branding:{{ branding_version | default('latest') }}", "branding:latest"]
+{% endif %}
+  cache-to = ["type=inline"]
+  platforms = ["linux/amd64"]
+}
+{% endif %}
+
 {% if 'collectory' in services_enabled %}
 {% endif %}
 
@@ -367,6 +394,9 @@ group "all" {
 {% if i18n.enabled %}
     "ala-i18n",
 {% endif %}
+{% if use_branding | default(false) %}
+    "branding",
+{% endif %}
 {% if 'collectory' in services_enabled %}
     "collectory",
 {% endif %}
@@ -395,6 +425,9 @@ group "all" {
 group "services" {
   targets = [
     "nginx",
+{% if use_branding | default(false) %}
+    "branding",
+{% endif %}
 {% if 'collectory' in services_enabled %}
     "collectory",
 {% endif %}

@@ -1,0 +1,132 @@
+services:
+  # Branding service - serves branding assets
+  # Can run in production mode (nginx serving static files) or development mode (hot-reload)
+  branding:
+    container_name: la_branding
+{% if branding_dev_mode | default(false) %}
+    # Development mode: hot-reload enabled
+    build:
+      context: ../branding-build
+      dockerfile: Dockerfile
+      target: development
+      args:
+        BUILD_SOURCE: {{ branding_build_source }}
+{% if branding_build_source == 'git' %}
+        GIT_URL: {{ branding_source }}
+        GIT_REF: {{ branding_git_ref | default('master') }}
+{% endif %}
+        NODE_VERSION: {{ branding_node_version | default('18') }}
+    image: {{ docker_registry | default('') }}branding:dev
+    volumes:
+      # Mount source for hot-reload
+      - ../branding-build:/build:rw
+      # Preserve node_modules
+      - node_modules:/build/node_modules
+    ports:
+      # Expose dev server port
+      - "{{ branding_dev_port | default('3000') }}:3000"
+      - "{{ branding_dev_port | default('5173') }}:5173"
+{% else %}
+    # Production mode: pre-built image serving static files
+    image: {{ docker_registry | default('') }}branding:{{ branding_version | default('latest') }}
+{% if build_images is defined and (build_images | bool or build_images == 'true') %}
+    # Build locally when build_images is enabled
+    pull_policy: never
+    build:
+      context: ../branding-build
+      dockerfile: Dockerfile
+      target: production
+      args:
+        BUILD_SOURCE: {{ branding_build_source }}
+{% if branding_build_source == 'git' %}
+        GIT_URL: {{ branding_source }}
+        GIT_REF: {{ branding_git_ref | default('master') }}
+{% endif %}
+        NODE_VERSION: {{ branding_node_version | default('18') }}
+{% else %}
+    # Use pre-built image from docker buildx bake
+    pull_policy: never
+{% endif %}
+{% endif %}
+    environment:
+      TZ: {{ server_tz | default('UTC') }}
+{% if branding_dev_mode | default(false) %}
+      NODE_ENV: development
+{% else %}
+      NODE_ENV: production
+{% endif %}
+    networks:
+      {{ docker_network | default('la_internal') }}:
+        aliases:
+          - branding
+{% if not (branding_dev_mode | default(false)) %}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+{% else %}
+    restart: "no"
+{% endif %}
+{% if branding_git_watch | default(false) and branding_build_source == 'git' and not (branding_dev_mode | default(false)) %}
+    depends_on:
+      - branding-git-watcher
+{% endif %}
+
+{% if branding_git_watch | default(false) and branding_build_source == 'git' and not (branding_dev_mode | default(false)) %}
+  # Git repository watcher - monitors for changes and signals rebuild
+  branding-git-watcher:
+    container_name: la_branding-git-watcher
+    image: alpine/git:latest
+    environment:
+      TZ: {{ server_tz | default('UTC') }}
+      GIT_URL: {{ branding_source }}
+      GIT_REF: {{ branding_git_ref | default('master') }}
+      CHECK_INTERVAL: {{ branding_git_check_interval | default('300') }}
+    volumes:
+      - git-cache:/git
+      - rebuild-signals:/signals
+    command: >
+      sh -c '
+        echo "🔍 Git watcher started for $$GIT_URL (ref: $$GIT_REF)";
+        cd /git;
+        if [ ! -d ".git" ]; then
+          echo "📥 Initial clone...";
+          git clone $$GIT_URL .;
+          git checkout $$GIT_REF;
+        fi;
+        LAST_COMMIT=$$(git rev-parse HEAD);
+        echo "📌 Current commit: $$LAST_COMMIT";
+        while true; do
+          sleep $$CHECK_INTERVAL;
+          echo "🔄 Checking for updates...";
+          git fetch origin $$GIT_REF;
+          NEW_COMMIT=$$(git rev-parse origin/$$GIT_REF);
+          if [ "$$LAST_COMMIT" != "$$NEW_COMMIT" ]; then
+            echo "🆕 New commit detected: $$NEW_COMMIT";
+            echo "$$NEW_COMMIT" > /signals/rebuild;
+            echo "⚠️  Rebuild signal sent. Please run: docker compose up -d --build branding";
+            LAST_COMMIT=$$NEW_COMMIT;
+          else
+            echo "✅ No changes";
+          fi;
+        done
+      '
+    restart: unless-stopped
+    networks:
+      default: {}
+{% endif %}
+
+{% if branding_dev_mode | default(false) %}
+volumes:
+  node_modules:
+    driver: local
+{% endif %}
+{% if branding_git_watch | default(false) and branding_build_source == 'git' and not (branding_dev_mode | default(false)) %}
+  git-cache:
+    driver: local
+  rebuild-signals:
+    driver: local
+{% endif %}

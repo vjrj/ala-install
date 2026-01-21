@@ -12,6 +12,9 @@ include:
 {% if 'nginx' in services_enabled %}
   - ./infrastructure/nginx.yml
 {% endif %}
+{% if use_branding | default(false) %}
+  - ./infrastructure/branding.yml
+{% endif %}
   - ./infrastructure/mysql.yml
   - ./infrastructure/postgres.yml
   - ./infrastructure/mongodb.yml
