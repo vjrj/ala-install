@@ -1,95 +1,121 @@
 #!/bin/sh
-# SSL Certificate Validator
-# Validates SSL certificates before nginx starts
-# Checks: file existence, PEM format, expiration, and cert/key match
-#
-# Usage: Set environment variables before running:
-#   CERT_DIR - Directory containing certificates
-#   CERT_FILE - Certificate filename
-#   KEY_FILE - Private key filename
+set -u
 
-echo "[*] Validating SSL certificates..."
-apk add --no-cache openssl > /dev/null 2>&1
+SSL_CERT_DIR="${SSL_CERT_DIR}"
+SSL_CERT_FILE="${SSL_CERT_FILE}"
+SSL_KEY_FILE="${SSL_KEY_FILE}"
 
-# Read from environment or use defaults
-CERT_DIR="${CERT_DIR:-/etc/letsencrypt/live/l-a.site}"
-CERT_FILE="${CERT_FILE:-fullchain.pem}"
-KEY_FILE="${KEY_FILE:-privkey.pem}"
+CERT_PATH="$SSL_CERT_DIR/$SSL_CERT_FILE"
+KEY_PATH="$SSL_CERT_DIR/$SSL_KEY_FILE"
 
-CERT_PATH="$CERT_DIR/$CERT_FILE"
-KEY_PATH="$CERT_DIR/$KEY_FILE"
+echo "[*] Using SSL configuration:"
+echo "    SSL_CERT_DIR:  $SSL_CERT_DIR"
+echo "    SSL_CERT_FILE: $SSL_CERT_FILE"
+echo "    SSL_KEY_FILE:  $SSL_KEY_FILE"
+echo ""
+echo "[*] Full paths:"
+echo "    CERT_PATH: $CERT_PATH"
+echo "    KEY_PATH:  $KEY_PATH"
+echo ""
+echo "[*] Listing directory contents:"
+ls -lah "$SSL_CERT_DIR" 2>/dev/null || echo "    (Directory not found or not readable)"
+echo ""
 
 ERRORS=0
 WARNINGS=0
+CERT_VALID=0
+KEY_VALID=0
 
-# Check certificate file exists
-if [ ! -f "$CERT_PATH" ]; then
-  echo "[ERROR] Certificate not found at $CERT_PATH"
+if ! command -v openssl >/dev/null 2>&1; then
+  echo "[ERROR] openssl not found in this container"
   ERRORS=$((ERRORS + 1))
-else
-  echo "[OK] Certificate found: $CERT_PATH"
+fi
 
-  # Validate certificate PEM format
-  if ! openssl x509 -in "$CERT_PATH" -noout 2>/dev/null; then
-    echo "[ERROR] Certificate is not valid PEM format"
-    echo "   Hint: Check if certificate and key are reversed"
+if [ $ERRORS -eq 0 ]; then
+  if [ ! -f "$CERT_PATH" ]; then
+    echo "[ERROR] Certificate not found at $CERT_PATH"
     ERRORS=$((ERRORS + 1))
   else
-    echo "[OK] Certificate PEM format valid"
+    echo "[OK] Certificate found: $CERT_PATH"
 
-    # Check certificate expiration
-    if ! openssl x509 -in "$CERT_PATH" -noout -checkend 0 2>/dev/null; then
-      echo "[ERROR] Certificate has EXPIRED"
+    # Check if file is empty
+    if [ ! -s "$CERT_PATH" ]; then
+      echo "[ERROR] Certificate file is EMPTY (0 bytes)"
       ERRORS=$((ERRORS + 1))
     else
-      EXPIRATION=$(openssl x509 -in "$CERT_PATH" -noout -dates 2>/dev/null | grep notAfter | cut -d= -f2)
-      echo "[OK] Certificate valid until: $EXPIRATION"
+      FILE_SIZE=$(wc -c < "$CERT_PATH" 2>/dev/null || echo "0")
+      echo "[OK] Certificate file size: $FILE_SIZE bytes"
+    fi
 
-      # Check if expiring soon (within 30 days)
-      if ! openssl x509 -in "$CERT_PATH" -noout -checkend 2592000 2>/dev/null; then
-        echo "[WARN] Certificate expires within 30 days"
-        WARNINGS=$((WARNINGS + 1))
+    if ! openssl x509 -in "$CERT_PATH" -noout >/dev/null 2>&1; then
+      echo "[ERROR] Certificate is not valid PEM/X509"
+      ERRORS=$((ERRORS + 1))
+    else
+      CERT_VALID=1
+      echo "[OK] Certificate PEM/X509 format valid"
+
+      if ! openssl x509 -in "$CERT_PATH" -noout -checkend 0 >/dev/null 2>&1; then
+        echo "[ERROR] Certificate is expired"
+        ERRORS=$((ERRORS + 1))
+      else
+        EXPIRATION="$(openssl x509 -in "$CERT_PATH" -noout -enddate 2>/dev/null | cut -d= -f2)"
+        echo "[OK] Certificate not expired (notAfter: $EXPIRATION)"
+
+        if ! openssl x509 -in "$CERT_PATH" -noout -checkend 2592000 >/dev/null 2>&1; then
+          echo "[WARN] Certificate expires within 30 days (notAfter: $EXPIRATION)"
+          WARNINGS=$((WARNINGS + 1))
+        fi
       fi
     fi
   fi
-fi
 
-# Check private key file exists
-if [ ! -f "$KEY_PATH" ]; then
-  echo "[ERROR] Private key not found at $KEY_PATH"
-  ERRORS=$((ERRORS + 1))
-else
-  echo "[OK] Private key found: $KEY_PATH"
-
-  # Check file permissions (should be readable)
-  if [ ! -r "$KEY_PATH" ]; then
-    echo "[ERROR] Private key is not readable - check permissions"
+  if [ ! -f "$KEY_PATH" ]; then
+    echo "[ERROR] Private key not found at $KEY_PATH"
     ERRORS=$((ERRORS + 1))
   else
-    echo "[OK] Private key is readable"
+    echo "[OK] Private key found: $KEY_PATH"
+
+    # Check if file is empty
+    if [ ! -s "$KEY_PATH" ]; then
+      echo "[ERROR] Private key file is EMPTY (0 bytes)"
+      ERRORS=$((ERRORS + 1))
+    else
+      FILE_SIZE=$(wc -c < "$KEY_PATH" 2>/dev/null || echo "0")
+      echo "[OK] Private key file size: $FILE_SIZE bytes"
+    fi
+
+    if [ ! -r "$KEY_PATH" ]; then
+      echo "[ERROR] Private key is not readable - check permissions"
+      ERRORS=$((ERRORS + 1))
+    else
+      echo "[OK] Private key is readable"
+    fi
+
+    if ! openssl pkey -in "$KEY_PATH" -noout >/dev/null 2>&1; then
+      echo "[ERROR] Private key is not a valid PEM private key"
+      if [ $CERT_VALID -eq 1 ]; then
+        echo "       Possible: cert/key variables swapped, or key is encrypted/invalid"
+      fi
+      ERRORS=$((ERRORS + 1))
+    else
+      KEY_VALID=1
+      echo "[OK] Private key PEM format valid"
+    fi
   fi
 
-  # Validate private key PEM format
-  if ! openssl pkey -in "$KEY_PATH" -noout 2>/dev/null; then
-    echo "[ERROR] Private key is not valid PEM format"
-    echo "   LIKELY CAUSE: Certificate and Private Key are reversed!"
-    echo "   Solution: Swap the values of ssl_cert_file and ssl_key_file in inventory"
-    ERRORS=$((ERRORS + 1))
-  else
-    echo "[OK] Private key PEM format valid"
-  fi
-fi
+  if [ $CERT_VALID -eq 1 ] && [ $KEY_VALID -eq 1 ]; then
+    CERT_PUB_FP="$(openssl x509 -in "$CERT_PATH" -noout -pubkey 2>/dev/null | openssl pkey -pubin -outform DER 2>/dev/null | openssl sha256 2>/dev/null | awk '{print $2}')"
+    KEY_PUB_FP="$(openssl pkey -in "$KEY_PATH" -pubout 2>/dev/null | openssl pkey -pubin -outform DER 2>/dev/null | openssl sha256 2>/dev/null | awk '{print $2}')"
 
-# Verify certificate and private key match
-if [ -f "$CERT_PATH" ] && [ -f "$KEY_PATH" ]; then
-  CERT_MOD=$(openssl x509 -noout -modulus -in "$CERT_PATH" 2>/dev/null | openssl md5)
-  KEY_MOD=$(openssl rsa -noout -modulus -in "$KEY_PATH" 2>/dev/null | openssl md5)
-
-  if [ "$CERT_MOD" != "$KEY_MOD" ]; then
-    echo "[ERROR] Certificate and Private Key do NOT match"
-    ERRORS=$((ERRORS + 1))
-  else
-    echo "[OK] Certificate and Private Key match correctly"
+    if [ -z "${CERT_PUB_FP:-}" ] || [ -z "${KEY_PUB_FP:-}" ]; then
+      echo "[ERROR] Could not compute public key fingerprints to compare cert and key"
+      ERRORS=$((ERRORS + 1))
+    elif [ "$CERT_PUB_FP" != "$KEY_PUB_FP" ]; then
+      echo "[ERROR] Certificate and private key do not match"
+      ERRORS=$((ERRORS + 1))
+    else
+      echo "[OK] Certificate and private key match"
+    fi
   fi
 fi
 
@@ -97,23 +123,21 @@ echo ""
 echo "================================"
 if [ $ERRORS -eq 0 ]; then
   if [ $WARNINGS -gt 0 ]; then
-    echo "[SUCCESS] SSL Certificate validation PASSED ($WARNINGS warning(s))"
+    echo "[OK] Checks passed with $WARNINGS warning(s)"
   else
-    echo "[SUCCESS] SSL Certificate validation PASSED"
+    echo "[OK] All checks passed"
   fi
   exit 0
 else
-  echo "[FAILED] SSL Certificate validation FAILED ($ERRORS error(s))"
   if [ $WARNINGS -gt 0 ]; then
-    echo "   Plus $WARNINGS warning(s)"
+    echo "[ERROR] Checks failed with $ERRORS error(s) and $WARNINGS warning(s)"
+  else
+    echo "[ERROR] Checks failed with $ERRORS error(s)"
   fi
   echo ""
   echo "SOLUTIONS:"
-  echo "1. Check certificate and key files exist and are readable"
-  echo "2. Verify certificate is valid PEM format"
-  echo "3. Check if certificate and key are reversed (swap ssl_cert_file and ssl_key_file)"
-  echo "4. Verify certificate has not expired"
-  echo "5. Regenerate certificate pair if needed"
-  echo ""
+  echo "1. Ensure cert/key files exist at the mounted path"
+  echo "2. Check SSL_CERT_FILE and SSL_KEY_FILE point to correct files"
+  echo "3. Verify private key is a valid PEM and not corrupted"
   exit 1
 fi
