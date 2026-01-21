@@ -4,7 +4,7 @@ services:
     container_name: la_gatus_service
     image: twinproduction/gatus:latest
     volumes:
-      - ../gatus/config:/etc/gatus/genconfig:ro
+      - ../gatus/config:/config
       - la_gatus-data:/data
     environment:
       TZ: {{ server_tz | default('UTC') }}
