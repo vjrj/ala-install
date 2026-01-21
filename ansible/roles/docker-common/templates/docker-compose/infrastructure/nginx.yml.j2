@@ -7,7 +7,7 @@ services:
     image: livingatlases/l-a-site-certs:latest
     container_name: la_certs-init
     entrypoint: /bin/sh
-    command: -c 'mkdir -p /out/l-a.site && cp /certs/fullchain.pem /out/l-a.site/fullchain.pem && cp /certs/privkey.pem /out/l-a.site/privkey.pem && cp /certs/chain.pem /out/l-a.site/chain.pem 2>/dev/null || true && ls -la /out/l-a.site/ && echo "✓ Certificates extracted"'
+    command: -c 'set -e && echo "[*] Checking source certificates in image..." && ls -lah /certs/ && test -f /certs/fullchain.pem && test -s /certs/fullchain.pem && test -f /certs/privkey.pem && test -s /certs/privkey.pem && echo "[OK] Source certificates validated" && echo "[*] Extracting certificates to volume..." && mkdir -p /out/l-a.site && cat /certs/fullchain.pem > /out/l-a.site/fullchain.pem && cat /certs/privkey.pem > /out/l-a.site/privkey.pem && cat /certs/chain.pem > /out/l-a.site/chain.pem 2>/dev/null || true && chmod 644 /out/l-a.site/*.pem && echo "[*] Extracted certificates:" && ls -lah /out/l-a.site/ && test -s /out/l-a.site/fullchain.pem && test -s /out/l-a.site/privkey.pem && echo "[SUCCESS] Certificates extracted successfully"'
     volumes:
       - la-site-certs:/out
     networks:
@@ -17,8 +17,9 @@ services:
 
   # Certificate validator service - validates SSL certificates before nginx starts
   # Checks: file existence, PEM format, expiration, and cert/key match
+  # before nginx starts to avoid runtime SSL errors
   cert-validator:
-    image: alpine:latest
+    image: alpine/openssl:latest
     container_name: la_cert-validator
     entrypoint: /bin/sh
     command: /scripts/cert-validator.sh
@@ -29,6 +30,10 @@ services:
       - "{{ inventory_dir }}/certs/:{{ ssl_certificate_server_dir }}:ro"
 {% endif %}
       - ../cert-validator:/scripts:ro
+    environment:
+      SSL_CERT_DIR: "{{ ssl_certificate_server_dir }}"
+      SSL_CERT_FILE: "{{ ssl_cert_file }}"
+      SSL_KEY_FILE: "{{ ssl_key_file }}"
     networks:
       default: {}
       {{ docker_network | default('internal') }}:
