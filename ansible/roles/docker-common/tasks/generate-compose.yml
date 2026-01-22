@@ -325,6 +325,7 @@
     owner: "{{ ansible_user_id }}"
     group: "{{ ansible_user_gid }}"
   loop:
+    - "{{ data_dir }}/db-backups"
     - "{{ data_dir }}/mysql/init"
     - "{{ data_dir }}/mongodb/init"
     - "{{ data_dir }}/var-log-atlas/cas"

@@ -4,7 +4,7 @@ services:
     container_name: la_db-backup
     image: tiredofit/db-backup:latest
     volumes:
-      - {{ data_dir }}/db-backups:/backup
+      - ../db-backups:/backup
     networks:
       default: {}
       {{ docker_network | default('internal') }}:
