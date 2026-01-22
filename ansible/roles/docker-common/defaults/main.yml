@@ -24,7 +24,8 @@ docker_cache_tag: "buildcache"  # Cache tag for layer caching
 docker_build_cache_dir: "{{ ansible_env.HOME }}/.cache/docker-buildx"
 
 # Docker network configuration (existing from PR #675)
-docker_network: la_internal
+# Network name will be prefixed with compose project name (e.g., la_internal when name: la)
+docker_network: internal
 docker_network_mtu: 1500
 
 # Services to enable (determines which services are included in docker-compose.yml)
@@ -67,3 +68,40 @@ docker_output_dir: "{{ docker_compose_output_dir | default('docker-compose-outpu
 # Nginx Docker image configuration
 docker_nginx_debug: false  # Set to true to use nginx-debug image with additional debugging tools
 docker_nginx_version: "latest"  # Version tag for nginx images
+
+# ============================================
+# Branding Configuration (Docker deployment)
+# ============================================
+use_branding: false  # Enable branding deployment
+
+# Branding source - can be a local path or git URL
+# Examples:
+#   Local: ../la-test-branding
+#   Git: https://github.com/living-atlases/base-branding.git
+branding_source: null
+
+# Branding URL/hostname (used for nginx vhost)
+branding_url: "branding"
+
+# Node.js version for building branding assets
+branding_node_version: "18"
+
+# Branding version tag for docker image
+branding_version: "latest"
+
+# Git reference (branch, tag, or commit) when branding_source is a git URL
+branding_git_ref: "master"
+
+# Development mode - enables hot-reload (only for local development)
+branding_dev_mode: false
+
+# Development server port (only used if branding_dev_mode=true)
+branding_dev_port: "3000"
+
+# Git repository watcher - monitors for changes and signals rebuild
+# Only applies when branding_source is a git URL
+branding_git_watch: false
+
+# Git check interval in seconds (default: 300 = 5 minutes)
+branding_git_check_interval: "300"
+
