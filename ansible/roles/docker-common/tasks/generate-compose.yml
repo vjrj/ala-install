@@ -17,10 +17,17 @@
     # CAS MongoDB flags
     cas_add_mongo_users: "{{ cas_add_mongo_users | default(true) }}"
     nginx_conf_dir: "{{ data_dir }}/nginx"
+    collectory_docker_data_dir: "/data/collectory"
+  tags:
+    - always
+    - only
 
 - name: Set nginx Docker resolver configuration
   set_fact:
     nginx_docker_internal_resolver: "{{ (deployment_type in ['swarm', 'container']) | bool }}"
+  tags:
+    - always
+    - only
 
 - name: Set docker service container names (used in proxy_pass for nginx)
   set_fact:
@@ -43,6 +50,9 @@
     doi_service_docker_host: "{{ doi_service_docker_host | default('la_doi_service', true) }}"
     sensitive_data_service_docker_host: "{{ sensitive_data_service_docker_host | default('la_sensitive_data_service', true) }}"
     gatus_docker_host: "{{ gatus_docker_host | default('la_gatus', true) }}"
+  tags:
+    - always
+    - only
 
 - name: Debug - Docker user configuration
   debug:
@@ -78,10 +88,16 @@
 - name: Include services descriptions
   include_vars:
     file: docker-services-desc.yaml
+  tags:
+    - always
+    - only
 
 - name: Set docker_services_desc as a clean variable
   set_fact:
     docker_services_desc: "{{ docker_services_desc }}"
+  tags:
+    - always
+    - only
 
 - name: Determine Java versions for services
   include_tasks: determine-java-versions.yml
@@ -274,19 +290,24 @@
         appname: "branding"
         hostname: "{{ branding_url }}"
         context_path: "/"
-        nginx_root: "{{ data_dir }}/srv/{{ branding_url }}/www/"
+        nginx_root: "/srv/{{ branding_url }}/www/"
+        use_gatos: true
         nginx_paths:
           - path: "/"
             sort_label: "1"
             is_proxy: false
-            alias: "{{ data_dir }}/srv/{{ branding_url }}/www/"
+            alias: "/srv/{{ branding_url }}/www/"
+          - path: "{{branding_path}}"
+            sort_label: "2"
+            is_proxy: false
+            alias: "/srv/{{ branding_url }}/www/"
   when:
     - use_branding | bool
-    - webserver_nginx | bool
   tags:
     - branding
     - nginx_vhost
     - config
+    - config-docker
 
 - name: Load collectory role variables if needed
   include_vars:
@@ -723,7 +744,8 @@
     service_classifier: "{{ docker_services_desc[item].get('classifier') | default('') }}"
     # Version from service_versions_dict
     service_version: "{{ service_versions_dict.get(item, 'develop') }}"
-    log_dir: "{{ docker_services_desc[item].get('log_dir') }}"
+    log_dir: "{{ docker_services_desc[item].get('log_dir', '') }}"
+    log_config_filename: "{{ docker_services_desc[item].get('log_config_filename', '') }}"
   when:
     - item in docker_services_desc
     - docker_services_desc[item].get('buildTool') == 'gradle'
@@ -737,6 +759,8 @@
     dest: "{{ playbook_dir | dirname }}/docker/{{ docker_services_desc[item].role }}/Dockerfile"
     mode: '0644'
   loop: "{{ services_enabled }}"
+  loop_control:
+    label: "{{ item }}"
   vars:
     service_name: "{{ item }}"
     description: "{{ docker_services_desc[item].desc }}"
@@ -749,12 +773,15 @@
     service_classifier: "{{ docker_services_desc[item].get('classifier') | default('') }}"
     # Version from service_versions_dict
     service_version: "{{ service_versions_dict.get(item, 'develop') }}"
-    log_dir: "{{ docker_services_desc[item].get('log_dir') }}"
+    log_dir: "{{ docker_services_desc[item].get('log_dir', '') }}"
+    log_config_filename: "{{ docker_services_desc[item].get('log_config_filename', '') }}"
   when:
     - item in docker_services_desc
     - docker_services_desc[item].get('buildTool') == 'maven'
     - docker_services_desc[item].get('artifacts') is defined
     - docker_services_desc[item].get('role') is defined
+  tags:
+    - only
 
 # Generate entrypoint.sh scripts for Maven/Gradle services only
 - name: Generate entrypoint.sh for services
@@ -954,3 +981,44 @@
     - docker-compose
     - nginx-validation
 
+# ============================================================================
+# Final Validation - Check for ala-install references
+# ============================================================================
+
+- name: "Validation: Check for ala-install references in generated files"
+  shell: |
+    set -o pipefail
+    cd {{ data_dir }}
+    # Search for ala-install in generated files, excluding comments and specific files
+    grep -r "ala-install" . 2>/dev/null | grep -v "# Generated" | grep -v "branding-build/deploy.sh" || true
+  args:
+    executable: /bin/bash
+  register: ala_install_check
+  changed_when: false
+  tags:
+    - validate
+    - docker-compose
+
+- name: "Display final validation summary"
+  debug:
+    msg: |
+      ✅ Docker Compose generation completed successfully!
+      
+      📋 Validation checks passed:
+        ✓ Docker daemon available
+        ✓ Database volumes created (external)
+        ✓ Log directories created
+        {% if ala_install_check.stdout %}
+        ⚠️  WARNING: Found 'ala-install' references in generated files:
+        {{ ala_install_check.stdout }}
+        {% else %}
+        ✓ No 'ala-install' references in generated files
+        {% endif %}
+      
+      📁 Location: {{ data_dir }}/
+      
+      🚀 Ready to deploy with:
+         docker-compose up -d
+  tags:
+    - validate
+    - docker-compose
