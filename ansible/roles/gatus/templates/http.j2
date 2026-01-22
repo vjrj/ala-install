@@ -18,7 +18,7 @@ endpoints:
 {% if entry.path not in (nginx_paths_gatus_exclude | default([])) %}
 {% set suffix_name = entry.path | replace("/", "-") %}
 {% if suffix_name == "-" %}
-{% set suffix_name = "root" %}
+{% set suffix_name = "" %}
 {% else %}
 {% set suffix_name = suffix_name | trim('-') %}
 {% endif %}
