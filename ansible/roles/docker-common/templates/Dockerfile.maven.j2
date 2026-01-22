@@ -166,16 +166,16 @@ WORKDIR /opt/atlas/$APP_ARTIFACT
 
 COPY --from=final-builder /build/artifact.war /app/app.war
 
-{% if log_config_filename is defined and log_config_filename != '' %}
+{% if log_config_filename %}
 # Logging configuration
 ENV LOGGING_CONFIG="/data/${APP_ARTIFACT}/config/{{ log_config_filename }}"
 {% endif %}
-{% if log_dir and log_dir != '' %}
+{% if log_dir %}
 ENV LOG_DIR="{{ log_dir }}"
 {% endif %}
 
 # Default JAVA_OPTS can be overridden via docker-compose environment variables
-{% if log_config_filename is defined and log_config_filename != '' %}
+{% if log_config_filename %}
 ENV JAVA_OPTS="-Djava.awt.headless=true -Xmx2g -Xms1g -Dlogging.config=${LOGGING_CONFIG}"
 {% else %}
 ENV JAVA_OPTS="-Djava.awt.headless=true -Xmx2g -Xms1g"
