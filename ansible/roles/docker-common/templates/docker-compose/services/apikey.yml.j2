@@ -28,7 +28,7 @@ services:
       TZ: {{ server_tz | default('UTC') }}
       JAVA_OPTS: ${APIKEY_JAVA_OPTS}
     ports:
-      - "9002:8080"
+      - 9002
     networks:
       default: {}
       {{ docker_network | default('internal') }}:

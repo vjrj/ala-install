@@ -783,21 +783,8 @@
   tags:
     - only
 
-# Generate entrypoint.sh scripts for Maven/Gradle services only
-- name: Generate entrypoint.sh for services
-  template:
-    src: "entrypoint.sh.j2"
-    dest: "{{ playbook_dir | dirname }}/docker/{{ docker_services_desc[item].role }}/entrypoint.sh"
-    mode: '0755'
-  loop: "{{ services_enabled }}"
-  vars:
-    service_name: "{{ item }}"
-    artifact_id: "{{ docker_services_desc[item].artifacts }}"
-  when:
-    - item in docker_services_desc
-    - docker_services_desc[item].get('buildTool') in ['maven', 'gradle']
-    - docker_services_desc[item].get('artifacts') is defined
-    - docker_services_desc[item].get('role') is defined
+# Entrypoint scripts are no longer generated - services use CMD directly
+# See Dockerfile.gradle.j2 and Dockerfile.maven.j2 for direct CMD execution
 
 - name: Display generated Dockerfiles with versions and Java
   debug:

@@ -53,6 +53,27 @@
     nginx_conf_dir: "{{ data_dir }}/nginx"
 
     # ======================================
+    # Docker Service Internal Ports
+    # ======================================
+    # All Java services in Docker listen on 8080 internally
+    # (not 9000, 9001, etc. like in VM deployments)
+    cas_port: 9000
+    cas_management_port: 8070
+    userdetails_port: 9001
+    apikey_port: 9002
+    collectory_port: 8080
+    bie_hub_port: 8080
+    bie_index_port: 8080
+    biocache_hub_port: 8080
+    biocache_service_port: 8080
+    image_service_port: 8080
+    logger_service_port: 8080
+    namematching_service_port: 8080
+    doi_service_port: 8080
+    sensitive_data_service_port: 8080
+    species_list_port: 8080
+
+    # ======================================
     # Docker Container Hostnames for Nginx
     # ======================================
     # These are the service names in docker-compose.yml for nginx proxy_pass
