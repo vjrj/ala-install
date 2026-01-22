@@ -170,6 +170,7 @@ target "ala-i18n" {
 target "branding" {
   dockerfile = "Dockerfile"
   context = "branding-build"
+  target = "builder-production"
   args = {
     BUILD_SOURCE = "{{ branding_build_source | default('local') }}"
 {% if branding_build_source == 'git' %}
@@ -177,16 +178,15 @@ target "branding" {
     GIT_REF = "{{ branding_git_ref | default('master') }}"
 {% endif %}
     NODE_VERSION = "{{ branding_node_version | default('18') }}"
-    TARGET = "production"
   }
 {% if docker_registry and docker_registry != '' %}
-  tags = ["{{ docker_registry }}/branding:{{ branding_version | default('latest') }}", "{{ docker_registry }}/branding:latest"]
+  tags = ["{{ docker_registry }}/branding-builder:{{ branding_version | default('latest') }}", "{{ docker_registry }}/branding-builder:latest"]
   cache-from = [
-    "type=registry,ref={{ docker_registry }}/branding:buildcache",
-    "type=registry,ref={{ docker_registry }}/branding:latest"
+    "type=registry,ref={{ docker_registry }}/branding-builder:buildcache",
+    "type=registry,ref={{ docker_registry }}/branding-builder:latest"
   ]
 {% else %}
-  tags = ["branding:{{ branding_version | default('latest') }}", "branding:latest"]
+  tags = ["branding-builder:{{ branding_version | default('latest') }}", "branding-builder:latest"]
 {% endif %}
   cache-to = ["type=inline"]
   platforms = ["linux/amd64"]
