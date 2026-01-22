@@ -55,7 +55,6 @@ Add to your inventory file (e.g., `la-test-local-extras.ini`):
 ```ini
 use_branding=true
 branding_source=../la-test-branding
-branding_hostname=branding.l-a.site
 build_images=true  # Optional: let docker-compose build the image
 ```
 

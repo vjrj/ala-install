@@ -162,8 +162,12 @@ WORKDIR /opt/atlas/$APP_ARTIFACT
 
 COPY --from=final-builder /build/artifact.war /app/app.war
 
+# Logging configuration
+ENV LOGGING_CONFIG="/data/${APP_ARTIFACT}/config/logback.groovy"
+ENV LOG_DIR="/var/log/atlas/image-service"
+
 # Default JAVA_OPTS can be overridden via docker-compose environment variables
-ENV JAVA_OPTS="-Djava.awt.headless=true -Xmx2g -Xms1g"
+ENV JAVA_OPTS="-Djava.awt.headless=true -Xmx2g -Xms1g -Dlogging.config=${LOGGING_CONFIG}"
 
 HEALTHCHECK --interval=10s --timeout=3s --start-period=30s --retries=3 CMD \
 curl --fail --silent http://localhost:8080/actuator/health || exit 1

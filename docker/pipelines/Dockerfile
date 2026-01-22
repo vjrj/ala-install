@@ -162,6 +162,7 @@ WORKDIR /opt/atlas/$APP_ARTIFACT
 
 COPY --from=final-builder /build/artifact.war /app/app.war
 
+
 # Default JAVA_OPTS can be overridden via docker-compose environment variables
 ENV JAVA_OPTS="-Djava.awt.headless=true -Xmx2g -Xms1g"
 

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Auto-generated entrypoint for apikey
-# Ensures proper permissions and executes the service
+# Provides DEBUG_ENTRYPOINT functionality for troubleshooting
 #
 # Environment variables:
 #   DEBUG_ENTRYPOINT=1    Keep container alive on errors (drops to shell instead of exiting)
@@ -9,43 +9,8 @@ SERVICE_USER="apikey"
 APP_ARTIFACT="apikey"
 DEBUG_MODE="${DEBUG_ENTRYPOINT:-0}"
 
-echo "🔍 Checking permissions for /data/${APP_ARTIFACT}..."
-[ "${DEBUG_MODE}" = "1" ] && echo "   (DEBUG MODE ENABLED)"
-
-# Fix ownership of config directory if it exists and is owned by root
-if [ -d "/data/${APP_ARTIFACT}/config" ]; then
-    if [ "$(stat -c '%U' /data/${APP_ARTIFACT}/config)" = "root" ]; then
-        echo "⚙️  Fixing config directory ownership..."
-        chown -R ${SERVICE_USER}:${SERVICE_USER} /data/${APP_ARTIFACT}/config || true
-    fi
-fi
-
-# Fix ownership of data directory if it exists and is owned by root
-if [ -d "/data/${APP_ARTIFACT}/data" ]; then
-    if [ "$(stat -c '%U' /data/${APP_ARTIFACT}/data)" = "root" ]; then
-        echo "⚙️  Fixing data directory ownership..."
-        chown -R ${SERVICE_USER}:${SERVICE_USER} /data/${APP_ARTIFACT}/data || true
-    fi
-fi
-
-# Fix ownership of /app/app.war if it exists and is owned by root
-if [ -f "/app/app.war" ]; then
-    if [ "$(stat -c '%U' /app/app.war)" = "root" ]; then
-        echo "⚙️  Fixing /app/app.war ownership..."
-        chown ${SERVICE_USER}:${SERVICE_USER} /app/app.war || true
-    fi
-fi
-
-# Fix ownership of /usr/local/tomcat/webapps if it exists and is owned by root
-if [ -d "/usr/local/tomcat/webapps" ]; then
-    if [ "$(stat -c '%U' /usr/local/tomcat/webapps)" = "root" ]; then
-        echo "⚙️  Fixing /usr/local/tomcat/webapps ownership..."
-        chown -R ${SERVICE_USER}:${SERVICE_USER} /usr/local/tomcat/webapps || true
-    fi
-fi
-
-echo "✅ Permission check completed"
 echo "🚀 Starting apikey as user: ${SERVICE_USER}"
+[ "${DEBUG_MODE}" = "1" ] && echo "   (DEBUG MODE ENABLED)"
 echo ""
 
 # Debug: Show environment
@@ -53,6 +18,8 @@ if [ "${DEBUG_MODE}" = "1" ] || [ "${DEBUG_MODE}" = "true" ]; then
     echo "📋 Environment variables:"
     echo "   USER=$(id -un)"
     echo "   JAVA_OPTS=${JAVA_OPTS}"
+    echo "   LOGGING_CONFIG=${LOGGING_CONFIG:-not set}"
+    echo "   LOG_DIR=${LOG_DIR:-not set}"
     echo "   PATH=${PATH}"
     echo ""
     echo "📋 Executing command: $@"
