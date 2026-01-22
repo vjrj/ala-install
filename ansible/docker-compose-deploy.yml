@@ -31,6 +31,7 @@
       when: "'collectory' in groups"
       tags:
         - always
+        - only
 
     - name: Load variables from cas group
       include_vars:
@@ -38,6 +39,7 @@
       when: "'cas-servers' in groups"
       tags:
         - always
+        - only
 
     - name: Calculate collectory_app based on version
       set_fact:
@@ -45,12 +47,16 @@
       when: "'collectory' in groups and collectory_version is defined"
       tags:
         - always
+        - only
 
     - name: Include docker-common role to generate docker-compose
       include_role:
         name: docker-common
         tasks_from: generate-compose
       when: deployment_type == 'container'
+      tags:
+        - always
+        - only
 
     - name: Initialize CAS5 and related databases in Docker Compose containers
       include_role:
