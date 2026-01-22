@@ -8,7 +8,7 @@ DOC=$(cat <<'EOF'
 Living Atlas CLI
 
 Usage:
-  ala [options] ( config | config-docker | validate | build | up | down | publish )...
+  ala [options] ( config | config-docker | config-only | validate | build | up | down | publish )...
   ala init-config
   ala -h | --help
   ala -v | --version
@@ -16,6 +16,7 @@ Usage:
 Commands:
   config                Generate all configs (Ansible + docker-compose.yml)
   config-docker         Generate only docker-compose.yml and docker-bake.hcl (no Ansible roles)
+  config-only           Generate only minimal configs (tagged with 'only' - for testing individual components)
   validate              Validate Ansible syntax + docker-compose YAML
   build                 Build Docker images
   up                    Start services
@@ -27,6 +28,7 @@ Options:
   --inventories=<dir>   Inventory directory [default: la-test-inventories]
   --registry=<name>     Docker registry [default: livingatlases]
   --ssl-certs=<dir>     SSL certificates directory to mount in nginx
+  --only-tag=<tag>      Run only tasks with this tag (when using config-only)
   --wipe                Remove volumes when stopping - WARNING: DELETES DATA!
   -h --help             Show this help message
   -v --version          Show version
@@ -34,6 +36,8 @@ Options:
 Examples:
   ala config                               # Generate all configs via Ansible
   ala config-docker                        # Generate only docker files (faster)
+  ala config-only                          # Generate minimal configs (for testing)
+  ala config-only --only-tag=branding      # Test only branding component
   ala config validate                      # Generate + validate
   ala config validate build                # Generate + validate + build
   ala config validate build up             # Full: generate + validate + build + up
@@ -398,6 +402,57 @@ cmd_config_docker() {
 
 }
 
+cmd_config_only() {
+    local inventories_dir="${1:-la-test-inventories}"
+    local only_tag="${ONLY_TAG:-only}"
+    inventories_dir=$(resolve_inventories_dir "$inventories_dir")
+    [[ ! -d "$inventories_dir" ]] && error "Inventories directory not found: $inventories_dir"
+
+    info "Generating minimal configuration with tag: '$only_tag' (for testing individual components)..."
+    mkdir -p "$DATA_DIR"
+    [[ ! -f "$PLAYBOOK" ]] && error "Playbook not found: $PLAYBOOK"
+
+    # Convert data_dir to absolute path
+    local abs_data_dir
+    if [[ "$DATA_DIR" = /* ]]; then
+        abs_data_dir="$DATA_DIR"
+    else
+        abs_data_dir="$PROJECT_ROOT/$DATA_DIR"
+    fi
+
+    local inventories_arg=$(get_inventory_files "$inventories_dir")
+    local extra_vars="-e data_dir=$abs_data_dir -e build_images=false"
+
+    if [[ -n "$SSL_CERTS_DIR" ]]; then
+        extra_vars="$extra_vars -e ssl_certs_dir=$SSL_CERTS_DIR"
+        info "SSL certificates directory: $SSL_CERTS_DIR"
+    fi
+
+    step "Running Ansible playbook with only tag: '$only_tag'..."
+    info "⚠️  This runs ONLY tasks tagged with '$only_tag' (useful for testing)"
+    info "💡 Use --only-tag=<tag> to specify a different tag"
+    cd "$PROJECT_ROOT" || exit 1
+    ansible-playbook $inventories_arg "$PLAYBOOK" $extra_vars \
+        --tags "$only_tag" || error "Failed to generate configuration with tag: $only_tag"
+    success "Configuration generated with tag: $only_tag"
+
+    # Create required docker subdirectories for volumes
+    step "Preparing docker subdirectories..."
+    (
+        umask 022
+        for dir in cas/config cas/data userdetails/config userdetails/data cas-management/config cas-management/data apikey/config apikey/data mongodb nginx logs; do
+            mkdir -p "$DATA_DIR/$dir" 2>/dev/null || true
+        done
+    )
+
+    success "Configuration ready!"
+    info "Generated files in: $DATA_DIR/"
+    info ""
+    info "Next steps:"
+    info "  docker compose -f $DATA_DIR/docker-compose.yml up -d"
+
+}
+
 cmd_build() {
     info "Building Docker images..."
 
@@ -565,10 +620,17 @@ if [[ -n "${ssl_certs}" ]]; then
     SSL_CERTS_DIR="${ssl_certs}"
 fi
 
+# Process only-tag argument if provided (for config-only command)
+if [[ -n "${only_tag}" ]]; then
+    ONLY_TAG="${only_tag}"
+else
+    ONLY_TAG="only"  # Default tag
+fi
+
 # Track if any command was executed
 EXECUTED=false
 
-# Execute commands in order: config, config-docker, validate, build, up, down, publish
+# Execute commands in order: config, config-docker, config-only, validate, build, up, down, publish
 # Note: docopts returns numbers (1/0) not booleans, so we check > 0
 if [[ "${config:-0}" -gt 0 ]]; then
     cmd_config "$INVENTORIES_DIR"
@@ -578,6 +640,12 @@ fi
 if [[ "${config_docker:-0}" -gt 0 ]]; then
     [[ "$EXECUTED" == "true" ]] && echo ""
     cmd_config_docker "$INVENTORIES_DIR"
+    EXECUTED=true
+fi
+
+if [[ "${config_only:-0}" -gt 0 ]]; then
+    [[ "$EXECUTED" == "true" ]] && echo ""
+    cmd_config_only "$INVENTORIES_DIR"
     EXECUTED=true
 fi
 
