@@ -44,7 +44,7 @@ services:
       cas:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "curl", "--fail", "http://localhost:8080/cas-management/"]
+      test: ["CMD", "sh", "-c", "curl --fail --silent http://localhost:8080/cas-management/actuator/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
