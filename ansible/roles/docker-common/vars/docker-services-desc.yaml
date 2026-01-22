@@ -28,6 +28,7 @@ docker_services_desc:
     # Can be 'gradle' or 'maven' for now, if not buildTool is specified, no Dockefile is generated
     buildTool: 'gradle'
     version_variable: 'collectory_version'
+    log_config_filename: 'logback.xml'
   ala_hub:
     name: 'records'
     alias: 'biocache-hub'
@@ -42,6 +43,7 @@ docker_services_desc:
     allowMultipleDeploys: true
     repository: 'https://github.com/AtlasOfLivingAustralia/biocache-hubs'
     version_variable: 'biocache_hub_version'
+    log_config_filename: 'logback.xml'
   biocache_service:
     name: 'records-ws'
     alias: 'biocache-service'
@@ -56,6 +58,7 @@ docker_services_desc:
     allowMultipleDeploys: true
     repository: 'https://github.com/AtlasOfLivingAustralia/biocache-service'
     version_variable: 'biocache_service_version'
+    log_config_filename: 'log4j.xml'
   ala_bie:
     name: 'species'
     alias: 'bie'
@@ -71,6 +74,7 @@ docker_services_desc:
     buildTool: 'gradle'
     repository: 'https://github.com/AtlasOfLivingAustralia/ala-bie-hub'
     version_variable: 'bie_hub_version'
+    log_config_filename: 'logback.xml'
   bie_index:
     name: 'species-ws'
     alias: 'bie-index'
@@ -85,6 +89,7 @@ docker_services_desc:
     buildTool: 'gradle'
     repository: 'https://github.com/AtlasOfLivingAustralia/bie-index'
     version_variable: 'bie_index_version'
+    log_config_filename: 'logback.xml'
   images:
     name: 'images'
     nameInt: 'images'
@@ -99,6 +104,7 @@ docker_services_desc:
     classifier: 'exec'
     version_variable: 'image_service_version'
     log_dir: '/var/log/atlas/image-service'
+    log_config_filename: 'logback.groovy'
   species_lists:
     name: 'species-lists'
     nameInt: 'species_lists'
@@ -111,6 +117,7 @@ docker_services_desc:
     buildTool: 'gradle'
     repository: 'https://github.com/AtlasOfLivingAustralia/specieslist-webapp'
     version_variable: 'species_list_version'
+    log_config_filename: 'logback.xml'
   regions:
     name: 'regions'
     nameInt: 'regions'
@@ -124,6 +131,7 @@ docker_services_desc:
     buildTool: 'gradle'
     repository: 'https://github.com/AtlasOfLivingAustralia/regions'
     version_variable: 'regions_version'
+    log_config_filename: 'logback.xml'
   logger:
     name: 'logger'
     nameInt: 'logger'
@@ -136,6 +144,7 @@ docker_services_desc:
     buildTool: 'gradle'
     repository: 'https://github.com/AtlasOfLivingAustralia/logger-service'
     version_variable: 'logger_version'
+    log_config_filename: 'logback.xml'
   solr:
     name: 'solr'
     nameInt: 'solr'
@@ -163,6 +172,7 @@ docker_services_desc:
     classifier: 'exec'
     version_variable: 'cas_version'
     log_dir: '/var/log/atlas/cas'
+    log_config_filename: 'log4j2.xml'
     extra_params:
       - key: cas.standalone.configurationDirectory
         value: /data/cas/config
@@ -183,6 +193,7 @@ docker_services_desc:
     classifier: 'exec'
     version_variable: 'user_details_version'
     log_dir: '/var/log/atlas/userdetails'
+    log_config_filename: 'logback.xml'
   apikey:
     name: 'API keys'
     nameInt: 'apikey'
@@ -198,6 +209,7 @@ docker_services_desc:
     classifier: 'exec'
     version_variable: 'apikey_version'
     log_dir: '/var/log/atlas/apikey'
+    log_config_filename: 'logback.xml'
   cas_management:
     name: 'CAS Management'
     nameInt: 'cas_management'
@@ -213,6 +225,7 @@ docker_services_desc:
     classifier: 'exec'
     version_variable: 'cas_management_version'
     log_dir: '/var/log/atlas/cas-management'
+    log_config_filename: 'log4j2.xml'
     extra_params:
       - key: cas.standalone.configurationDirectory
         value: /data/cas-management/config/
@@ -229,6 +242,7 @@ docker_services_desc:
     buildTool: 'gradle'
     repository: 'https://github.com/AtlasOfLivingAustralia/spatial-hub'
     version_variable: 'spatial_hub_version'
+    log_config_filename: 'log4j.properties'
   spatial_service:
     name: 'Spatial Webservice'
     nameInt: 'spatial_service'
@@ -242,6 +256,7 @@ docker_services_desc:
     repository: 'https://github.com/AtlasOfLivingAustralia/spatial-service'
     desc: ''
     version_variable: 'spatial_service_version'
+    log_config_filename: 'log4j.properties'
   geoserver:
     name: 'Geoserver'
     nameInt: 'geoserver'
@@ -263,6 +278,7 @@ docker_services_desc:
     buildTool: 'gradle'
     repository: 'https://github.com/AtlasOfLivingAustralia/dashboard'
     version_variable: 'dashboard_version'
+    log_config_filename: 'logback.xml'
   sds:
     name: 'sds'
     nameInt: 'sds'
@@ -275,6 +291,7 @@ docker_services_desc:
     buildTool: 'gradle'
     repository: 'https://github.com/AtlasOfLivingAustralia/sds'
     version_variable: 'sds_version'
+    log_config_filename: 'logback.xml'
   alerts:
     name: 'alerts'
     nameInt: 'alerts'
@@ -287,6 +304,7 @@ docker_services_desc:
     buildTool: 'gradle'
     repository: 'https://github.com/AtlasOfLivingAustralia/alerts'
     version_variable: 'alerts_version'
+    log_config_filename: 'logback.xml'
   doi:
     name: 'doi'
     nameInt: 'doi'
@@ -300,6 +318,7 @@ docker_services_desc:
     repository: 'https://github.com/AtlasOfLivingAustralia/doi-service'
     classifier: 'exec'
     version_variable: 'doi_service_version'
+    log_config_filename: 'logback.groovy'
   branding:
     name: 'branding'
     nameInt: 'branding'
@@ -343,6 +362,7 @@ docker_services_desc:
     buildTool: 'gradle'
     sample: 'https://data-quality-service.ala.org.au'
     version_variable: 'data_quality_filter_service_version'
+    log_config_filename: 'logback.xml'
   pipelines:
     name: 'pipelines'
     nameInt: 'pipelines'
@@ -424,6 +444,7 @@ docker_services_desc:
     buildTool: 'gradle'
     classifier: 'exec'
     version_variable: 'biocollect_version'
+    log_config_filename: 'logback.xml'
   pdfgen:
     name: 'pdfgen'
     nameInt: 'pdfgen'
@@ -445,6 +466,7 @@ docker_services_desc:
     buildTool: 'gradle'
     classifier: 'exec'
     version_variable: 'ecodata_version'
+    log_config_filename: 'logback.groovy'
     extra_params:
       - key: java.io.tmpdir
         value: /data/tmp
