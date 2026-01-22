@@ -257,15 +257,35 @@
     - cas-management
     - config
 
-- name: Run branding configuration generation
-  include_role:
-    name: branding
-  vars:
-    deployment_type: container
+- name: Configure branding nginx vhost (Docker mode)
+  block:
+    - name: Ensure branding srv directory exists for nginx_vhost
+      file:
+        path: "{{ data_dir }}/srv/{{ branding_url }}/www"
+        state: directory
+        mode: '0755'
+        owner: "{{ ansible_user_id }}"
+        group: "{{ ansible_user_gid }}"
+
+    - name: Create branding nginx vhost
+      include_role:
+        name: nginx_vhost
+      vars:
+        appname: "branding"
+        hostname: "{{ branding_url }}"
+        context_path: "/"
+        nginx_root: "{{ data_dir }}/srv/{{ branding_url }}/www/"
+        nginx_paths:
+          - path: "/"
+            sort_label: "1"
+            is_proxy: false
+            alias: "{{ data_dir }}/srv/{{ branding_url }}/www/"
   when:
     - use_branding | bool
+    - webserver_nginx | bool
   tags:
     - branding
+    - nginx_vhost
     - config
 
 - name: Load collectory role variables if needed
@@ -559,8 +579,8 @@
 
 - name: Add branding hostname to nginx_docker_internal_aliases
   set_fact:
-    nginx_docker_internal_aliases: "{{ nginx_docker_internal_aliases | default([]) | union([branding_hostname]) | unique }}"
-  when: use_branding | bool and branding_hostname is defined
+    nginx_docker_internal_aliases: "{{ nginx_docker_internal_aliases | default([]) | union([branding_url]) | unique }}"
+  when: use_branding | bool and branding_url is defined
   tags:
     - branding
 
