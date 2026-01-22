@@ -62,3 +62,7 @@ volumes:
   la_gatus-data:
     external: true
 {% endif %}
+{% if use_branding | default(false) %}
+  branding-assets:
+    driver: local
+{% endif %}
