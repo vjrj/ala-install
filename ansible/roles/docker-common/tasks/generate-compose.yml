@@ -34,10 +34,10 @@
     # Convention: la_<service> - these are the container service names in docker-compose
     # Only used when deployment_type is 'container' or 'swarm'
     # Can be overridden in inventory for custom naming
-    cas_docker_host: "{{ cas_docker_host | default('la_auth_cas', true) }}"
-    cas_management_docker_host: "{{ cas_management_docker_host | default('la_auth_cas_management', true) }}"
-    apikey_docker_host: "{{ apikey_docker_host | default('la_auth_apikey', true) }}"
-    userdetails_docker_host: "{{ userdetails_docker_host | default('la_auth_userdetails', true) }}"
+    cas_docker_host: "{{ cas_docker_host | default('la_cas', true) }}"
+    cas_management_docker_host: "{{ cas_management_docker_host | default('la_cas_management', true) }}"
+    apikey_docker_host: "{{ apikey_docker_host | default('la_apikey', true) }}"
+    userdetails_docker_host: "{{ userdetails_docker_host | default('la_userdetails', true) }}"
     species_list_docker_host: "{{ species_list_docker_host | default('la_species_list', true) }}"
     collectory_docker_host: "{{ collectory_docker_host | default('la_collectory', true) }}"
     biocache_service_docker_host: "{{ biocache_service_docker_host | default('la_biocache_service', true) }}"

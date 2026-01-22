@@ -162,24 +162,25 @@ LABEL org.opencontainers.image.title="{{ service_name }}"
 LABEL org.opencontainers.image.description="{{ description }}"
 LABEL org.opencontainers.image.source="{{ repo }}"
 
-WORKDIR /opt/atlas/$APP_ARTIFACT
+# Convert APP_ARTIFACT to ENV so it persists after USER change
+ENV APP_ARTIFACT={{ artifact_id }}
+ENV SERVICE_USER={{ service_name }}
 
-COPY --from=final-builder /build/artifact.war /app/app.war
+WORKDIR /opt/atlas/${APP_ARTIFACT}
 
-{% if log_config_filename %}
+COPY --from=final-builder /build/artifact.war /opt/atlas/${APP_ARTIFACT}/app.war
+
 # Logging configuration
+{% if log_config_filename %}
 ENV LOGGING_CONFIG="/data/${APP_ARTIFACT}/config/{{ log_config_filename }}"
 {% endif %}
 {% if log_dir %}
 ENV LOG_DIR="{{ log_dir }}"
 {% endif %}
 
-# Default JAVA_OPTS can be overridden via docker-compose environment variables
-{% if log_config_filename %}
-ENV JAVA_OPTS="-Djava.awt.headless=true -Xmx2g -Xms1g -Dlogging.config=${LOGGING_CONFIG}"
-{% else %}
+# Default JAVA_OPTS - will be overridden by docker-compose .env file
+# The docker-compose service will set {{ service_name.upper().replace('-', '_') }}_JAVA_OPTS environment variable
 ENV JAVA_OPTS="-Djava.awt.headless=true -Xmx2g -Xms1g"
-{% endif %}
 
 HEALTHCHECK --interval=10s --timeout=3s --start-period=30s --retries=3 CMD \
 curl --fail --silent http://localhost:{{ port }}/actuator/health || exit 1
@@ -192,7 +193,8 @@ RUN groupadd -r ${SERVICE_USER} -g 1000 && \
     mkdir -p /data/${APP_ARTIFACT}/config && \
     mkdir -p /data/${APP_ARTIFACT}/data && \
     chown -R ${SERVICE_USER}:${SERVICE_USER} /data/${APP_ARTIFACT} && \
-    chown ${SERVICE_USER}:${SERVICE_USER} /app/app.war
+    chown ${SERVICE_USER}:${SERVICE_USER} /opt/atlas/${APP_ARTIFACT}/app.war && \
+    chown -R ${SERVICE_USER}:${SERVICE_USER} /opt/atlas/${APP_ARTIFACT}
 
 {% if log_dir and log_dir != '' %}
 RUN mkdir -p {{ log_dir }} && \
@@ -201,18 +203,12 @@ RUN mkdir -p {{ log_dir }} && \
 
 VOLUME /data
 
-# Copy entrypoint script
-COPY ./entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
 # Switch to service user for runtime execution
 USER ${SERVICE_USER}
 
-# Set entrypoint to fix permissions at runtime, then execute CMD
-ENTRYPOINT ["/entrypoint.sh"]
-
 # Execute service
-CMD ["sh", "-c", "java ${JAVA_OPTS} -jar /app/app.war"]
+# Use shell form to allow variable expansion
+CMD java ${JAVA_OPTS} -jar /opt/atlas/${APP_ARTIFACT}/app.war
 
 ARG BUILD_DATE
 ARG VCS_REF

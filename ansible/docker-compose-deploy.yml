@@ -24,6 +24,54 @@
     # Docker Compose deployment type
     deployment_type: container
 
+    # ======================================
+    # Docker Compose Container Names
+    # ======================================
+    # MySQL and MongoDB container names (used by all services)
+    cas_db_hostname: mysql
+    collectory_db_host_address: mysql
+    collectory_db_host: mysql
+    user_store_db_hostname: mysql
+    apikey_db_hostname: mysql
+
+    # MongoDB container names for CAS
+    ticket_registry_db_hostname: mongodb
+    cas_audit_host: mongodb
+    cas_spring_session_host: mongodb
+    cas_tickets_host: mongodb
+    cas_services_host: mongodb
+
+    # Docker users
+    tomcat_user: "{{ docker_default_user }}"
+    nginx_user: "{{ docker_default_user }}"
+    cas_user: "{{ docker_default_user }}"
+    collectory_user: "{{ docker_default_user }}"
+    userdetails_user: "{{ docker_default_user }}"
+    apikey_user: "{{ docker_default_user }}"
+
+    # Docker-specific nginx configuration directory
+    nginx_conf_dir: "{{ data_dir }}/nginx"
+
+    # ======================================
+    # Docker Container Hostnames for Nginx
+    # ======================================
+    # These are the service names in docker-compose.yml for nginx proxy_pass
+    cas_docker_host: la_cas
+    userdetails_docker_host: la_userdetails
+    cas_management_docker_host: la_cas_management
+    apikey_docker_host: la_apikey
+    collectory_docker_host: la_collectory
+    bie_hub_docker_host: la_bie_hub
+    bie_index_docker_host: la_bie_index
+    biocache_hub_docker_host: la_biocache_hub
+    biocache_service_docker_host: la_biocache_service
+    image_service_docker_host: la_image_service
+    logger_service_docker_host: la_logger_service
+    namematching_service_docker_host: la_namematching_service
+    doi_service_docker_host: la_doi_service
+    sensitive_data_service_docker_host: la_sensitive_data_service
+    species_list_docker_host: la_species_list
+
   tasks:
     - name: Load variables from collectory group
       include_vars:
