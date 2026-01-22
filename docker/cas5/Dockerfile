@@ -158,16 +158,21 @@ LABEL org.opencontainers.image.title="cas"
 LABEL org.opencontainers.image.description="CAS authentication system"
 LABEL org.opencontainers.image.source="https://github.com/AtlasOfLivingAustralia/ala-cas-5"
 
-WORKDIR /opt/atlas/$APP_ARTIFACT
+# Convert APP_ARTIFACT to ENV so it persists after USER change
+ENV APP_ARTIFACT=cas
+ENV SERVICE_USER=cas
 
-COPY --from=final-builder /build/artifact.war /app/app.war
+WORKDIR /opt/atlas/${APP_ARTIFACT}
+
+COPY --from=final-builder /build/artifact.war /opt/atlas/${APP_ARTIFACT}/app.war
 
 # Logging configuration
 ENV LOGGING_CONFIG="/data/${APP_ARTIFACT}/config/log4j2.xml"
 ENV LOG_DIR="/var/log/atlas/cas"
 
-# Default JAVA_OPTS can be overridden via docker-compose environment variables
-ENV JAVA_OPTS="-Djava.awt.headless=true -Xmx2g -Xms1g -Dlogging.config=${LOGGING_CONFIG}"
+# Default JAVA_OPTS - will be overridden by docker-compose .env file
+# The docker-compose service will set CAS_JAVA_OPTS environment variable
+ENV JAVA_OPTS="-Djava.awt.headless=true -Xmx2g -Xms1g"
 
 HEALTHCHECK --interval=10s --timeout=3s --start-period=30s --retries=3 CMD \
 curl --fail --silent http://localhost:8080/actuator/health || exit 1
@@ -180,25 +185,20 @@ RUN groupadd -r ${SERVICE_USER} -g 1000 && \
     mkdir -p /data/${APP_ARTIFACT}/config && \
     mkdir -p /data/${APP_ARTIFACT}/data && \
     chown -R ${SERVICE_USER}:${SERVICE_USER} /data/${APP_ARTIFACT} && \
-    chown ${SERVICE_USER}:${SERVICE_USER} /app/app.war
+    chown ${SERVICE_USER}:${SERVICE_USER} /opt/atlas/${APP_ARTIFACT}/app.war && \
+    chown -R ${SERVICE_USER}:${SERVICE_USER} /opt/atlas/${APP_ARTIFACT}
 
 RUN mkdir -p /var/log/atlas/cas && \
     chown -R ${SERVICE_USER}:${SERVICE_USER} /var/log/atlas/cas
 
 VOLUME /data
 
-# Copy entrypoint script
-COPY ./entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
 # Switch to service user for runtime execution
 USER ${SERVICE_USER}
 
-# Set entrypoint to fix permissions at runtime, then execute CMD
-ENTRYPOINT ["/entrypoint.sh"]
-
 # Execute service
-CMD ["sh", "-c", "java ${JAVA_OPTS} -jar /app/app.war"]
+# Use shell form to allow variable expansion
+CMD java ${JAVA_OPTS} -jar /opt/atlas/${APP_ARTIFACT}/app.war
 
 ARG BUILD_DATE
 ARG VCS_REF

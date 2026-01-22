@@ -158,9 +158,13 @@ LABEL org.opencontainers.image.title="spatial"
 LABEL org.opencontainers.image.description="spatial front-end"
 LABEL org.opencontainers.image.source="https://github.com/AtlasOfLivingAustralia/spatial-hub"
 
-WORKDIR /opt/atlas/$APP_ARTIFACT
+# Convert APP_ARTIFACT to ENV so it persists after USER change
+ENV APP_ARTIFACT=spatial-hub
+ENV SERVICE_USER=spatial
 
-COPY --from=final-builder /build/artifact.war /app/app.war
+WORKDIR /opt/atlas/${APP_ARTIFACT}
+
+COPY --from=final-builder /build/artifact.war /opt/atlas/${APP_ARTIFACT}/app.war
 
 # Logging configuration
 ENV LOGGING_CONFIG="/data/${APP_ARTIFACT}/config/log4j.properties"
@@ -179,23 +183,17 @@ RUN groupadd -r ${SERVICE_USER} -g 1000 && \
     mkdir -p /data/${APP_ARTIFACT}/config && \
     mkdir -p /data/${APP_ARTIFACT}/data && \
     chown -R ${SERVICE_USER}:${SERVICE_USER} /data/${APP_ARTIFACT} && \
-    chown ${SERVICE_USER}:${SERVICE_USER} /app/app.war
-
+    chown ${SERVICE_USER}:${SERVICE_USER} /opt/atlas/${APP_ARTIFACT}/app.war && \
+    chown -R ${SERVICE_USER}:${SERVICE_USER} /opt/atlas/${APP_ARTIFACT}
 
 VOLUME /data
-
-# Copy entrypoint script
-COPY ./entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
 
 # Switch to service user for runtime execution
 USER ${SERVICE_USER}
 
-# Set entrypoint to fix permissions at runtime, then execute CMD
-ENTRYPOINT ["/entrypoint.sh"]
-
 # Execute service
-CMD ["sh", "-c", "java ${JAVA_OPTS} -jar /app/app.war"]
+# Use shell form to allow variable expansion
+CMD java ${JAVA_OPTS} -jar /opt/atlas/${APP_ARTIFACT}/app.war
 
 ARG BUILD_DATE
 ARG VCS_REF

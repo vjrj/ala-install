@@ -158,9 +158,13 @@ LABEL org.opencontainers.image.title="images"
 LABEL org.opencontainers.image.description="images service"
 LABEL org.opencontainers.image.source="https://github.com/AtlasOfLivingAustralia/image-service"
 
-WORKDIR /opt/atlas/$APP_ARTIFACT
+# Convert APP_ARTIFACT to ENV so it persists after USER change
+ENV APP_ARTIFACT=image-service
+ENV SERVICE_USER=images
 
-COPY --from=final-builder /build/artifact.war /app/app.war
+WORKDIR /opt/atlas/${APP_ARTIFACT}
+
+COPY --from=final-builder /build/artifact.war /opt/atlas/${APP_ARTIFACT}/app.war
 
 # Logging configuration
 ENV LOGGING_CONFIG="/data/${APP_ARTIFACT}/config/logback.groovy"
@@ -180,25 +184,19 @@ RUN groupadd -r ${SERVICE_USER} -g 1000 && \
     mkdir -p /data/${APP_ARTIFACT}/config && \
     mkdir -p /data/${APP_ARTIFACT}/data && \
     chown -R ${SERVICE_USER}:${SERVICE_USER} /data/${APP_ARTIFACT} && \
-    chown ${SERVICE_USER}:${SERVICE_USER} /app/app.war
-
+    chown ${SERVICE_USER}:${SERVICE_USER} /opt/atlas/${APP_ARTIFACT}/app.war && \
+    chown -R ${SERVICE_USER}:${SERVICE_USER} /opt/atlas/${APP_ARTIFACT}
 RUN mkdir -p /var/log/atlas/image-service && \
     chown -R ${SERVICE_USER}:${SERVICE_USER} /var/log/atlas/image-service
 
 VOLUME /data
 
-# Copy entrypoint script
-COPY ./entrypoint.sh /entrypoint.sh
-RUN chmod +x /entrypoint.sh
-
 # Switch to service user for runtime execution
 USER ${SERVICE_USER}
 
-# Set entrypoint to fix permissions at runtime, then execute CMD
-ENTRYPOINT ["/entrypoint.sh"]
-
 # Execute service
-CMD ["sh", "-c", "java ${JAVA_OPTS} -jar /app/app.war"]
+# Use shell form to allow variable expansion
+CMD java ${JAVA_OPTS} -jar /opt/atlas/${APP_ARTIFACT}/app.war
 
 ARG BUILD_DATE
 ARG VCS_REF
