@@ -44,6 +44,18 @@ include:
 {% if 'collectory' in services_enabled %}
   - ./services/collectory.yml
 {% endif %}
+{% if 'bie_hub' in services_enabled or bie_hub_enabled | default(false) %}
+  - ./services/bie-hub.yml
+{% endif %}
+{% if 'bie_index' in services_enabled or bie_index_enabled | default(false) %}
+  - ./services/bie-index.yml
+{% endif %}
+{% if 'biocache_hub' in services_enabled or biocache_hub_enabled | default(false) %}
+  - ./services/biocache-hub.yml
+{% endif %}
+{% if 'biocache_service' in services_enabled or biocache_service_enabled | default(false) %}
+  - ./services/biocache-service.yml
+{% endif %}
 {% if 'gatus' in services_enabled or gatus_enabled | default(true) %}
   - ./infrastructure/gatus.yml
 {% endif %}
