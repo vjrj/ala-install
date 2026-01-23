@@ -15,6 +15,9 @@ include:
 {% if use_branding | default(false) %}
   - ./infrastructure/branding.yml
 {% endif %}
+{% if docker_mail_development_mode | default(false) %}
+  - ./infrastructure/mailhog.yml
+{% endif %}
   - ./infrastructure/mysql.yml
   - ./infrastructure/postgres.yml
   - ./infrastructure/mongodb.yml
