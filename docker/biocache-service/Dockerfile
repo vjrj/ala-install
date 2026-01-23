@@ -172,7 +172,7 @@ ENV LOGGING_CONFIG="/data/${APP_ARTIFACT}/config/log4j.xml"
 # Default JAVA_OPTS can be overridden via docker-compose environment variables
 ENV JAVA_OPTS="-Djava.awt.headless=true -Xmx2g -Xms1g -Dlogging.config=${LOGGING_CONFIG}"
 
-HEALTHCHECK --interval=10s --timeout=3s --start-period=30s --retries=3 CMD \
+HEALTHCHECK --interval=10s --timeout=3s --start-period=90s --retries=3 CMD \
 curl --fail --silent http://localhost:8080/actuator/health || exit 1
 
 EXPOSE 8080
@@ -185,6 +185,7 @@ RUN groupadd -r ${SERVICE_USER} -g 1000 && \
     chown -R ${SERVICE_USER}:${SERVICE_USER} /data/${APP_ARTIFACT} && \
     chown ${SERVICE_USER}:${SERVICE_USER} /opt/atlas/${APP_ARTIFACT}/app.war && \
     chown -R ${SERVICE_USER}:${SERVICE_USER} /opt/atlas/${APP_ARTIFACT}
+
 
 VOLUME /data
 

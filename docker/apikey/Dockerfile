@@ -173,7 +173,7 @@ ENV LOG_DIR="/var/log/atlas/apikey"
 # Default JAVA_OPTS can be overridden via docker-compose environment variables
 ENV JAVA_OPTS="-Djava.awt.headless=true -Xmx2g -Xms1g -Dlogging.config=${LOGGING_CONFIG}"
 
-HEALTHCHECK --interval=10s --timeout=3s --start-period=30s --retries=3 CMD \
+HEALTHCHECK --interval=10s --timeout=3s --start-period=90s --retries=3 CMD \
 curl --fail --silent http://localhost:8080/actuator/health || exit 1
 
 EXPOSE 8080
@@ -188,6 +188,7 @@ RUN groupadd -r ${SERVICE_USER} -g 1000 && \
     chown -R ${SERVICE_USER}:${SERVICE_USER} /opt/atlas/${APP_ARTIFACT}
 RUN mkdir -p /var/log/atlas/apikey && \
     chown -R ${SERVICE_USER}:${SERVICE_USER} /var/log/atlas/apikey
+
 
 VOLUME /data
 
