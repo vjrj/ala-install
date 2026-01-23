@@ -212,7 +212,7 @@ docker_services_desc:
     log_config_filename: 'logback.xml'
   cas_management:
     name: 'CAS Management'
-    nameInt: 'cas_management'
+    nameInt: 'cas-management'
     artifacts: 'cas-management'
     role: 'cas-management'
     group: 'cas-servers'
