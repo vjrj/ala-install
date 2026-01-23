@@ -60,6 +60,13 @@
     set_sql_mode: true
 
     # ======================================
+    # Java Memory Configuration
+    # ======================================
+    # Default Java options for all services (can be overridden per service)
+    # Format: -Xmx<max>m -Xms<min>m -Xss<stack>k -D<property>=<value>
+    tomcat_java_opts: "-Xmx2g -Xms2g -Xss512k -Djava.awt.headless=true"
+
+    # ======================================
     # Docker Service Internal Ports
     # ======================================
     # All Java services in Docker listen on 8080 internally
