@@ -186,6 +186,10 @@ RUN groupadd -r ${SERVICE_USER} -g 1000 && \
 RUN mkdir -p /var/log/atlas/cas-management && \
     chown -R ${SERVICE_USER}:${SERVICE_USER} /var/log/atlas/cas-management
 
+# Create additional log directories for Tomcat-based applications
+RUN mkdir -p /var/log/tomcat10 && \
+    chown -R ${SERVICE_USER}:${SERVICE_USER} /var/log/tomcat10
+
 # CAS Management specific directories for SAML metadata
 RUN mkdir -p /etc/cas/saml/metadata-backups && \
     chown -R ${SERVICE_USER}:${SERVICE_USER} /etc/cas/saml

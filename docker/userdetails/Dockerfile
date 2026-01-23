@@ -186,6 +186,10 @@ RUN groupadd -r ${SERVICE_USER} -g 1000 && \
 RUN mkdir -p /var/log/atlas/userdetails && \
     chown -R ${SERVICE_USER}:${SERVICE_USER} /var/log/atlas/userdetails
 
+# Create additional log directories for Tomcat-based applications
+RUN mkdir -p /var/log/tomcat10 && \
+    chown -R ${SERVICE_USER}:${SERVICE_USER} /var/log/tomcat10
+
 
 VOLUME /data
 
