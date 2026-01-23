@@ -89,16 +89,16 @@
     cas_management_docker_host: la_cas-management
     apikey_docker_host: la_apikey
     collectory_docker_host: la_collectory
-    bie_hub_docker_host: la_bie_hub
-    bie_index_docker_host: la_bie_index
-    biocache_hub_docker_host: la_biocache_hub
-    biocache_service_docker_host: la_biocache_service
-    image_service_docker_host: la_image_service
-    logger_service_docker_host: la_logger_service
-    namematching_service_docker_host: la_namematching_service
-    doi_service_docker_host: la_doi_service
-    sensitive_data_service_docker_host: la_sensitive_data_service
-    species_list_docker_host: la_species_list
+    bie_hub_docker_host: la_bie-hub
+    bie_index_docker_host: la_bie-index
+    biocache_hub_docker_host: la_biocache-hub
+    biocache_service_docker_host: la_biocache-service
+    image_service_docker_host: la_image-service
+    logger_service_docker_host: la_logger-service
+    namematching_service_docker_host: la_namematching-service
+    doi_service_docker_host: la_doi-service
+    sensitive_data_service_docker_host: la_sensitive-data-service
+    species_list_docker_host: la_species-list
 
   tasks:
     - name: Load variables from collectory group
