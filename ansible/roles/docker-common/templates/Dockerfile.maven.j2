@@ -180,7 +180,9 @@ ENV LOG_DIR="{{ log_dir }}"
 
 # Default JAVA_OPTS - will be overridden by docker-compose .env file
 # The docker-compose service will set {{ service_name.upper().replace('-', '_') }}_JAVA_OPTS environment variable
-ENV JAVA_OPTS="-Djava.awt.headless=true -Xmx2g -Xms1g"
+# Uses tomcat_java_opts if available, otherwise uses safe defaults
+{% set java_memory_opts = tomcat_java_opts | default('-Xmx2g -Xms2g -Xss512k -Djava.awt.headless=true') %}
+ENV JAVA_OPTS="{{ java_memory_opts }}"
 
 
 EXPOSE {{ port }}
