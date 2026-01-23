@@ -75,11 +75,11 @@
 
     # ======================================
     # Docker Container Hostnames for Nginx
-    # ======================================
+    # Docker Container Hostnames for Nginx
     # These are the service names in docker-compose.yml for nginx proxy_pass
     cas_docker_host: la_cas
     userdetails_docker_host: la_userdetails
-    cas_management_docker_host: la_cas_management
+    cas_management_docker_host: la_cas-management
     apikey_docker_host: la_apikey
     collectory_docker_host: la_collectory
     bie_hub_docker_host: la_bie_hub
