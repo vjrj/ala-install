@@ -224,6 +224,7 @@
     name: gatus
   vars:
     deployment_type: container
+    nginx_vhost_fast_mode: true
   when: "'gatus' in services_enabled or use_gatus | default(true) | bool"
   tags:
     - gatus
@@ -292,6 +293,7 @@
         context_path: "/"
         nginx_root: "/srv/{{ branding_url }}/www/"
         use_gatos: true
+        nginx_vhost_fast_mode: true
         nginx_cors_origin_regexp: "{{ branding_nginx_cors_origin_regexp | default('^https?:\\/\\/(localhost|l-a\\.site|.*\\.l-a\\.site)') }}"
         nginx_paths:
           - path: "/"
@@ -334,6 +336,7 @@
     name: collectory
   vars:
     deployment_type: container
+    nginx_vhost_fast_mode: true
   when: "'collectory' in services_enabled"
   tags:
     - collectory
@@ -344,6 +347,7 @@
     name: species-list
   vars:
     deployment_type: container
+    nginx_vhost_fast_mode: true
   when: "'species-list' in services_enabled or groups['species-list'] is defined"
   tags:
     - species-list
@@ -355,6 +359,7 @@
   vars:
     deployment_type: container
     bie_hub_docker_host: la_bie-hub
+    nginx_vhost_fast_mode: true
   when: "'bie_hub' in services_enabled or bie_hub_enabled | default(false)"
   tags:
     - bie-hub
@@ -366,6 +371,7 @@
   vars:
     deployment_type: container
     bie_index_docker_host: la_bie-index
+    nginx_vhost_fast_mode: true
   when: "'bie_index' in services_enabled or bie_index_enabled | default(false)"
   tags:
     - bie-index
@@ -377,6 +383,7 @@
   vars:
     deployment_type: container
     biocache_hub_docker_host: la_biocache-hub
+    nginx_vhost_fast_mode: true
   when: "'biocache_hub' in services_enabled or biocache_hub_enabled | default(false)"
   tags:
     - biocache-hub
@@ -389,6 +396,7 @@
     deployment_type: container
     biocache_service_docker_host: la_biocache-service
     biocache_db_host: la_cassandra
+    nginx_vhost_fast_mode: true
   when: "'biocache_service' in services_enabled or biocache_service_enabled | default(false)"
   tags:
     - biocache-service
@@ -693,6 +701,7 @@
         context_path: "/"
         nginx_root: "/srv/{{ docker_mail_development_url }}/www/"
         use_gatos: true
+        nginx_vhost_fast_mode: true
         nginx_paths:
           - path: "/"
             sort_label: "1"
