@@ -174,8 +174,6 @@ ENV LOG_DIR="/var/log/atlas/cas"
 # The docker-compose service will set CAS_JAVA_OPTS environment variable
 ENV JAVA_OPTS="-Djava.awt.headless=true -Xmx2g -Xms1g"
 
-HEALTHCHECK --interval=10s --timeout=3s --start-period=90s --retries=3 CMD \
-curl --fail --silent http://localhost:8080/actuator/health || exit 1
 
 EXPOSE 8080
 
