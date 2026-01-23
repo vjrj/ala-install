@@ -81,11 +81,11 @@ services:
           # These aliases allow services to reach nginx on the internal network using vhost hostnames
           # Example: service can resolve auth-es.l-a.site to nginx container internally
     healthcheck:
-      test: ["CMD", "wget", "--quiet", "--tries=1", "--spider", "http://localhost/"]
+      test: ["CMD", "curl", "--fail", "--silent", "http://localhost/"]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 30s
     restart: unless-stopped
     environment:
       TZ: {{ server_tz | default('UTC') }}

@@ -24,7 +24,7 @@ services:
         aliases:
           - {{ mongodb_hostname | default('mongodb') }}
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test: ["CMD-SHELL", "mongosh --quiet --eval \"db.adminCommand('ping').ok\" || exit 1"]
       interval: 10s
       timeout: 5s
       retries: 5
