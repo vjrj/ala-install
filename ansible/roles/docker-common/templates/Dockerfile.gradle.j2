@@ -185,7 +185,7 @@ ENV JAVA_OPTS="-Djava.awt.headless=true -Xmx2g -Xms1g -Dlogging.config=${LOGGING
 ENV JAVA_OPTS="-Djava.awt.headless=true -Xmx2g -Xms1g"
 {% endif %}
 
-HEALTHCHECK --interval=10s --timeout=3s --start-period=30s --retries=3 CMD \
+HEALTHCHECK --interval=10s --timeout=3s --start-period=90s --retries=3 CMD \
 curl --fail --silent http://localhost:{{ port }}/actuator/health || exit 1
 
 EXPOSE {{ port }}
@@ -201,6 +201,12 @@ RUN groupadd -r ${SERVICE_USER} -g 1000 && \
 {% if log_dir and log_dir != '' %}
 RUN mkdir -p {{ log_dir }} && \
     chown -R ${SERVICE_USER}:${SERVICE_USER} {{ log_dir }}
+{% endif %}
+
+{% if artifact_id == 'cas-management' %}
+# CAS Management specific directories for SAML metadata
+RUN mkdir -p /etc/cas/saml/metadata-backups && \
+    chown -R ${SERVICE_USER}:${SERVICE_USER} /etc/cas/saml
 {% endif %}
 
 VOLUME /data
