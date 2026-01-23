@@ -292,6 +292,7 @@
         context_path: "/"
         nginx_root: "/srv/{{ branding_url }}/www/"
         use_gatos: true
+        nginx_cors_origin_regexp: "{{ branding_nginx_cors_origin_regexp | default('^https?:\\/\\/(localhost|l-a\\.site|.*\\.l-a\\.site)') }}"
         nginx_paths:
           - path: "/"
             sort_label: "1"
