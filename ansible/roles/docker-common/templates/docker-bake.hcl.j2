@@ -305,7 +305,7 @@ target "apikey" {
 }
 {% endif %}
 
-{% if 'cas-management' in services_enabled %}
+{% if 'cas' in services_enabled %}
 target "cas-management" {
   dockerfile = "Dockerfile"
   context = "../docker/{{ docker_services_desc['cas_management'].role }}"
@@ -443,7 +443,7 @@ group "services" {
 {% if 'apikey' in services_enabled %}
     "apikey",
 {% endif %}
-{% if 'cas-management' in services_enabled %}
+{% if 'cas' in services_enabled %}
     "cas-management",
 {% endif %}
 # Gatus is launched directly from docker-compose without custom Dockerfile
