@@ -42,7 +42,7 @@ services:
   # Nginx reverse proxy
   nginx:
     container_name: la_nginx
-    image: {% if docker_registry and docker_registry != '' %}{{ docker_registry }}/{% endif %}{% if docker_nginx_debug | default(false) %}nginx-debug{% else %}nginx{% endif %}:{{ docker_nginx_version | default('latest') }}
+    image: {% if docker_registry and docker_registry != '' %}{{ docker_registry }}/{% endif %}nginx:{{ docker_nginx_version | default('1.25') }}
     ports:
       - "80:80"
       - "443:443"
