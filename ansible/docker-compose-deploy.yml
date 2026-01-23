@@ -33,6 +33,7 @@
     collectory_db_host: mysql
     user_store_db_hostname: mysql
     apikey_db_hostname: mysql
+    specieslist_db_hostname: mysql
 
     # MongoDB container names for CAS
     ticket_registry_db_hostname: mongodb
@@ -48,9 +49,15 @@
     collectory_user: "{{ docker_default_user }}"
     userdetails_user: "{{ docker_default_user }}"
     apikey_user: "{{ docker_default_user }}"
+    species_list_user: "{{ docker_default_user }}"
 
     # Docker-specific nginx configuration directory
     nginx_conf_dir: "{{ data_dir }}/nginx"
+
+    # ======================================
+    # Species List specific configuration
+    # ======================================
+    set_sql_mode: true
 
     # ======================================
     # Docker Service Internal Ports
