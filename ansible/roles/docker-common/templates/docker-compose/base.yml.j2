@@ -21,16 +21,9 @@ include:
   - ./infrastructure/mysql.yml
   - ./infrastructure/postgres.yml
   - ./infrastructure/mongodb.yml
-
-{% if 'solr' in services_enabled or solr_enabled | default(false) %}
   - ./infrastructure/solr.yml
-{% endif %}
-{% if 'cassandra' in services_enabled or cassandra_enabled | default(false) %}
   - ./infrastructure/cassandra.yml
-{% endif %}
-{% if 'elasticsearch' in services_enabled or elasticsearch_enabled | default(false) %}
   - ./infrastructure/elasticsearch.yml
-{% endif %}
   - ./infrastructure/db-backup.yml
 {% if 'cas' in services_enabled or groups['cas-servers'] is defined %}
   - ./services/cas.yml
@@ -86,18 +79,12 @@ volumes:
     external: true
   la_mongodb-data:
     external: true
-{% if 'solr' in services_enabled or solr_enabled | default(false) %}
   la_solr-data:
     external: true
-{% endif %}
-{% if 'cassandra' in services_enabled or cassandra_enabled | default(false) %}
   la_cassandra-data:
     external: true
-{% endif %}
-{% if 'elasticsearch' in services_enabled or elasticsearch_enabled | default(false) %}
   la_elasticsearch-data:
     external: true
-{% endif %}
 {% if 'gatus' in services_enabled or gatus_enabled | default(true) %}
   la_gatus-data:
     external: true

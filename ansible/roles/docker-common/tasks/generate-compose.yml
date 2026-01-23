@@ -349,6 +349,51 @@
     - species-list
     - config
 
+- name: Run bie-hub configuration generation
+  include_role:
+    name: bie-hub
+  vars:
+    deployment_type: container
+    bie_hub_docker_host: la_bie-hub
+  when: "'bie_hub' in services_enabled or bie_hub_enabled | default(false)"
+  tags:
+    - bie-hub
+    - config
+
+- name: Run bie-index configuration generation
+  include_role:
+    name: bie-index
+  vars:
+    deployment_type: container
+    bie_index_docker_host: la_bie-index
+  when: "'bie_index' in services_enabled or bie_index_enabled | default(false)"
+  tags:
+    - bie-index
+    - config
+
+- name: Run biocache-hub configuration generation
+  include_role:
+    name: biocache-hub
+  vars:
+    deployment_type: container
+    biocache_hub_docker_host: la_biocache-hub
+  when: "'biocache_hub' in services_enabled or biocache_hub_enabled | default(false)"
+  tags:
+    - biocache-hub
+    - config
+
+- name: Run biocache-service configuration generation
+  include_role:
+    name: biocache3-service
+  vars:
+    deployment_type: container
+    biocache_service_docker_host: la_biocache-service
+    biocache_db_host: la_cassandra
+  when: "'biocache_service' in services_enabled or biocache_service_enabled | default(false)"
+  tags:
+    - biocache-service
+    - config
+
 - name: Ensure database init directories exist with correct permissions
   file:
     path: "{{ item }}"
@@ -678,7 +723,6 @@
     mode: '0644'
     owner: "{{ ansible_user_id }}"
     group: "{{ ansible_user_gid }}"
-  when: "'solr' in services_enabled or solr_enabled | default(false)"
   tags:
     - solr
 
@@ -689,7 +733,6 @@
     mode: '0644'
     owner: "{{ ansible_user_id }}"
     group: "{{ ansible_user_gid }}"
-  when: "'cassandra' in services_enabled or cassandra_enabled | default(false)"
   tags:
     - cassandra
 
@@ -700,7 +743,6 @@
     mode: '0644'
     owner: "{{ ansible_user_id }}"
     group: "{{ ansible_user_gid }}"
-  when: "'elasticsearch' in services_enabled or elasticsearch_enabled | default(false)"
   tags:
     - elasticsearch
   when: "'cas' in services_enabled or groups['cas-servers'] is defined"

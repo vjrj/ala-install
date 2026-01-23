@@ -371,6 +371,100 @@ target "species-list" {
 }
 {% endif %}
 
+# BIE Hub and Index services
+{% if 'bie_hub' in services_enabled or bie_hub_enabled | default(false) %}
+target "bie-hub" {
+  dockerfile = "Dockerfile"
+  context = "../docker/bie-hub"
+  contexts = {
+    "gradle-builder:jdk{{ bie_hub_java_version | default('17') }}" = "target:gradle-builder-jdk{{ bie_hub_java_version | default('17') }}"
+  }
+  args = {
+    GRADLE_BUILDER_IMAGE = "gradle-builder:jdk{{ bie_hub_java_version | default('17') }}"
+    VERSION = "{{ bie_hub_version | default('develop') }}"
+    REPO = "https://github.com/AtlasOfLivingAustralia/ala-bie-hub.git"
+    BRANCH = "{{ bie_hub_branch | default('master') }}"
+  }
+{% if docker_registry and docker_registry != '' %}
+  tags = ["{{ docker_registry }}/bie-hub:{{ bie_hub_version | default('latest') }}", "{{ docker_registry }}/bie-hub:latest"]
+{% else %}
+  tags = ["bie-hub:{{ bie_hub_version | default('latest') }}", "bie-hub:latest"]
+{% endif %}
+  cache-to = ["type=inline"]
+  platforms = ["linux/amd64"]
+}
+{% endif %}
+
+{% if 'bie_index' in services_enabled or bie_index_enabled | default(false) %}
+target "bie-index" {
+  dockerfile = "Dockerfile"
+  context = "../docker/bie-index"
+  contexts = {
+    "gradle-builder:jdk{{ bie_index_java_version | default('17') }}" = "target:gradle-builder-jdk{{ bie_index_java_version | default('17') }}"
+  }
+  args = {
+    GRADLE_BUILDER_IMAGE = "gradle-builder:jdk{{ bie_index_java_version | default('17') }}"
+    VERSION = "{{ bie_index_version | default('develop') }}"
+    REPO = "https://github.com/AtlasOfLivingAustralia/bie-index.git"
+    BRANCH = "{{ bie_index_branch | default('master') }}"
+  }
+{% if docker_registry and docker_registry != '' %}
+  tags = ["{{ docker_registry }}/bie-index:{{ bie_index_version | default('latest') }}", "{{ docker_registry }}/bie-index:latest"]
+{% else %}
+  tags = ["bie-index:{{ bie_index_version | default('latest') }}", "bie-index:latest"]
+{% endif %}
+  cache-to = ["type=inline"]
+  platforms = ["linux/amd64"]
+}
+{% endif %}
+
+# Biocache Hub and Service
+{% if 'biocache_hub' in services_enabled or biocache_hub_enabled | default(false) %}
+target "biocache-hub" {
+  dockerfile = "Dockerfile"
+  context = "../docker/biocache-hub"
+  contexts = {
+    "gradle-builder:jdk{{ biocache_hub_java_version | default('17') }}" = "target:gradle-builder-jdk{{ biocache_hub_java_version | default('17') }}"
+  }
+  args = {
+    GRADLE_BUILDER_IMAGE = "gradle-builder:jdk{{ biocache_hub_java_version | default('17') }}"
+    VERSION = "{{ biocache_hub_version | default('develop') }}"
+    REPO = "https://github.com/AtlasOfLivingAustralia/ala-hub.git"
+    BRANCH = "{{ biocache_hub_branch | default('master') }}"
+  }
+{% if docker_registry and docker_registry != '' %}
+  tags = ["{{ docker_registry }}/ala-hub:{{ biocache_hub_version | default('latest') }}", "{{ docker_registry }}/ala-hub:latest"]
+{% else %}
+  tags = ["ala-hub:{{ biocache_hub_version | default('latest') }}", "ala-hub:latest"]
+{% endif %}
+  cache-to = ["type=inline"]
+  platforms = ["linux/amd64"]
+}
+{% endif %}
+
+{% if 'biocache_service' in services_enabled or biocache_service_enabled | default(false) %}
+target "biocache-service" {
+  dockerfile = "Dockerfile"
+  context = "../docker/biocache-service"
+  contexts = {
+    "gradle-builder:jdk{{ biocache_service_java_version | default('17') }}" = "target:gradle-builder-jdk{{ biocache_service_java_version | default('17') }}"
+  }
+  args = {
+    GRADLE_BUILDER_IMAGE = "gradle-builder:jdk{{ biocache_service_java_version | default('17') }}"
+    VERSION = "{{ biocache_service_version | default('develop') }}"
+    REPO = "https://github.com/AtlasOfLivingAustralia/biocache-service.git"
+    BRANCH = "{{ biocache_service_branch | default('master') }}"
+  }
+{% if docker_registry and docker_registry != '' %}
+  tags = ["{{ docker_registry }}/biocache-service:{{ biocache_service_version | default('latest') }}", "{{ docker_registry }}/biocache-service:latest"]
+{% else %}
+  tags = ["biocache-service:{{ biocache_service_version | default('latest') }}", "biocache-service:latest"]
+{% endif %}
+  cache-to = ["type=inline"]
+  platforms = ["linux/amd64"]
+}
+{% endif %}
+
 # ============================================
 # Build Groups
 # ============================================
@@ -415,6 +509,18 @@ group "all" {
 {% if 'cas_management' in services_enabled %}
     "cas-management",
 {% endif %}
+{% if 'bie_hub' in services_enabled or bie_hub_enabled | default(false) %}
+    "bie-hub",
+{% endif %}
+{% if 'bie_index' in services_enabled or bie_index_enabled | default(false) %}
+    "bie-index",
+{% endif %}
+{% if 'biocache_hub' in services_enabled or biocache_hub_enabled | default(false) %}
+    "biocache-hub",
+{% endif %}
+{% if 'biocache_service' in services_enabled or biocache_service_enabled | default(false) %}
+    "biocache-service",
+{% endif %}
 # Gatus is launched directly from docker-compose without custom Dockerfile
 {% if 'gatus' in services_enabled %}
 {% endif %}
@@ -445,6 +551,18 @@ group "services" {
 {% endif %}
 {% if 'cas' in services_enabled %}
     "cas-management",
+{% endif %}
+{% if 'bie_hub' in services_enabled or bie_hub_enabled | default(false) %}
+    "bie-hub",
+{% endif %}
+{% if 'bie_index' in services_enabled or bie_index_enabled | default(false) %}
+    "bie-index",
+{% endif %}
+{% if 'biocache_hub' in services_enabled or biocache_hub_enabled | default(false) %}
+    "biocache-hub",
+{% endif %}
+{% if 'biocache_service' in services_enabled or biocache_service_enabled | default(false) %}
+    "biocache-service",
 {% endif %}
 # Gatus is launched directly from docker-compose without custom Dockerfile
 {% if 'gatus' in services_enabled %}
