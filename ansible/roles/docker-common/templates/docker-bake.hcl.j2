@@ -412,7 +412,7 @@ group "all" {
 {% if 'apikey' in services_enabled %}
     "apikey",
 {% endif %}
-{% if 'cas-management' in services_enabled %}
+{% if 'cas_management' in services_enabled %}
     "cas-management",
 {% endif %}
 # Gatus is launched directly from docker-compose without custom Dockerfile
