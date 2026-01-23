@@ -1,0 +1,107 @@
+#!/bin/bash
+# CAS Admin Account Initialization Script
+# Generated automatically for Docker initialization
+# Creates ROLE_EDITOR and admin account after CAS is healthy
+# Database tables and users are created by Ansible during initial setup
+# Uses environment variables from .env for credentials
+
+set -e
+
+# Get credentials from environment variables
+MYSQL_HOST="${MYSQL_HOST:-mysql}"
+MYSQL_PORT="${MYSQL_PORT:-3306}"
+CAS_DB_NAME="${CAS_DB_NAME:-emmet}"
+CAS_DB_USERNAME="${CAS_DB_USERNAME:-cas}"
+CAS_DB_PASSWORD="${CAS_DB_PASSWORD}"
+
+echo "Finalizing CAS database setup at ${MYSQL_HOST}:${MYSQL_PORT}..."
+
+# Create ROLE_EDITOR and admin account if credentials are defined
+if [ -n "${CAS_FIRST_ADMIN_EMAIL}" ] && [ -n "${CAS_FIRST_ADMIN_BCRYPT_PASSWORD}" ] && [ -n "${CAS_FIRST_ADMIN_TEMP_AUTH_KEY}" ]; then
+  echo "Creating ROLE_EDITOR role..."
+  mysql -h "${MYSQL_HOST}" -P "${MYSQL_PORT}" -u "${CAS_DB_USERNAME}" -p"${CAS_DB_PASSWORD}" "${CAS_DB_NAME}" <<EOF
+INSERT INTO role (role, description)
+    SELECT role, description
+    FROM (SELECT 'ROLE_EDITOR' as role, '' as description) t
+    WHERE NOT EXISTS (SELECT 1 FROM role r WHERE r.role = CONVERT(t.role USING latin1));
+EOF
+
+  echo "Creating admin user account..."
+  mysql -h "${MYSQL_HOST}" -P "${MYSQL_PORT}" -u "${CAS_DB_USERNAME}" -p"${CAS_DB_PASSWORD}" "${CAS_DB_NAME}" <<EOF
+INSERT INTO users (userid, username, firstname, lastname, email, activated, locked, temp_auth_key)
+    SELECT userid, username, firstname, lastname, email, activated, locked, temp_auth_key
+    FROM (SELECT 1 as userid, '${CAS_FIRST_ADMIN_EMAIL}' as username, 'Admin' as firstname, 'User' as lastname, '${CAS_FIRST_ADMIN_EMAIL}' as email, '1' as activated, '0' as locked, '${CAS_FIRST_ADMIN_TEMP_AUTH_KEY}' as temp_auth_key) t
+    WHERE NOT EXISTS (SELECT 1 FROM users u WHERE u.userid = t.userid);
+
+INSERT INTO passwords (userid, password, type, status)
+    SELECT userid, password, type, status
+    FROM (SELECT 1 as userid,'${CAS_FIRST_ADMIN_BCRYPT_PASSWORD}' as password, 'bcrypt' as type, 'CURRENT' as status) t
+    WHERE NOT EXISTS (SELECT 1 FROM passwords p WHERE p.userid = t.userid);
+
+INSERT INTO profiles (userid, property, value)
+    SELECT userid, property, value
+    FROM (SELECT 1 as userId, 'city' as property, '' as value) t
+    WHERE NOT EXISTS (SELECT 1 FROM profiles u WHERE u.userid = t.userid AND u.property = t.property);
+
+INSERT INTO profiles (userid, property, value)
+    SELECT userid, property, value
+    FROM (SELECT 1 as userId, 'country' as property, '' as value) t
+    WHERE NOT EXISTS (SELECT 1 FROM profiles u WHERE u.userid = t.userid AND u.property = t.property);
+
+INSERT INTO profiles (userid, property, value)
+    SELECT userid, property, value
+    FROM (SELECT 1 as userId, 'organisation' as property, '' as value) t
+    WHERE NOT EXISTS (SELECT 1 FROM profiles u WHERE u.userid = t.userid AND u.property = t.property);
+
+INSERT INTO profiles (userid, property, value)
+    SELECT userid, property, value
+    FROM (SELECT 1 as userId, 'state' as property, '' as value) t
+    WHERE NOT EXISTS (SELECT 1 FROM profiles u WHERE u.userid = t.userid AND u.property = t.property);
+
+INSERT INTO user_role (user_id, role_id)
+    SELECT user_id, role_id
+    FROM (SELECT 1 as user_id, 'ROLE_ADMIN' as role_id) t
+    WHERE NOT EXISTS (SELECT 1 FROM user_role u WHERE u.user_id = t.user_id AND u.role_id = CONVERT(t.role_id USING latin1));
+
+INSERT INTO user_role (user_id, role_id)
+    SELECT user_id, role_id
+    FROM (SELECT 1 as user_id, 'ROLE_COLLECTION_ADMIN' as role_id) t
+    WHERE NOT EXISTS (SELECT 1 FROM user_role u WHERE u.user_id = t.user_id AND u.role_id = CONVERT(t.role_id USING latin1));
+
+INSERT INTO user_role (user_id, role_id)
+    SELECT user_id, role_id
+    FROM (SELECT 1 as user_id, 'ROLE_COLLECTION_EDITOR' as role_id) t
+    WHERE NOT EXISTS (SELECT 1 FROM user_role u WHERE u.user_id = t.user_id AND u.role_id = CONVERT(t.role_id USING latin1));
+
+INSERT INTO user_role (user_id, role_id)
+    SELECT user_id, role_id
+    FROM (SELECT 1 as user_id, 'ROLE_EDITOR' as role_id) t
+    WHERE NOT EXISTS (SELECT 1 FROM user_role u WHERE u.user_id = t.user_id AND u.role_id = CONVERT(t.role_id USING latin1));
+
+INSERT INTO user_role (user_id, role_id)
+    SELECT user_id, role_id
+    FROM (SELECT 1 as user_id, 'ROLE_IMAGE_ADMIN' as role_id) t
+    WHERE NOT EXISTS (SELECT 1 FROM user_role u WHERE u.user_id = t.user_id AND u.role_id = CONVERT(t.role_id USING latin1));
+
+INSERT INTO user_role (user_id, role_id)
+    SELECT user_id, role_id
+    FROM (SELECT 1 as user_id, 'ROLE_SPATIAL_ADMIN' as role_id) t
+    WHERE NOT EXISTS (SELECT 1 FROM user_role u WHERE u.user_id = t.user_id AND u.role_id = CONVERT(t.role_id USING latin1));
+
+INSERT INTO user_role (user_id, role_id)
+    SELECT user_id, role_id
+    FROM (SELECT 1 as user_id, 'ROLE_SYSTEM_ADMIN' as role_id) t
+    WHERE NOT EXISTS (SELECT 1 FROM user_role u WHERE u.user_id = t.user_id AND u.role_id = CONVERT(t.role_id USING latin1));
+
+INSERT INTO user_role (user_id, role_id)
+    SELECT user_id, role_id
+    FROM (SELECT 1 as user_id, 'ROLE_USER' as role_id) t
+    WHERE NOT EXISTS (SELECT 1 FROM user_role u WHERE u.user_id = t.user_id AND u.role_id = CONVERT(t.role_id USING latin1));
+EOF
+
+  echo "Admin user account created successfully"
+else
+  echo "INFO: CAS admin account variables not defined - skipping admin account creation"
+fi
+
+echo "CAS database initialization completed successfully"

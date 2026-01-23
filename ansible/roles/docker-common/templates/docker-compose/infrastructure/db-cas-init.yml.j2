@@ -1,0 +1,50 @@
+  # Database initialization service - runs once after CAS is healthy
+  # This service waits for CAS to be healthy, then initializes the databases
+services:
+  db-cas-init:
+    image: mysql:8.0
+    container_name: la_db_cas_init
+    restart: "no"
+    depends_on:
+      cas:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+    environment:
+      MYSQL_ROOT_PASSWORD: "{{ mysql_root_password }}"
+      MYSQL_HOST: mysql
+      MYSQL_PORT: 3306
+      MYSQL_USER: root
+    volumes:
+      - ../mysql/init:/scripts:ro
+    working_dir: /scripts
+    command: |
+      bash -c '
+      set -e
+
+      MYSQL_HOST=$${MYSQL_HOST:-mysql}
+      MYSQL_PORT=$${MYSQL_PORT:-3306}
+      MYSQL_USER=$${MYSQL_USER:-root}
+
+      echo "Waiting for MySQL at $${MYSQL_HOST}:$${MYSQL_PORT}..."
+      until mysql -h "$${MYSQL_HOST}" -P "$${MYSQL_PORT}" -u "$${MYSQL_USER}" -p"$${MYSQL_ROOT_PASSWORD}" -e "SELECT 1" > /dev/null 2>&1; do
+        echo "MySQL is unavailable - sleeping..."
+        sleep 2
+      done
+
+      echo "MySQL is ready!"
+      echo "Initializing CAS databases from $${MYSQL_HOST}..."
+
+      if [ -f "cas-init.sh" ]; then
+        echo "Executing cas-init.sh..."
+        bash cas-init.sh
+        echo "cas-init.sh completed"
+      else
+        echo "WARNING: cas-init.sh not found in /scripts"
+      fi
+
+      echo "Database initialization completed successfully"
+      '
+    networks:
+      default: {}
+      {{ docker_network | default('internal') }}:

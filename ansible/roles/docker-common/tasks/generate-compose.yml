@@ -429,6 +429,8 @@
     mode: '0644'
     owner: "{{ ansible_user_id }}"
     group: "{{ ansible_user_gid }}"
+  tags:
+    - docker-compose
 
 - name: Validate nginx_docker_internal_aliases is configured
   assert:
@@ -668,6 +670,39 @@
     mode: '0644'
     owner: "{{ ansible_user_id }}"
     group: "{{ ansible_user_gid }}"
+
+- name: Generate solr.yml
+  template:
+    src: docker-compose/infrastructure/solr.yml.j2
+    dest: "{{ data_dir }}/infrastructure/solr.yml"
+    mode: '0644'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+  when: "'solr' in services_enabled or solr_enabled | default(false)"
+  tags:
+    - solr
+
+- name: Generate cassandra.yml
+  template:
+    src: docker-compose/infrastructure/cassandra.yml.j2
+    dest: "{{ data_dir }}/infrastructure/cassandra.yml"
+    mode: '0644'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+  when: "'cassandra' in services_enabled or cassandra_enabled | default(false)"
+  tags:
+    - cassandra
+
+- name: Generate elasticsearch.yml
+  template:
+    src: docker-compose/infrastructure/elasticsearch.yml.j2
+    dest: "{{ data_dir }}/infrastructure/elasticsearch.yml"
+    mode: '0644'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+  when: "'elasticsearch' in services_enabled or elasticsearch_enabled | default(false)"
+  tags:
+    - elasticsearch
   when: "'cas' in services_enabled or groups['cas-servers'] is defined"
 
 - name: Generate mysql.yml
@@ -703,6 +738,29 @@
     owner: "{{ ansible_user_id }}"
     group: "{{ ansible_user_gid }}"
   when: "'gatus' in services_enabled or gatus_enabled | default(true)"
+
+- name: Generate db-cas-init.yml
+  template:
+    src: docker-compose/infrastructure/db-cas-init.yml.j2
+    dest: "{{ data_dir }}/infrastructure/db-cas-init.yml"
+    mode: '0644'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+  tags:
+    - db-init
+
+- name: Generate CAS database initialization script
+  template:
+    src: mysql/init/cas-init.sh.j2
+    dest: "{{ data_dir }}/mysql/init/cas-init.sh"
+    mode: '0755'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+  when: "'cas' in services_enabled"
+  tags:
+    - db-init
+    - cas
+    - config-docker
 
 - name: Generate mailhog.yml
   template:
