@@ -49,6 +49,42 @@
     - db-init
     - docker-volumes
 
+- name: "Database volumes: Create Solr external volume"
+  docker_volume:
+    name: la_solr-data
+    driver: local
+    docker_host: "{{ docker_socket }}"
+    state: present
+  when: "'solr' in services_enabled or solr_enabled | default(false)"
+  tags:
+    - db-init
+    - docker-volumes
+    - solr
+
+- name: "Database volumes: Create Cassandra external volume"
+  docker_volume:
+    name: la_cassandra-data
+    driver: local
+    docker_host: "{{ docker_socket }}"
+    state: present
+  when: "'cassandra' in services_enabled or cassandra_enabled | default(false)"
+  tags:
+    - db-init
+    - docker-volumes
+    - cassandra
+
+- name: "Database volumes: Create Elasticsearch external volume"
+  docker_volume:
+    name: la_elasticsearch-data
+    driver: local
+    docker_host: "{{ docker_socket }}"
+    state: present
+  when: "'elasticsearch' in services_enabled or elasticsearch_enabled | default(false)"
+  tags:
+    - db-init
+    - docker-volumes
+    - elasticsearch
+
 - name: "Database volumes: Create SSL certificates external volume"
   docker_volume:
     name: la-site-certs
