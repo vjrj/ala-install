@@ -21,14 +21,12 @@ services:
     volumes:
       - ../userdetails:/data/userdetails
       # - ../var-log-atlas/userdetails:/var/log/atlas/userdetails
-{% if i18n.enabled and i18n.strategy == 'volume' %}
-      - {{ i18n.volume.name }}:/opt/atlas/i18n/:ro
-{% endif %}
+{% include '_i18n_volumes.yml.j2' %}
     environment:
       TZ: {{ server_tz | default('UTC') }}
       JAVA_OPTS: ${USERDETAILS_JAVA_OPTS}
     expose:
-      - 8080
+      - {{ userdetails_port | default('9001') }}
     networks:
       default: {}
       {{ docker_network | default('internal') }}:
@@ -42,7 +40,7 @@ services:
       cas:
         condition: service_healthy
     healthcheck:
-      test: ["CMD", "sh", "-c", "curl --fail --silent http://localhost:8080/userdetails/actuator/health || exit 1"]
+      test: ["CMD", "sh", "-c", "curl --fail --silent http://localhost:{{ userdetails_port | default('9001') }}/userdetails/actuator/health || exit 1"]
       interval: 30s
       timeout: 10s
       retries: 5
