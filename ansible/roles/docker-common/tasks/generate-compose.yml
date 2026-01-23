@@ -748,6 +748,7 @@
     group: "{{ ansible_user_gid }}"
   tags:
     - db-init
+    - config-docker
 
 - name: Generate CAS database initialization script
   template:
