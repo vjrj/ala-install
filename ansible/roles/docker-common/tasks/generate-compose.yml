@@ -338,6 +338,16 @@
     - collectory
     - config
 
+- name: Run species-list configuration generation (asset copy, config templates)
+  include_role:
+    name: species-list
+  vars:
+    deployment_type: container
+  when: "'species-list' in services_enabled or groups['species-list'] is defined"
+  tags:
+    - species-list
+    - config
+
 - name: Ensure database init directories exist with correct permissions
   file:
     path: "{{ item }}"
