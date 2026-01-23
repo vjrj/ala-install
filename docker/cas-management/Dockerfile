@@ -171,7 +171,8 @@ ENV LOGGING_CONFIG="/data/${APP_ARTIFACT}/config/log4j2.xml"
 ENV LOG_DIR="/var/log/atlas/cas-management"
 
 # Default JAVA_OPTS can be overridden via docker-compose environment variables
-ENV JAVA_OPTS="-Djava.awt.headless=true -Xmx2g -Xms1g -Dlogging.config=${LOGGING_CONFIG}"
+# Uses tomcat_java_opts if available, otherwise uses safe defaults
+ENV JAVA_OPTS="-Xmx4g -Xms4g -Xss256k -Djava.awt.headless=true -Dlogging.config=${LOGGING_CONFIG}"
 
 EXPOSE 8080
 
