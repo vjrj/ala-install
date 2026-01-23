@@ -1,5 +1,5 @@
 {% if nginx_cors_origin_regexp is defined and nginx_cors_origin_regexp|length > 0 %}
-    {% if deployment_type == 'swarm' || deployment_type == 'container' %}
+    {% if deployment_type == 'swarm' or deployment_type == 'container' %}
         include /etc/nginx/conf.d/ala_cors_{{appname}};
     {% else %}
         include {{nginx_conf_dir}}/conf.d/ala_cors_{{appname}};
