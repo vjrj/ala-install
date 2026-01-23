@@ -171,7 +171,7 @@ ENV LOGGING_CONFIG="/data/${APP_ARTIFACT}/config/logback.xml"
 
 # Default JAVA_OPTS can be overridden via docker-compose environment variables
 # Uses tomcat_java_opts if available, otherwise uses safe defaults
-ENV JAVA_OPTS="-Xmx4g -Xms4g -Xss256k -Djava.awt.headless=true -Dlogging.config=${LOGGING_CONFIG}"
+ENV JAVA_OPTS="-Xmx2g -Xms2g -Xss512k -Djava.awt.headless=true -Dlogging.config=${LOGGING_CONFIG}"
 
 EXPOSE 8080
 

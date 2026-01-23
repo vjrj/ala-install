@@ -173,7 +173,7 @@ ENV LOG_DIR="/var/log/atlas/cas"
 # Default JAVA_OPTS - will be overridden by docker-compose .env file
 # The docker-compose service will set CAS_JAVA_OPTS environment variable
 # Uses tomcat_java_opts if available, otherwise uses safe defaults
-ENV JAVA_OPTS="-Xmx4g -Xms4g -Xss256k -Djava.awt.headless=true"
+ENV JAVA_OPTS="-Xmx2g -Xms2g -Xss512k -Djava.awt.headless=true"
 
 
 EXPOSE 8080
