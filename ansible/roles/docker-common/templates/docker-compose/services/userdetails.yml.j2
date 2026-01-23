@@ -28,7 +28,7 @@ services:
       TZ: {{ server_tz | default('UTC') }}
       JAVA_OPTS: ${USERDETAILS_JAVA_OPTS}
     expose:
-      - 9001
+      - 8080
     networks:
       default: {}
       {{ docker_network | default('internal') }}:

@@ -27,7 +27,7 @@ services:
     environment:
       TZ: {{ server_tz | default('UTC') }}
       JAVA_OPTS: ${CAS_JAVA_OPTS}
-    ports:
+    expose:
       - 9000
     networks:
       default: {}
