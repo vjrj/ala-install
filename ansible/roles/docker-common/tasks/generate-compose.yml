@@ -606,6 +606,50 @@
   tags:
     - branding
 
+- name: Add mailhog hostname to nginx_docker_internal_aliases
+  set_fact:
+    nginx_docker_internal_aliases: "{{ nginx_docker_internal_aliases | default([]) | union([docker_mail_development_url]) | unique }}"
+  when: docker_mail_development_mode | default(false) | bool and docker_mail_development_url is defined
+  tags:
+    - mail
+
+- name: Set mail configuration variables when docker_mail_development_mode is enabled
+  set_fact:
+    docker_mail_development_url: "{{ docker_mail_development_url | default('mailhog.l-a.site') }}"
+    mail_smtp_host: mailhog
+    mail_smtp_port: 1025
+    mail_http_port: 8025
+    mail_host: mailhog
+  when: docker_mail_development_mode | default(false) | bool
+  tags:
+    - mail
+
+- name: Configure mailhog nginx vhost (Docker development mode)
+  block:
+    - name: Create mailhog nginx vhost using nginx_vhost role
+      include_role:
+        name: nginx_vhost
+      vars:
+        appname: "mailhog"
+        hostname: "{{ docker_mail_development_url }}"
+        context_path: "/"
+        nginx_root: "/srv/{{ docker_mail_development_url }}/www/"
+        use_gatos: true
+        nginx_paths:
+          - path: "/"
+            sort_label: "1"
+            is_proxy: true
+            is_proxy_rewrite: false
+            proxy_pass: "http://{{ mail_host | default('mailhog') }}:{{ mail_http_port | default('8025') }}/"
+  when:
+    - docker_mail_development_mode | default(false) | bool
+    - docker_mail_development_url is defined
+  tags:
+    - mail
+    - nginx_vhost
+    - config
+    - config-docker
+
 - name: Generate mongodb.yml
   template:
     src: docker-compose/infrastructure/mongodb.yml.j2
@@ -648,6 +692,17 @@
     owner: "{{ ansible_user_id }}"
     group: "{{ ansible_user_gid }}"
   when: "'gatus' in services_enabled or gatus_enabled | default(true)"
+
+- name: Generate mailhog.yml
+  template:
+    src: docker-compose/infrastructure/mailhog.yml.j2
+    dest: "{{ data_dir }}/infrastructure/mailhog.yml"
+    mode: '0644'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+  when: docker_mail_development_mode | default(false) | bool
+  tags:
+    - mail
 
 # Generate service files
 - name: Generate cas.yml
@@ -1009,3 +1064,8 @@
   tags:
     - validate
     - docker-compose
+
+
+
+
+
