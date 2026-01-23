@@ -200,6 +200,10 @@ RUN mkdir -p {{ log_dir }} && \
     chown -R ${SERVICE_USER}:${SERVICE_USER} {{ log_dir }}
 {% endif %}
 
+# Create additional log directories for Tomcat-based applications
+RUN mkdir -p /var/log/tomcat10 && \
+    chown -R ${SERVICE_USER}:${SERVICE_USER} /var/log/tomcat10
+
 {% if artifact_id == 'cas-management' %}
 # CAS Management specific directories for SAML metadata
 RUN mkdir -p /etc/cas/saml/metadata-backups && \
