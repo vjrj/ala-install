@@ -829,6 +829,50 @@
     group: "{{ ansible_user_gid }}"
   when: "'collectory' in services_enabled"
 
+- name: Generate bie-hub.yml
+  template:
+    src: docker-compose/services/bie-hub.yml.j2
+    dest: "{{ data_dir }}/services/bie-hub.yml"
+    mode: '0644'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+  when: "'bie_hub' in services_enabled or bie_hub_enabled | default(false)"
+  tags:
+    - bie-hub
+
+- name: Generate bie-index.yml
+  template:
+    src: docker-compose/services/bie-index.yml.j2
+    dest: "{{ data_dir }}/services/bie-index.yml"
+    mode: '0644'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+  when: "'bie_index' in services_enabled or bie_index_enabled | default(false)"
+  tags:
+    - bie-index
+
+- name: Generate biocache-hub.yml
+  template:
+    src: docker-compose/services/biocache-hub.yml.j2
+    dest: "{{ data_dir }}/services/biocache-hub.yml"
+    mode: '0644'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+  when: "'biocache_hub' in services_enabled or biocache_hub_enabled | default(false)"
+  tags:
+    - biocache-hub
+
+- name: Generate biocache-service.yml
+  template:
+    src: docker-compose/services/biocache-service.yml.j2
+    dest: "{{ data_dir }}/services/biocache-service.yml"
+    mode: '0644'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+  when: "'biocache_service' in services_enabled or biocache_service_enabled | default(false)"
+  tags:
+    - biocache-service
+
 - name: Fix docker-compose build paths in base file (relative to docker-compose-output/)
   replace:
     path: "{{ data_dir }}/docker-compose.yml"

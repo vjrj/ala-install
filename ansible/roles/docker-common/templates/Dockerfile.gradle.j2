@@ -179,10 +179,12 @@ ENV LOG_DIR="{{ log_dir }}"
 {% endif %}
 
 # Default JAVA_OPTS can be overridden via docker-compose environment variables
+# Uses tomcat_java_opts if available, otherwise uses safe defaults
+{% set java_memory_opts = tomcat_java_opts | default('-Xmx2g -Xms2g -Xss512k -Djava.awt.headless=true') %}
 {% if log_config_filename %}
-ENV JAVA_OPTS="-Djava.awt.headless=true -Xmx2g -Xms1g -Dlogging.config=${LOGGING_CONFIG}"
+ENV JAVA_OPTS="{{ java_memory_opts }} -Dlogging.config=${LOGGING_CONFIG}"
 {% else %}
-ENV JAVA_OPTS="-Djava.awt.headless=true -Xmx2g -Xms1g"
+ENV JAVA_OPTS="{{ java_memory_opts }}"
 {% endif %}
 
 EXPOSE {{ port }}
