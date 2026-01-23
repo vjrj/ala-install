@@ -185,9 +185,6 @@ ENV JAVA_OPTS="-Djava.awt.headless=true -Xmx2g -Xms1g -Dlogging.config=${LOGGING
 ENV JAVA_OPTS="-Djava.awt.headless=true -Xmx2g -Xms1g"
 {% endif %}
 
-HEALTHCHECK --interval=10s --timeout=3s --start-period=90s --retries=3 CMD \
-curl --fail --silent http://localhost:{{ port }}/actuator/health || exit 1
-
 EXPOSE {{ port }}
 
 # Create service user and data directories
