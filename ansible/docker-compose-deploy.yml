@@ -106,6 +106,10 @@
     doi_service_docker_host: la_doi-service
     sensitive_data_service_docker_host: la_sensitive-data-service
     species_list_docker_host: la_species-list
+    
+    biocache_hub: ala-hub
+    grouped_facets_json: grouped_facets_ala.json
+    biocache_hub_tomcat_server_address: "0.0.0.0"
 
   tasks:
     - name: Load variables from collectory group
