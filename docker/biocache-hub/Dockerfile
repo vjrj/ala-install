@@ -47,11 +47,10 @@ ARG VERSION=8.1.0
 ARG ARTIFACT=ala-hub
 ARG CLASSIFIER=""
 
-RUN echo "🔍 Preparing download from Nexus..." && \
-    echo "   Version: ${VERSION}" && \
-    echo "   Artifact: ${ARTIFACT}"
-
-RUN --mount=type=cache,target=/cache/nexus,sharing=locked bash -c 'set -e; echo "📦 Building artifact name..."; ARTIFACT_NAME="${ARTIFACT}-${VERSION}"; if [ -n "${CLASSIFIER}" ] && [ "${CLASSIFIER}" != "" ]; then ARTIFACT_NAME="${ARTIFACT_NAME}-${CLASSIFIER}"; fi; echo "🏗️  Artifact: ${ARTIFACT_NAME}"; NEXUS_BASE_URL="https://nexus.ala.org.au/repository/releases"; NEXUS_URL="${NEXUS_BASE_URL}/au/org/ala/${ARTIFACT}/${VERSION}/${ARTIFACT_NAME}.war"; CACHE_FILE="/cache/nexus/${ARTIFACT}-${VERSION}${CLASSIFIER:+-${CLASSIFIER}}.war"; echo "📥 Target: ${NEXUS_URL}"; if [ -f "${CACHE_FILE}" ]; then echo "💾 Cache hit! Using cached artifact..."; cp "${CACHE_FILE}" artifact.war; else echo "⬇️  Cache miss. Fetching from Nexus..."; curl -f -L -o artifact.war "${NEXUS_URL}"; echo "💾 Saving to cache..."; cp artifact.war "${CACHE_FILE}"; fi; echo "📋 Artifact details:"; ls -lh artifact.war; echo "✅ Download completed"'
+COPY download-artifact.sh /usr/local/bin/download-artifact.sh
+RUN chmod +x /usr/local/bin/download-artifact.sh
+RUN --mount=type=cache,target=/cache/nexus,sharing=locked \
+    BUILD_METHOD=nexus /usr/local/bin/download-artifact.sh
 
 # ============================================
 # Stage 3: Build from URL
@@ -60,18 +59,9 @@ FROM base-builder AS builder-url
 
 ARG ARTIFACT_URL=""
 
-RUN if [ -z "${ARTIFACT_URL}" ]; then \
-        echo "❌ ERROR: ARTIFACT_URL must be specified for url build method"; \
-        exit 1; \
-    fi && \
-    echo "✅ ARTIFACT_URL is set"
-
-RUN echo "🔍 Downloading from URL..." && \
-    echo "   URL: ${ARTIFACT_URL}"
-
-RUN curl -f -L -o artifact.war "${ARTIFACT_URL}" && \
-    ls -lh artifact.war && \
-    echo "✅ Download completed"
+COPY download-artifact.sh /usr/local/bin/download-artifact.sh
+RUN chmod +x /usr/local/bin/download-artifact.sh
+RUN BUILD_METHOD=url /usr/local/bin/download-artifact.sh
 
 # ============================================
 # Stage 4: Build from Repository Branch

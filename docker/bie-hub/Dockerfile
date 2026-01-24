@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.4
-# pipelines - Pipelines for data processing and indexing of biodiversity data
+# ala_bie - species search frontend
 # AUTO-GENERATED - DO NOT EDIT MANUALLY
 # Edit ansible/roles/docker-common/tasks/generate-compose.yml and re-run ansible
 #
@@ -21,9 +21,9 @@
 # ============================================
 # GLOBAL BUILD ARGUMENTS
 # ============================================
-ARG BUILDER_IMAGE=maven-builder:jdk11
+ARG BUILDER_IMAGE=gradle-builder:jdk11
 ARG BUILD_METHOD=nexus
-ARG BUILD_TOOL=maven
+ARG BUILD_TOOL=gradle
 ARG RUN_TOOL=java-jar
 ARG HTTP_PROXY
 ARG HTTPS_PROXY
@@ -43,8 +43,8 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 # ============================================
 FROM base-builder AS builder-nexus
 
-ARG VERSION=develop
-ARG ARTIFACT=pipelines
+ARG VERSION=4.1.3
+ARG ARTIFACT=ala-bie-hub
 ARG CLASSIFIER=""
 
 COPY download-artifact.sh /usr/local/bin/download-artifact.sh
@@ -68,9 +68,9 @@ RUN BUILD_METHOD=url /usr/local/bin/download-artifact.sh
 # ============================================
 FROM base-builder AS builder-repo-branch
 
-ARG REPO=
+ARG REPO=https://github.com/AtlasOfLivingAustralia/ala-bie-hub
 ARG BRANCH=develop
-ARG BUILD_TOOL=maven
+ARG BUILD_TOOL=gradle
 
 RUN echo "🔍 Cloning repository..." && \
     echo "   Repo: ${REPO}"
@@ -87,9 +87,9 @@ RUN git checkout "${BRANCH}" && \
 
 RUN echo "🔨 Building with ${BUILD_TOOL}..."
 
-RUN --mount=type=cache,target=/root/.m2 \
-    mvn clean package -DskipTests -P war && \
-    mv target/*.war artifact.war
+RUN --mount=type=cache,target=/root/.gradle \
+    ./gradlew clean war -x test --no-daemon --max-workers=1 && \
+    mv build/libs/*.war artifact.war
 
 RUN ls -lh artifact.war && \
     echo "✅ Build completed successfully"
@@ -99,9 +99,9 @@ RUN ls -lh artifact.war && \
 # ============================================
 FROM base-builder AS builder-repo-commit
 
-ARG REPO=
+ARG REPO=https://github.com/AtlasOfLivingAustralia/ala-bie-hub
 ARG COMMIT=HEAD
-ARG BUILD_TOOL=maven
+ARG BUILD_TOOL=gradle
 
 RUN echo "🔍 Cloning repository..." && \
     echo "   Repo: ${REPO}"
@@ -118,9 +118,9 @@ RUN git checkout "${COMMIT}" && \
 
 RUN echo "🔨 Building with ${BUILD_TOOL}..."
 
-RUN --mount=type=cache,target=/root/.m2 \
-    mvn clean package -DskipTests -P war && \
-    mv target/*.war artifact.war
+RUN --mount=type=cache,target=/root/.gradle \
+    ./gradlew clean war -x test --no-daemon --max-workers=1 && \
+    mv build/libs/*.war artifact.war
 
 RUN ls -lh artifact.war && \
     echo "✅ Build completed successfully"
@@ -140,29 +140,28 @@ FROM builder-${BUILD_METHOD} AS final-builder
 # ============================================
 FROM eclipse-temurin:11-jre-jammy
 
-ARG SERVICE_USER=pipelines
-ARG APP_ARTIFACT=pipelines
+ARG SERVICE_USER=ala_bie
+ARG APP_ARTIFACT=ala-bie-hub
 ARG LOG_DIR=
 
-LABEL org.opencontainers.image.title="pipelines"
-LABEL org.opencontainers.image.description="Pipelines for data processing and indexing of biodiversity data"
-LABEL org.opencontainers.image.source=""
+LABEL org.opencontainers.image.title="ala_bie"
+LABEL org.opencontainers.image.description="species search frontend"
+LABEL org.opencontainers.image.source="https://github.com/AtlasOfLivingAustralia/ala-bie-hub"
 
 # Convert APP_ARTIFACT to ENV so it persists after USER change
-ENV APP_ARTIFACT=pipelines
-ENV SERVICE_USER=pipelines
+ENV APP_ARTIFACT=ala-bie-hub
+ENV SERVICE_USER=ala_bie
 
 WORKDIR /opt/atlas/${APP_ARTIFACT}
 
 COPY --from=final-builder /build/artifact.war /opt/atlas/${APP_ARTIFACT}/app.war
 
 # Logging configuration
+ENV LOGGING_CONFIG="/data/${APP_ARTIFACT}/config/logback.xml"
 
-# Default JAVA_OPTS - will be overridden by docker-compose .env file
-# The docker-compose service will set PIPELINES_JAVA_OPTS environment variable
+# Default JAVA_OPTS can be overridden via docker-compose environment variables
 # Uses tomcat_java_opts if available, otherwise uses safe defaults
-ENV JAVA_OPTS="-Xmx2g -Xms2g -Xss512k -Djava.awt.headless=true"
-
+ENV JAVA_OPTS="-Xmx2g -Xms2g -Xss512k -Djava.awt.headless=true -Dlogging.config=${LOGGING_CONFIG}"
 
 EXPOSE 8080
 
@@ -174,7 +173,6 @@ RUN groupadd -r ${SERVICE_USER} -g 1000 && \
     chown -R ${SERVICE_USER}:${SERVICE_USER} /data/${APP_ARTIFACT} && \
     chown ${SERVICE_USER}:${SERVICE_USER} /opt/atlas/${APP_ARTIFACT}/app.war && \
     chown -R ${SERVICE_USER}:${SERVICE_USER} /opt/atlas/${APP_ARTIFACT}
-
 
 # Create additional log directories for Tomcat-based applications
 RUN mkdir -p /var/log/tomcat10 && \
@@ -192,7 +190,7 @@ CMD java ${JAVA_OPTS} -jar /opt/atlas/${APP_ARTIFACT}/app.war
 
 ARG BUILD_DATE
 ARG VCS_REF
-ARG VERSION=develop
+ARG VERSION=4.1.3
 
 LABEL org.opencontainers.image.created="${BUILD_DATE}"
 LABEL org.opencontainers.image.revision="${VCS_REF}"

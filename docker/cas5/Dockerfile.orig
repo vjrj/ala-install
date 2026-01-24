@@ -1,5 +1,5 @@
 # syntax=docker/dockerfile:1.4
-# pipelines - Pipelines for data processing and indexing of biodiversity data
+# cas - CAS authentication system
 # AUTO-GENERATED - DO NOT EDIT MANUALLY
 # Edit ansible/roles/docker-common/tasks/generate-compose.yml and re-run ansible
 #
@@ -43,14 +43,15 @@ SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 # ============================================
 FROM base-builder AS builder-nexus
 
-ARG VERSION=develop
-ARG ARTIFACT=pipelines
-ARG CLASSIFIER=""
+ARG VERSION=6.5.6-3
+ARG ARTIFACT=cas
+ARG CLASSIFIER=exec
 
-COPY download-artifact.sh /usr/local/bin/download-artifact.sh
-RUN chmod +x /usr/local/bin/download-artifact.sh
-RUN --mount=type=cache,target=/cache/nexus,sharing=locked \
-    BUILD_METHOD=nexus /usr/local/bin/download-artifact.sh
+RUN echo "🔍 Preparing download from Nexus..." && \
+    echo "   Version: ${VERSION}" && \
+    echo "   Artifact: ${ARTIFACT}"
+
+RUN --mount=type=cache,target=/cache/nexus,sharing=locked bash -c 'set -e; echo "📦 Building artifact name..."; ARTIFACT_NAME="${ARTIFACT}-${VERSION}"; if [ -n "${CLASSIFIER}" ] && [ "${CLASSIFIER}" != "" ]; then ARTIFACT_NAME="${ARTIFACT_NAME}-${CLASSIFIER}"; fi; echo "🏗️  Artifact: ${ARTIFACT_NAME}"; NEXUS_BASE_URL="https://nexus.ala.org.au/repository/releases"; NEXUS_URL="${NEXUS_BASE_URL}/au/org/ala/${ARTIFACT}/${VERSION}/${ARTIFACT_NAME}.war"; CACHE_FILE="/cache/nexus/${ARTIFACT}-${VERSION}${CLASSIFIER:+-${CLASSIFIER}}.war"; echo "📥 Target: ${NEXUS_URL}"; if [ -f "${CACHE_FILE}" ]; then echo "💾 Cache hit! Using cached artifact..."; cp "${CACHE_FILE}" artifact.war; else echo "⬇️  Cache miss. Fetching from Nexus..."; curl -f -L -o artifact.war "${NEXUS_URL}"; echo "💾 Saving to cache..."; cp artifact.war "${CACHE_FILE}"; fi; echo "📋 Artifact details:"; ls -lh artifact.war; echo "✅ Download completed"'
 
 # ============================================
 # Stage 3: Build from URL
@@ -59,16 +60,25 @@ FROM base-builder AS builder-url
 
 ARG ARTIFACT_URL=""
 
-COPY download-artifact.sh /usr/local/bin/download-artifact.sh
-RUN chmod +x /usr/local/bin/download-artifact.sh
-RUN BUILD_METHOD=url /usr/local/bin/download-artifact.sh
+RUN if [ -z "${ARTIFACT_URL}" ]; then \
+        echo "❌ ERROR: ARTIFACT_URL must be specified for url build method"; \
+        exit 1; \
+    fi && \
+    echo "✅ ARTIFACT_URL is set"
+
+RUN echo "🔍 Downloading from URL..." && \
+    echo "   URL: ${ARTIFACT_URL}"
+
+RUN curl -f -L -o artifact.war "${ARTIFACT_URL}" && \
+    ls -lh artifact.war && \
+    echo "✅ Download completed"
 
 # ============================================
 # Stage 4: Build from Repository Branch
 # ============================================
 FROM base-builder AS builder-repo-branch
 
-ARG REPO=
+ARG REPO=https://github.com/AtlasOfLivingAustralia/ala-cas-5
 ARG BRANCH=develop
 ARG BUILD_TOOL=maven
 
@@ -99,7 +109,7 @@ RUN ls -lh artifact.war && \
 # ============================================
 FROM base-builder AS builder-repo-commit
 
-ARG REPO=
+ARG REPO=https://github.com/AtlasOfLivingAustralia/ala-cas-5
 ARG COMMIT=HEAD
 ARG BUILD_TOOL=maven
 
@@ -140,29 +150,27 @@ FROM builder-${BUILD_METHOD} AS final-builder
 # ============================================
 FROM eclipse-temurin:11-jre-jammy
 
-ARG SERVICE_USER=pipelines
-ARG APP_ARTIFACT=pipelines
-ARG LOG_DIR=
+ARG SERVICE_USER=cas
+ARG APP_ARTIFACT=cas
+ARG LOG_DIR=/var/log/atlas/cas
 
-LABEL org.opencontainers.image.title="pipelines"
-LABEL org.opencontainers.image.description="Pipelines for data processing and indexing of biodiversity data"
-LABEL org.opencontainers.image.source=""
+LABEL org.opencontainers.image.title="cas"
+LABEL org.opencontainers.image.description="CAS authentication system"
+LABEL org.opencontainers.image.source="https://github.com/AtlasOfLivingAustralia/ala-cas-5"
 
-# Convert APP_ARTIFACT to ENV so it persists after USER change
-ENV APP_ARTIFACT=pipelines
-ENV SERVICE_USER=pipelines
+WORKDIR /opt/atlas/$APP_ARTIFACT
 
-WORKDIR /opt/atlas/${APP_ARTIFACT}
-
-COPY --from=final-builder /build/artifact.war /opt/atlas/${APP_ARTIFACT}/app.war
+COPY --from=final-builder /build/artifact.war /app/app.war
 
 # Logging configuration
+ENV LOGGING_CONFIG="/data/${APP_ARTIFACT}/config/log4j2.xml"
+ENV LOG_DIR="/var/log/atlas/cas"
 
-# Default JAVA_OPTS - will be overridden by docker-compose .env file
-# The docker-compose service will set PIPELINES_JAVA_OPTS environment variable
-# Uses tomcat_java_opts if available, otherwise uses safe defaults
-ENV JAVA_OPTS="-Xmx2g -Xms2g -Xss512k -Djava.awt.headless=true"
+# Default JAVA_OPTS can be overridden via docker-compose environment variables
+ENV JAVA_OPTS="-Djava.awt.headless=true -Xmx2g -Xms1g -Dlogging.config=${LOGGING_CONFIG}"
 
+HEALTHCHECK --interval=10s --timeout=3s --start-period=30s --retries=3 CMD \
+curl --fail --silent http://localhost:8080/actuator/health || exit 1
 
 EXPOSE 8080
 
@@ -172,27 +180,23 @@ RUN groupadd -r ${SERVICE_USER} -g 1000 && \
     mkdir -p /data/${APP_ARTIFACT}/config && \
     mkdir -p /data/${APP_ARTIFACT}/data && \
     chown -R ${SERVICE_USER}:${SERVICE_USER} /data/${APP_ARTIFACT} && \
-    chown ${SERVICE_USER}:${SERVICE_USER} /opt/atlas/${APP_ARTIFACT}/app.war && \
-    chown -R ${SERVICE_USER}:${SERVICE_USER} /opt/atlas/${APP_ARTIFACT}
+    chown ${SERVICE_USER}:${SERVICE_USER} /app/app.war
 
-
-# Create additional log directories for Tomcat-based applications
-RUN mkdir -p /var/log/tomcat10 && \
-    chown -R ${SERVICE_USER}:${SERVICE_USER} /var/log/tomcat10
-
+RUN mkdir -p /var/log/atlas/cas && \
+    chown -R ${SERVICE_USER}:${SERVICE_USER} /var/log/atlas/cas
 
 VOLUME /data
 
 # Switch to service user for runtime execution
 USER ${SERVICE_USER}
 
+
 # Execute service
-# Use shell form to allow variable expansion
-CMD java ${JAVA_OPTS} -jar /opt/atlas/${APP_ARTIFACT}/app.war
+CMD ["sh", "-c", "java ${JAVA_OPTS} -jar /app/app.war"]
 
 ARG BUILD_DATE
 ARG VCS_REF
-ARG VERSION=develop
+ARG VERSION=6.5.6-3
 
 LABEL org.opencontainers.image.created="${BUILD_DATE}"
 LABEL org.opencontainers.image.revision="${VCS_REF}"
