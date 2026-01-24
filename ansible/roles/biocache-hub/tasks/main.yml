@@ -37,21 +37,7 @@
     - biocache_hub
   when: webserver_nginx | bool 
 
-- include_tasks: ../../tomcat_deploy/tasks/main.yml
-  vars:
-    war_url: '{{ biocache_hub_artifact_url }}'
-    context_path: '{{ biocache_hub_context_path }}'
-    hostname: '{{ biocache_hub_hostname }}'
-  tags:
-    - webapps
-    - tomcat_vhost
-    - deploy
-    - biocache_hub
-  when: not exec_jar
-
-#
 # Properties and data file configuration
-#
 
 - name: Create a unique user for the service
   user:
