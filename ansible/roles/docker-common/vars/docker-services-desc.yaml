@@ -62,7 +62,7 @@ docker_services_desc:
   ala_bie:
     name: 'species'
     alias: 'bie'
-    nameInt: 'bie'
+    nameInt: 'ala_bie'
     role: 'bie-hub'
     group: 'bie-hub'
     desc: 'species search frontend'
