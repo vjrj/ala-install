@@ -1010,6 +1010,20 @@
     - docker_services_desc[item].get('artifacts') is defined
     - docker_services_desc[item].get('role') is defined
 
+# Copy download-artifact.sh script to docker directories
+- name: Copy download-artifact.sh script
+  copy:
+    src: "download-artifact.sh"
+    dest: "{{ playbook_dir | dirname }}/docker/{{ docker_services_desc[item].role }}/download-artifact.sh"
+    mode: '0755'
+  loop: "{{ services_enabled }}"
+  when:
+    - item in docker_services_desc
+    - docker_services_desc[item].get('buildTool') in ['gradle', 'maven']
+    - docker_services_desc[item].get('role') is defined
+    - docker_services_desc[item].get('artifacts') is defined
+
+
 # Generate Maven Dockerfiles using already-determined Java versions
 - name: Generate Maven Dockerfiles
   template:
