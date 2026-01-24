@@ -122,35 +122,6 @@ target "maven-builder-jdk21" {
 # Service Targets
 # ============================================
 
-# Nginx reverse proxy
-{% if docker_nginx_debug | default(false) %}
-target "nginx" {
-  dockerfile = "Dockerfile-debug"
-  context = "../docker/nginx"
-  args = {}
-{% if docker_registry and docker_registry != '' %}
-  tags = ["{{ docker_registry }}/nginx-debug:{{ docker_nginx_version | default('latest') }}", "{{ docker_registry }}/nginx-debug:latest"]
-{% else %}
-  tags = ["nginx-debug:{{ docker_nginx_version | default('latest') }}", "nginx-debug:latest"]
-{% endif %}
-  cache-to = ["type=inline"]
-  platforms = ["linux/amd64"]
-}
-{% else %}
-target "nginx" {
-  dockerfile = "Dockerfile"
-  context = "../docker/nginx"
-  args = {}
-{% if docker_registry and docker_registry != '' %}
-  tags = ["{{ docker_registry }}/nginx:{{ docker_nginx_version | default('latest') }}", "{{ docker_registry }}/nginx:latest"]
-{% else %}
-  tags = ["nginx:{{ docker_nginx_version | default('latest') }}", "nginx:latest"]
-{% endif %}
-  cache-to = ["type=inline"]
-  platforms = ["linux/amd64"]
-}
-{% endif %}
-
 {% if i18n.enabled %}
 target "ala-i18n" {
   dockerfile = "Dockerfile"
@@ -348,7 +319,7 @@ target "cas-management" {
 # }
 # {% endif %}
 
-{% if 'species-list' in services_enabled or groups['species-list'] is defined %}
+{% if 'species_lists' in services_enabled or groups['species-list'] is defined %}
 target "species-list" {
   dockerfile = "Dockerfile"
   context = "../docker/{{ docker_services_desc['species_lists'].role }}"
@@ -372,7 +343,7 @@ target "species-list" {
 {% endif %}
 
 # BIE Hub and Index services
-{% if 'bie_hub' in services_enabled or bie_hub_enabled | default(false) %}
+{% if 'ala_bie' in services_enabled or bie_hub_enabled | default(false) %}
 target "bie-hub" {
   dockerfile = "Dockerfile"
   context = "../docker/bie-hub"
@@ -419,7 +390,7 @@ target "bie-index" {
 {% endif %}
 
 # Biocache Hub and Service
-{% if 'biocache_hub' in services_enabled or biocache_hub_enabled | default(false) %}
+{% if 'ala_hub' in services_enabled or biocache_hub_enabled | default(false) %}
 target "biocache-hub" {
   dockerfile = "Dockerfile"
   context = "../docker/biocache-hub"
@@ -484,7 +455,6 @@ group "builders" {
 # Build all services (depends on builders)
 group "all" {
   targets = [
-    "nginx",
 {% if i18n.enabled %}
     "ala-i18n",
 {% endif %}
@@ -494,7 +464,7 @@ group "all" {
 {% if 'collectory' in services_enabled %}
     "collectory",
 {% endif %}
-{% if 'species-list' in services_enabled or groups['species-list'] is defined %}
+{% if 'species_lists' in services_enabled or groups['species-list'] is defined %}
     "species-list",
 {% endif %}
 {% if 'cas' in services_enabled %}
@@ -509,13 +479,13 @@ group "all" {
 {% if 'cas_management' in services_enabled %}
     "cas-management",
 {% endif %}
-{% if 'bie_hub' in services_enabled or bie_hub_enabled | default(false) %}
+{% if 'ala_bie' in services_enabled or bie_hub_enabled | default(false) %}
     "bie-hub",
 {% endif %}
 {% if 'bie_index' in services_enabled or bie_index_enabled | default(false) %}
     "bie-index",
 {% endif %}
-{% if 'biocache_hub' in services_enabled or biocache_hub_enabled | default(false) %}
+{% if 'ala_hub' in services_enabled or biocache_hub_enabled | default(false) %}
     "biocache-hub",
 {% endif %}
 {% if 'biocache_service' in services_enabled or biocache_service_enabled | default(false) %}
@@ -530,14 +500,13 @@ group "all" {
 # Build only services (assumes builders exist)
 group "services" {
   targets = [
-    "nginx",
 {% if use_branding | default(false) %}
     "branding",
 {% endif %}
 {% if 'collectory' in services_enabled %}
     "collectory",
 {% endif %}
-{% if 'species-list' in services_enabled or groups['species-list'] is defined %}
+{% if 'species_lists' in services_enabled or groups['species-list'] is defined %}
     "species-list",
 {% endif %}
 {% if 'cas' in services_enabled %}
@@ -552,13 +521,13 @@ group "services" {
 {% if 'cas' in services_enabled %}
     "cas-management",
 {% endif %}
-{% if 'bie_hub' in services_enabled or bie_hub_enabled | default(false) %}
+{% if 'ala_bie' in services_enabled or bie_hub_enabled | default(false) %}
     "bie-hub",
 {% endif %}
 {% if 'bie_index' in services_enabled or bie_index_enabled | default(false) %}
     "bie-index",
 {% endif %}
-{% if 'biocache_hub' in services_enabled or biocache_hub_enabled | default(false) %}
+{% if 'ala_hub' in services_enabled or biocache_hub_enabled | default(false) %}
     "biocache-hub",
 {% endif %}
 {% if 'biocache_service' in services_enabled or biocache_service_enabled | default(false) %}
