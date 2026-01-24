@@ -1,7 +1,7 @@
   # Cassandra - NoSQL database for biocache
 services:
   cassandra:
-    image: cassandra:{{ cassandra_version | default('4.1') }}
+    image: cassandra:{{ cassandra_version | default('5.0.6') }}
     container_name: la_cassandra
     restart: unless-stopped
     expose:
@@ -34,7 +34,7 @@ services:
       start_period: 120s
 
   cassandra-load-keyspace:
-    image: cassandra:{{ cassandra_version | default('4.1') }}
+    image: cassandra:{{ cassandra_version | default('5.0.6') }}
     container_name: la_cassandra_init
     restart: "no"
     command:
