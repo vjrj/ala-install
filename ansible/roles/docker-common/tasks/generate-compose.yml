@@ -348,7 +348,7 @@
   vars:
     deployment_type: container
     nginx_vhost_fast_mode: true
-  when: "'species-list' in services_enabled or groups['species-list'] is defined"
+  when: "'species_lists' in services_enabled or groups['species-list'] is defined"
   tags:
     - species-list
     - config
@@ -360,7 +360,7 @@
     deployment_type: container
     bie_hub_docker_host: la_bie-hub
     nginx_vhost_fast_mode: true
-  when: "'bie_hub' in services_enabled or bie_hub_enabled | default(false)"
+  when: "'ala_bie' in services_enabled or bie_hub_enabled | default(false)"
   tags:
     - bie-hub
     - config
@@ -384,7 +384,7 @@
     deployment_type: container
     biocache_hub_docker_host: la_biocache-hub
     nginx_vhost_fast_mode: true
-  when: "'biocache_hub' in services_enabled or biocache_hub_enabled | default(false)"
+  when: "'ala_hub' in services_enabled or biocache_hub_enabled | default(false)"
   tags:
     - biocache-hub
     - config
@@ -789,6 +789,44 @@
     owner: "{{ ansible_user_id }}"
     group: "{{ ansible_user_gid }}"
   when: "'gatus' in services_enabled or gatus_enabled | default(true)"
+
+- name: Create initialization directories for Solr and Cassandra
+  file:
+    path: "{{ item }}"
+    state: directory
+    mode: '0755'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+  loop:
+    - "{{ data_dir }}/solr/init"
+    - "{{ data_dir }}/cassandra/init"
+  tags:
+    - solr
+    - cassandra
+    - docker-compose-docker
+
+- name: Copy Solr configuration files from solrcloud_config role
+  copy:
+    src: "{{ playbook_dir }}/roles/solrcloud_config/files/"
+    dest: "{{ data_dir }}/solr/init/"
+    mode: '0644'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+  tags:
+    - solr
+    - docker-compose-docker
+
+- name: Copy Cassandra schema from biocache3-db role
+  copy:
+    src: "{{ playbook_dir }}/roles/biocache3-db/files/cassandra/cassandra3-schema.txt"
+    dest: "{{ data_dir }}/cassandra/init/schema.cql"
+    mode: '0644'
+    owner: "{{ ansible_user_id }}"
+    group: "{{ ansible_user_gid }}"
+  tags:
+    - cassandra
+    - docker-compose-docker
+
 
 - name: Generate db-cas-init.yml
   template:

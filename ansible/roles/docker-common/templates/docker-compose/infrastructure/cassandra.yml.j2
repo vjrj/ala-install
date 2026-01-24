@@ -1,7 +1,7 @@
   # Cassandra - NoSQL database for biocache
 services:
   cassandra:
-    image: cassandra:4.1
+    image: cassandra:{{ cassandra_version | default('4.1') }}
     container_name: la_cassandra
     restart: unless-stopped
     expose:
@@ -32,3 +32,29 @@ services:
       timeout: 10s
       retries: 3
       start_period: 120s
+
+  cassandra-load-keyspace:
+    image: cassandra:{{ cassandra_version | default('4.1') }}
+    container_name: la_cassandra_init
+    restart: "no"
+    command:
+      - /bin/bash
+      - -c
+      - |
+        echo "Waiting for Cassandra..."
+        # Wait using cqlsh
+        while ! cqlsh cassandra -e "describe keyspaces" > /dev/null 2>&1; do
+            echo "Cassandra not ready yet..."
+            sleep 5
+        done
+        echo "Cassandra is up! Loading schema..."
+        cqlsh cassandra -f /docker-entrypoint-initdb.d/schema.cql
+        echo "Schema loaded!"
+    volumes:
+      - {{ data_dir }}/cassandra/init:/docker-entrypoint-initdb.d:ro
+    networks:
+      {{ docker_network | default('internal') }}:
+    depends_on:
+      cassandra:
+        condition: service_healthy
+
