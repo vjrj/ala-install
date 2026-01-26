@@ -149,10 +149,6 @@
   tags:
     - nginx_vhost
 
-- name: debug - check nginx_paths value
-  pause: prompt="nginx_paths value is {{nginx_paths}}"
-  when: nginx_paths_debug_enabled is defined and nginx_paths_debug_enabled | bool == True
-
 - name: add gatus monitor of nginx_paths
   template:
     src: ../../gatus/templates/http.j2
