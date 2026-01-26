@@ -106,7 +106,7 @@
     doi_service_docker_host: la_doi-service
     sensitive_data_service_docker_host: la_sensitive-data-service
     species_list_docker_host: la_species-list
-    
+
     biocache_hub: ala-hub
     grouped_facets_json: grouped_facets_ala.json
     biocache_hub_tomcat_server_address: "0.0.0.0"
@@ -115,7 +115,7 @@
     - name: Load variables from collectory group
       include_vars:
         file: "{{ playbook_dir }}/roles/collectory/vars/main.yml"
-      when: "'collectory' in groups"
+      when: "'collectory' in group_names"
       tags:
         - always
         - only
@@ -123,7 +123,7 @@
     - name: Load variables from cas group
       include_vars:
         file: "{{ playbook_dir }}/roles/cas5/vars/main.yml"
-      when: "'cas-servers' in groups"
+      when: "'cas-servers' in group_names"
       tags:
         - always
         - only
@@ -131,7 +131,7 @@
     - name: Calculate collectory_app based on version
       set_fact:
         collectory_app: "{{ 'collectory' if collectory_version is version('3', '>=') else 'ala-collectory' }}"
-      when: "'collectory' in groups and collectory_version is defined"
+      when: "'collectory' in group_names and collectory_version is defined"
       tags:
         - always
         - only
@@ -157,4 +157,3 @@
       tags:
         - db-init
         - cas-dbs
-
