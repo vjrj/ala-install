@@ -8,3 +8,4 @@
     - "{{ nginx_conf_dir }}/sites-available"
   tags:
     - docker-common
+  run_once: true

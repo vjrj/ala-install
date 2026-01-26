@@ -22,6 +22,7 @@
   tags:
     - always
     - only
+    - docker-compose
 
 - name: Set nginx Docker resolver configuration
   set_fact:
@@ -30,6 +31,7 @@
   tags:
     - always
     - only
+    - docker-compose
 
 - name: Set docker service container names (used in proxy_pass for nginx)
   set_fact:
@@ -56,6 +58,7 @@
   tags:
     - always
     - only
+    - docker-compose
 
 - name: Debug - Docker user configuration
   debug:
@@ -63,10 +66,17 @@
       Docker users - tomcat: {{ tomcat_user }}, nginx: {{ nginx_user }}, cas: {{ cas_user }}, collectory: {{ collectory_user }}, userdetails: {{ userdetails_user }}, apikey: {{ apikey_user }}
       Nginx Docker Internal Resolver: {{ nginx_docker_internal_resolver }}
       Deployment Type: {{ deployment_type }}
+  run_once: true
+  tags:
+    - always
+    - only
+    - docker-compose
 
 # Create common directories BEFORE any role tries to use them
 - name: Run common directory and config setup
   include_tasks: common.yml
+  tags:
+    - docker-compose
 
 - name: Ensure output directory exists
   file:
@@ -76,6 +86,8 @@
     owner: "{{ ansible_user_id }}"
     group: "{{ ansible_user_gid }}"
   run_once: true
+  tags:
+    - docker-compose
 
 - name: Ensure cert-validator directory exists
   file:
@@ -85,6 +97,8 @@
     owner: "{{ ansible_user_id }}"
     group: "{{ ansible_user_gid }}"
   run_once: true
+  tags:
+    - docker-compose
 
 - name: Copy cert-validator script
   template:
@@ -94,14 +108,16 @@
     owner: "{{ ansible_user_id }}"
     group: "{{ ansible_user_gid }}"
   run_once: true
+  tags:
+    - docker-compose
 
 - name: Include services descriptions
   include_vars:
     file: docker-services-desc.yaml
-  run_once: true
   tags:
     - always
     - only
+    - docker-compose
 
 - name: Set docker_services_desc as a clean variable
   set_fact:
@@ -110,10 +126,13 @@
   tags:
     - always
     - only
+    - docker-compose
 
 - name: Determine Java versions for services
   include_tasks: determine-java-versions.yml
   run_once: true
+  tags:
+    - docker-compose
 
 # Create clean dictionaries for easy access to software and Java versions
 # Uses version_variable from docker_services_desc dynamically
@@ -125,6 +144,8 @@
   loop_control:
     label: "{{ item.key }}"
   run_once: true
+  tags:
+    - docker-compose
 
 - name: Build Java versions dictionary from determined java versions
   set_fact:
@@ -140,6 +161,8 @@
   loop_control:
     label: "{{ item.key }}"
   run_once: true
+  tags:
+    - docker-compose
 
 - name: Fetch latest ala-i18n version from apt.gbif.es repository
   block:
@@ -164,7 +187,10 @@
     - name: Display fetched i18n version
       debug:
         msg: "Latest ala-i18n version from apt.gbif.es: {{ i18n_version | default('unable to fetch') }}"
+      run_once: true
   run_once: true
+  tags:
+    - docker-compose
 
 - name: Detect enabled services from optional flag and use_* inventory variables
   set_fact:
@@ -176,6 +202,8 @@
   loop: "{{ docker_services_desc | dict2items }}"
   loop_control:
     label: "{{ item.key }}"
+  tags:
+    - docker-compose
 
 # Debug after detecting services
 - name: "DEBUG: Show services_enabled after detection"
@@ -183,21 +211,32 @@
     msg: |
       Services detected after Detect enabled services task:
       {{ services_enabled }}
+  run_once: true
+  tags:
+    - docker-compose
 
 - name: "DEBUG: Check use_gatus variable"
   debug:
     msg: |
       use_gatus variable: {{ use_gatus | default('NOT SET - will use default true') }}
       use_gatus | default(true) | bool: {{ use_gatus | default(true) | bool }}
+  run_once: true
+  tags:
+    - docker-compose
 
 # Always add nginx and ensure unique services
 - name: Add nginx and ensure unique services list
   set_fact:
     services_enabled: "{{ (['nginx'] + services_enabled) | unique }}"
+  tags:
+    - docker-compose
 
 - name: Debug - Show services configuration
   debug:
     msg: "Services enabled: {{ services_enabled }}"
+  run_once: true
+  tags:
+    - docker-compose
 
 # Create nginx directories BEFORE any role tries to use nginx_vhost
 - name: Ensure nginx config directory exists
@@ -209,6 +248,8 @@
     group: "{{ ansible_user_gid }}"
   when: "'nginx' in services_enabled"
   run_once: true
+  tags:
+    - docker-compose
 
 - name: Ensure nginx conf.d directory exists
   file:
@@ -219,6 +260,8 @@
     group: "{{ ansible_user_gid }}"
   when: "'nginx' in services_enabled"
   run_once: true
+  tags:
+    - docker-compose
 
 - name: Ensure nginx sites-enabled directory exists
   file:
@@ -229,12 +272,15 @@
     group: "{{ ansible_user_gid }}"
   when: "'nginx' in services_enabled"
   run_once: true
+  tags:
+    - docker-compose
 
 - name: Load common role variables
   include_vars:
     file: "{{ playbook_dir }}/roles/common/vars/main.yml"
   tags:
     - always
+    - docker-compose
 
 - name: Run gatus configuration generation
   include_role:
@@ -328,6 +374,7 @@
             alias: "/srv/{{ branding_url }}/www/"
   when:
     - use_branding | bool
+    - "'branding' in group_names"
   run_once: true
   tags:
     - branding
@@ -339,6 +386,8 @@
   include_vars:
     file: "{{ playbook_dir }}/roles/collectory/vars/main.yml"
   when: "'collectory' in group_names"
+  tags:
+    - docker-compose
 
 # Ensure database password variables have values (from inventory or defaults)
 # These are critical for docker-compose .env generation
@@ -349,6 +398,8 @@
     mongodb_root_password: "{{ mongodb_root_password | default('generated_mongodb_password') }}"
     mongodb_root_username: "{{ mongodb_root_username | default('admin') }}"
     postgresql_password: "{{ postgresql_password | default('generated_postgres_password') }}"
+  tags:
+    - docker-compose
 
 # Now run collectory and other services
 - name: Run collectory configuration generation (asset copy, config templates)
@@ -451,6 +502,8 @@
     - "{{ data_dir }}/var-log-atlas/userdetails"
     - "{{ data_dir }}/var-log-atlas/image-service"
   run_once: true
+  tags:
+    - docker-compose
 
 - name: Set CAS database variables from inventories for MongoDB initialization
   set_fact:
@@ -467,6 +520,8 @@
     cas_spring_session_password: "{{ cas_spring_session_password | default(lookup('password', '/dev/null length=20')) }}"
     spring_session_mongo_collection: "{{ spring_session_mongo_collection | default('spring-sessions') }}"
   when: "'cas' in services_enabled"
+  tags:
+    - docker-compose
 
 # Build JAVA_OPTS for each service from inventory variables
 - name: Build JAVA_OPTS strings for each service
@@ -495,6 +550,8 @@
   set_fact:
     service_java_opts_dict: "{{ temp_java_opts }}"
   run_once: true
+  tags:
+    - docker-compose
 
 - name: Debug - Show service_extra_params (extra JVM parameters defined per service)
   debug:
@@ -505,10 +562,16 @@
         {{ service }}: {{ extras | map(attribute='key') | list | join(', ') }}
       {% endif %}
       {% endfor %}
+  run_once: true
+  tags:
+    - docker-compose
 
 - name: Debug - Show generated JAVA_OPTS for services (BASE - extras added in template)
   debug:
     msg: "{{ service_java_opts_dict }}"
+  run_once: true
+  tags:
+    - docker-compose
 
 - name: Generate .env file with database passwords from inventories
   template:
@@ -614,7 +677,9 @@
     mode: '0644'
     owner: "{{ ansible_user_id }}"
     group: "{{ ansible_user_gid }}"
-  when: i18n.enabled and i18n.strategy == 'volume' and i18n.volume.source == 'init-container'
+  tags:
+    - i18n
+    - docker-compose
   run_once: true
 
 - name: Generate nginx.yml
@@ -625,6 +690,9 @@
     owner: "{{ ansible_user_id }}"
     group: "{{ ansible_user_gid }}"
   when: "'nginx' in services_enabled"
+  tags:
+    - nginx
+    - docker-compose
   run_once: true
 
 # Branding preparation and generation
@@ -724,6 +792,7 @@
   run_once: true
   tags:
     - branding
+    - docker-compose
 
 - name: Add branding hostname to nginx_docker_internal_aliases
   set_fact:
@@ -789,6 +858,8 @@
     owner: "{{ ansible_user_id }}"
     group: "{{ ansible_user_gid }}"
   run_once: true
+  tags:
+    - docker-compose
 
 - name: Generate solr.yml
   template:
@@ -800,6 +871,7 @@
   run_once: true
   tags:
     - solr
+    - docker-compose
 
 - name: Generate cassandra.yml
   template:
@@ -811,6 +883,7 @@
   run_once: true
   tags:
     - cassandra
+    - docker-compose
 
 - name: Generate elasticsearch.yml
   template:
@@ -822,7 +895,8 @@
   run_once: true
   tags:
     - elasticsearch
-  when: "'cas' in services_enabled or groups['cas-servers'] is defined"
+    - docker-compose
+  when: "'cas' in services_enabled"
 
 - name: Generate mysql.yml
   template:
@@ -832,7 +906,9 @@
     owner: "{{ ansible_user_id }}"
     group: "{{ ansible_user_gid }}"
   run_once: true
-  when: "'collectory' in services_enabled or 'cas' in services_enabled or groups['cas-servers'] is defined"
+  when: "'collectory' in services_enabled or 'cas' in services_enabled"
+  tags:
+    - docker-compose
 
 - name: Generate postgres.yml
   template:
@@ -842,6 +918,8 @@
     owner: "{{ ansible_user_id }}"
     group: "{{ ansible_user_gid }}"
   run_once: true
+  tags:
+    - docker-compose
 
 - name: Generate db-backup.yml
   template:
@@ -851,6 +929,8 @@
     owner: "{{ ansible_user_id }}"
     group: "{{ ansible_user_gid }}"
   run_once: true
+  tags:
+    - docker-compose
 
 - name: Generate gatus.yml
   template:
@@ -861,6 +941,8 @@
     group: "{{ ansible_user_gid }}"
   run_once: true
   when: "'gatus' in services_enabled or gatus_enabled | default(true)"
+  tags:
+    - docker-compose
 
 - name: Create initialization directories for Solr and Cassandra
   file:
@@ -876,6 +958,7 @@
     - solr
     - cassandra
     - docker-compose-docker
+    - docker-compose
   run_once: true
 
 - name: Copy Solr configuration files from solrcloud_config role
@@ -888,6 +971,7 @@
   tags:
     - solr
     - docker-compose-docker
+    - docker-compose
   run_once: true
 
 - name: Copy Cassandra schema from biocache3-db role
@@ -900,6 +984,7 @@
   tags:
     - cassandra
     - docker-compose-docker
+    - docker-compose
   run_once: true
 
 - name: Generate db-cas-init.yml
@@ -912,6 +997,7 @@
   tags:
     - db-init
     - config-docker
+    - docker-compose
   run_once: true
 
 - name: Generate CAS database initialization script
@@ -926,6 +1012,7 @@
     - db-init
     - cas
     - config-docker
+    - docker-compose
   run_once: true
 
 - name: Generate mailhog.yml
@@ -938,6 +1025,7 @@
   when: docker_mail_development_mode | default(false) | bool
   tags:
     - mail
+    - docker-compose
   run_once: true
 
 - name: Generate cas.yml
@@ -949,6 +1037,8 @@
     group: "{{ ansible_user_gid }}"
   when: "'cas' in services_enabled or groups['cas-servers'] is defined"
   run_once: true
+  tags:
+    - docker-compose
 
 - name: Generate userdetails.yml
   template:
@@ -959,6 +1049,8 @@
     group: "{{ ansible_user_gid }}"
   when: "'cas' in services_enabled or groups['cas-servers'] is defined"
   run_once: true
+  tags:
+    - docker-compose
 
 - name: Generate apikey.yml
   template:
@@ -969,6 +1061,8 @@
     group: "{{ ansible_user_gid }}"
   when: "'cas' in services_enabled"
   run_once: true
+  tags:
+    - docker-compose
 
 - name: Generate cas-management.yml
   template:
@@ -979,6 +1073,8 @@
     group: "{{ ansible_user_gid }}"
   when: "'cas' in services_enabled"
   run_once: true
+  tags:
+    - docker-compose
 
 - name: Generate species-list.yml
   template:
@@ -987,8 +1083,10 @@
     mode: '0644'
     owner: "{{ ansible_user_id }}"
     group: "{{ ansible_user_gid }}"
-  when: "'species-list' in services_enabled"
+  when: "'species_lists' in services_enabled"
   run_once: true
+  tags:
+    - docker-compose
 
 - name: Generate collectory.yml
   template:
@@ -999,6 +1097,8 @@
     group: "{{ ansible_user_gid }}"
   when: "'collectory' in services_enabled"
   run_once: true
+  tags:
+    - docker-compose
 
 - name: Generate bie-hub.yml
   template:
@@ -1007,9 +1107,10 @@
     mode: '0644'
     owner: "{{ ansible_user_id }}"
     group: "{{ ansible_user_gid }}"
-  when: "'bie_hub' in services_enabled"
+  when: "'ala_bie' in services_enabled"
   tags:
     - bie-hub
+    - docker-compose
   run_once: true
 
 - name: Generate bie-index.yml
@@ -1022,6 +1123,7 @@
   when: "'bie_index' in services_enabled"
   tags:
     - bie-index
+    - docker-compose
   run_once: true
 
 - name: Generate biocache-hub.yml
@@ -1031,9 +1133,10 @@
     mode: '0644'
     owner: "{{ ansible_user_id }}"
     group: "{{ ansible_user_gid }}"
-  when: "'biocache_hub' in services_enabled"
+  when: "'ala_hub' in services_enabled"
   tags:
     - biocache-hub
+    - docker-compose
   run_once: true
 
 - name: Generate biocache-service.yml
@@ -1046,6 +1149,7 @@
   when: "'biocache_service' in services_enabled"
   tags:
     - biocache-service
+    - docker-compose
   run_once: true
 
 - name: Fix docker-compose build paths in base file (relative to docker-compose-output/)
@@ -1055,6 +1159,8 @@
     replace: 'context: ../docker/'
   when: data_dir is defined
   run_once: true
+  tags:
+    - docker-compose
 
 # Create directories for enabled services with build tools
 - name: Create directories for Dockerfile generation
@@ -1175,6 +1281,9 @@
       - docker/{{ service }}/Dockerfile ({{ docker_services_desc[service].build_tool }}) v{{ svc_version }} (Java {{ svc_java }})
       {% endif %}
       {% endfor %}
+  run_once: true
+  tags:
+    - docker-compose
 
 - name: Remove old docker-bake.hcl to force regeneration
   file:
@@ -1182,6 +1291,8 @@
     state: absent
   run_once: true
   when: build_images | default(false)
+  tags:
+    - docker-compose
 
 - name: Generate docker-bake.hcl for optimized builds
   template:
@@ -1192,6 +1303,8 @@
     group: "{{ ansible_user_gid }}"
   run_once: true
   when: build_images | default(false)
+  tags:
+    - docker-compose
 
 - name: Include build-images tasks
   include_tasks: build-images.yml
@@ -1234,6 +1347,9 @@
         1. Review configuration: cat {{ data_dir }}/docker-compose.yml
         2. Start services: docker-compose -f {{ data_dir }}/docker-compose.yml up -d
         3. Access Gatus monitoring: http://your-domain/gatus/
+  run_once: true
+  tags:
+    - docker-compose
 
 - name: "SSL Certificates: Start nginx to validate local certificates"
   shell: |
@@ -1242,7 +1358,6 @@
     DOCKER_HOST: "{{ docker_socket }}"
   when: not use_la_site_certs | bool
   tags:
-    - docker-compose
     - nginx-validation
   run_once: true
 
@@ -1252,7 +1367,6 @@
   when: not use_la_site_certs | bool
   register: nginx_check
   tags:
-    - docker-compose
     - nginx-validation
   run_once: true
 
@@ -1262,7 +1376,6 @@
   register: cert_file_stat
   when: not use_la_site_certs | bool
   tags:
-    - docker-compose
     - nginx-validation
   run_once: true
 
@@ -1274,7 +1387,6 @@
     success_msg: "Certificate file exists: {{ ssl_cert_file }}"
   when: not use_la_site_certs | bool
   tags:
-    - docker-compose
     - nginx-validation
   run_once: true
 
@@ -1284,7 +1396,6 @@
   register: key_file_stat
   when: not use_la_site_certs | bool
   tags:
-    - docker-compose
     - nginx-validation
   run_once: true
 
@@ -1296,7 +1407,6 @@
     success_msg: "Key file exists: {{ ssl_key_file }}"
   when: not use_la_site_certs | bool
   tags:
-    - docker-compose
     - nginx-validation
   run_once: true
 
@@ -1315,9 +1425,9 @@
       ✓ Certificate file found in nginx
       ✓ Key file found in nginx
       ✓ Nginx container running with SSL enabled
+  run_once: true
   when: not use_la_site_certs | bool
   tags:
-    - docker-compose
     - nginx-validation
 
 - name: "SSL Certificates: Display info for Docker image certs"
@@ -1331,9 +1441,9 @@
       - Configure ssl_certificate_server_dir to match image certificate location
       
       Note: Certificate validation skipped (using Docker image source)
+  run_once: true
   when: use_la_site_certs | bool
   tags:
-    - docker-compose
     - nginx-validation
 
 # ============================================================================
@@ -1376,6 +1486,7 @@
       
       🚀 Ready to deploy with:
          docker-compose up -d
+  run_once: true
   tags:
     - validate
     - docker-compose

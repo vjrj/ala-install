@@ -20,6 +20,7 @@
 
 - name: "Database initialization: Regenerate docker-compose.yml with exposed ports"
   include_tasks: generate-compose.yml
+
   tags:
     - db-init
 
@@ -30,6 +31,7 @@
   environment:
     DOCKER_HOST: "{{ docker_socket }}"
   changed_when: false
+  run_once: true
   tags:
     - db-init
 
@@ -43,6 +45,7 @@
     - 3306
     - 5432
     - 27017
+  run_once: true
   tags:
     - db-init
 
@@ -99,6 +102,7 @@
 
 - name: "Database initialization: Regenerate docker-compose.yml without exposed ports"
   include_tasks: generate-compose.yml
+  run_once: true
   tags:
     - db-init
 
@@ -109,6 +113,7 @@
   environment:
     DOCKER_HOST: "{{ docker_socket }}"
   changed_when: false
+  run_once: true
   tags:
     - db-init
 
@@ -119,6 +124,7 @@
     delay: 2
     timeout: 30
   ignore_errors: yes
+  run_once: true
   tags:
     - db-init
 
@@ -132,6 +138,7 @@
       - CAS Management OIDC configuration applied
       - Temporary exposed ports have been removed
       - Containers running with secure internal network only
+  run_once: true
   tags:
     - db-init
 
