@@ -18,35 +18,41 @@ include:
 {% if docker_mail_development_mode | default(false) %}
   - ./infrastructure/mailhog.yml
 {% endif %}
+{% if 'collectory' in services_enabled or 'cas' in services_enabled %}
   - ./infrastructure/mysql.yml
+{% endif %}
   - ./infrastructure/postgres.yml
+{% if 'cas' in services_enabled %}
   - ./infrastructure/mongodb.yml
+{% endif %}
   - ./infrastructure/solr.yml
   - ./infrastructure/cassandra.yml
+{% if 'image-service' in services_enabled %}
   - ./infrastructure/elasticsearch.yml
+{% endif %}
   - ./infrastructure/db-backup.yml
-{% if 'cas' in services_enabled or groups['cas-servers'] is defined %}
+{% if 'cas' in services_enabled %}
   - ./services/cas.yml
   - ./services/userdetails.yml
   - ./services/apikey.yml
   - ./services/cas-management.yml
 {% endif %}
-{% if 'species-list' in services_enabled or groups['species-list'] is defined %}
+{% if 'species_lists' in services_enabled %}
   - ./services/species-list.yml
 {% endif %}
 {% if 'collectory' in services_enabled %}
   - ./services/collectory.yml
 {% endif %}
-{% if 'bie_hub' in services_enabled or bie_hub_enabled | default(false) %}
+{% if 'ala_bie' in services_enabled %}
   - ./services/bie-hub.yml
 {% endif %}
-{% if 'bie_index' in services_enabled or bie_index_enabled | default(false) %}
+{% if 'bie_index' in services_enabled %}
   - ./services/bie-index.yml
 {% endif %}
-{% if 'biocache_hub' in services_enabled or biocache_hub_enabled | default(false) %}
+{% if 'ala_hub' in services_enabled %}
   - ./services/biocache-hub.yml
 {% endif %}
-{% if 'biocache_service' in services_enabled or biocache_service_enabled | default(false) %}
+{% if 'biocache_service' in services_enabled %}
   - ./services/biocache-service.yml
 {% endif %}
 {% if 'gatus' in services_enabled or gatus_enabled | default(true) %}
