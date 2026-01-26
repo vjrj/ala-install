@@ -53,10 +53,10 @@ services:
 
         echo "Uploading configsets..."
         # Upload biocache config
-        run_zkcli -cmd upconfig -zkhost $ZK_HOST -confname biocache -solrhome /var/solr/data -confdir /var/solr/init/biocache/conf
+        run_zkcli -cmd upconfig -zkhost $$ZK_HOST -confname biocache -solrhome /var/solr/data -confdir /var/solr/init/biocache/conf
 
         # Upload bie config
-        run_zkcli -cmd upconfig -zkhost $ZK_HOST -confname bie -solrhome /var/solr/data -confdir /var/solr/init/bie/conf
+        run_zkcli -cmd upconfig -zkhost $$ZK_HOST -confname bie -solrhome /var/solr/data -confdir /var/solr/init/bie/conf
 
         echo "Creating collections..."
         # Create biocache collection
