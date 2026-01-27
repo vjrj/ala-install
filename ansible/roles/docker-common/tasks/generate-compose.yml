@@ -488,6 +488,22 @@
     - biocache-hub
     - config
 
+- name: Run biocache-service properties generation
+  include_role:
+    name: biocache3-properties
+  vars:
+    deployment_type: container
+    biocache_service_docker_host: la_biocache-service
+    biocache_db_host: la_cassandra
+    nginx_vhost_fast_mode: true
+  when:
+    - "'biocache_service' in services_enabled"
+    - "'biocache-service-clusterdb' in group_names"
+  tags:
+    - biocache-service
+    - config
+    - only
+
 - name: Run biocache-service configuration generation
   include_role:
     name: biocache3-service
