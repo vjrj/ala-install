@@ -45,7 +45,7 @@ FROM base-builder AS builder-nexus
 
 ARG VERSION=3.8.1
 ARG ARTIFACT=biocache-service
-ARG CLASSIFIER=""
+ARG CLASSIFIER=exec
 
 COPY download-artifact.sh /usr/local/bin/download-artifact.sh
 RUN chmod +x /usr/local/bin/download-artifact.sh
