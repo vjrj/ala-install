@@ -21,7 +21,7 @@
 # ============================================
 # GLOBAL BUILD ARGUMENTS
 # ============================================
-ARG BUILDER_IMAGE=gradle-builder:jdk11
+ARG BUILDER_IMAGE=gradle-builder:jdk17
 ARG BUILD_METHOD=nexus
 ARG BUILD_TOOL=gradle
 ARG RUN_TOOL=java-jar
@@ -138,7 +138,7 @@ FROM builder-${BUILD_METHOD} AS final-builder
 # ============================================
 # Stage 7: Final Runtime - Java JAR with setup
 # ============================================
-FROM eclipse-temurin:11-jre-jammy
+FROM eclipse-temurin:17-jre-jammy
 
 ARG SERVICE_USER=biocache_service
 ARG APP_ARTIFACT=biocache-service

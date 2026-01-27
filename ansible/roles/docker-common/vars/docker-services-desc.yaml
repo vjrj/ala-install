@@ -59,6 +59,7 @@ docker_services_desc:
     repository: 'https://github.com/AtlasOfLivingAustralia/biocache-service'
     version_variable: 'biocache_service_version'
     log_config_filename: 'log4j.xml'
+    classifier: 'exec'
   ala_bie:
     name: 'species'
     alias: 'bie'

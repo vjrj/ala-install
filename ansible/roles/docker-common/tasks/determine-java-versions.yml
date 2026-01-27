@@ -37,6 +37,9 @@
     namematching_java_version: "{{ 'namematching' | determine_java_version(ala_namematching_service_version | default('develop'), la_dependencies) }}"
     sensitive_data_java_version: "{{ 'sensitive-data' | determine_java_version(ala_sensitive_data_service_version | default('develop'), la_dependencies) }}"
     data_quality_java_version: "{{ 'data-quality' | determine_java_version(data_quality_filter_service_version | default('develop'), la_dependencies) }}"
+    biocache_service_java_version: "{{ 'biocache-service' | determine_java_version(biocache_service_version | default('develop'), la_dependencies) }}"
+    ala_hub_java_version: "{{ 'ala-hub' | determine_java_version(biocache_hub_version | default('develop'), la_dependencies) }}"
+    logger_java_version: "{{ 'logger' | determine_java_version(logger_version | default('develop'), la_dependencies) }}"
 
 #- name: Display determined Java versions
 #  debug:
