@@ -8,29 +8,52 @@
     # Core user variables for all services
     tomcat_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(ansible_user_id) }}"
     nginx_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(ansible_user_id) }}"
+    nginx_conf_dir: "{{ data_dir }}/nginx"
+  run_once: true
+  tags:
+    - always
+    - docker-compose
+
+- name: Set docker facts for cas services
+  set_fact:
     cas_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(ansible_user_id) }}"
     collectory_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(ansible_user_id) }}"
     userdetails_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(ansible_user_id) }}"
     apikey_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(ansible_user_id) }}"
-    namematching_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(ansible_user_id) }}"
-    sensitive_data_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(ansible_user_id) }}"
-    # CAS MongoDB flags
     cas_add_mongo_users: "{{ cas_add_mongo_users | default(true) }}"
-    nginx_conf_dir: "{{ data_dir }}/nginx"
-    collectory_docker_data_dir: "/data/collectory"
-  run_once: true
   tags:
     - always
-    - only
+    - docker-compose 
+  when: "'cas-servers' in group_names"
+
+- name: Set docker facts for namematching service
+  set_fact:
+    namematching_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(ansible_user_id) }}"
+  tags:
+    - always
+    - docker-compose    
+  when: "'namematching-service' in group_names"
+
+- name: Set docker facts for sensitive data service
+  set_fact:
+    sensitive_data_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(ansible_user_id) }}"
+  tags:
+    - always
     - docker-compose
+  when: "'sensitive-data-service' in group_names"
+
+- name: Set docker facts for collectory service
+  set_fact:
+    collectory_docker_data_dir: "/data/collectory"
+  tags:
+    - always
+    - docker-compose
+  when: "'collectory' in group_names"
 
 - name: Set nginx Docker resolver configuration
   set_fact:
     nginx_docker_internal_resolver: "{{ (deployment_type in ['swarm', 'container']) | bool }}"
-  run_once: true
   tags:
-    - always
-    - only
     - docker-compose
 
 - name: Set docker service container names (used in proxy_pass for nginx)
@@ -54,7 +77,6 @@
     doi_service_docker_host: "{{ doi_service_docker_host | default('la_doi_service', true) }}"
     sensitive_data_service_docker_host: "{{ sensitive_data_service_docker_host | default('la_sensitive_data_service', true) }}"
     gatus_docker_host: "{{ gatus_docker_host | default('la_gatus', true) }}"
-  run_once: true
   tags:
     - always
     - only
@@ -122,7 +144,6 @@
 - name: Set docker_services_desc as a clean variable
   set_fact:
     docker_services_desc: "{{ docker_services_desc }}"
-  run_once: true
   tags:
     - always
     - only
@@ -130,7 +151,6 @@
 
 - name: Determine Java versions for services
   include_tasks: determine-java-versions.yml
-  run_once: true
   tags:
     - docker-compose
 
@@ -143,7 +163,6 @@
   when: item.value.version_variable is defined
   loop_control:
     label: "{{ item.key }}"
-  run_once: true
   tags:
     - docker-compose
 
@@ -160,7 +179,6 @@
     - vars.get(item.key.replace('-', '_') + '_java_version') is defined or item.value.get('java_version') is defined
   loop_control:
     label: "{{ item.key }}"
-  run_once: true
   tags:
     - docker-compose
 
@@ -186,8 +204,7 @@
 
     - name: Display fetched i18n version
       debug:
-        msg: "Latest ala-i18n version from apt.gbif.es: {{ i18n_version | default('unable to fetch') }}"
-      run_once: true
+        msg: "Latest ala-i18n version from apt.gbif.es: {{ i18n_version | default('unable to fetch') }}"      
   run_once: true
   tags:
     - docker-compose
@@ -279,7 +296,6 @@
   include_vars:
     file: "{{ playbook_dir }}/roles/common/vars/main.yml"
   tags:
-    - always
     - docker-compose
 
 - name: Run gatus configuration generation
@@ -288,7 +304,9 @@
   vars:
     deployment_type: container
     nginx_vhost_fast_mode: true
-  when: "'gatus' in services_enabled or use_gatus | default(true) | bool"
+  when: 
+  - "'gatus' in services_enabled or use_gatus | default(true) | bool"
+  - "'gatus' in group_names"
   tags:
     - gatus
     - config
@@ -301,7 +319,7 @@
     deployment_type: container
   when:
     - "'cas' in services_enabled"
-    - "'cas-servers' in group_names"    
+    - "'cas-servers' in group_names"
   tags:
     - cas
     - config
@@ -437,7 +455,7 @@
     nginx_vhost_fast_mode: true
   when: 
     - "'ala_bie' in services_enabled"
-    - "'ala_bie' in group_names"
+    - "'bie-hub' in group_names"
   tags:
     - bie-hub
     - config
@@ -451,7 +469,7 @@
     nginx_vhost_fast_mode: true
   when: 
     - "'bie_index' in services_enabled"
-    - "'bie_index' in group_names"
+    - "'bie-index' in group_names"
   tags:
     - bie-index
     - config
@@ -465,7 +483,7 @@
     nginx_vhost_fast_mode: true
   when:
     - "'ala_hub' in services_enabled"
-    - "'ala_hub' in group_names"
+    - "'biocache-hub' in group_names"
   tags:
     - biocache-hub
     - config
@@ -480,7 +498,7 @@
     nginx_vhost_fast_mode: true
   when:
     - "'biocache_service' in services_enabled"
-    - "'biocache_service' in group_names"
+    - "'biocache-service-clusterdb' in group_names"
   tags:
     - biocache-service
     - config
