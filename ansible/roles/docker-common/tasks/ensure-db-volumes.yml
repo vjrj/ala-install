@@ -18,6 +18,13 @@
   tags:
     - db-init
     - docker-volumes
+  run_once: true
+  when:
+    - "'cas-servers' in group_names"
+    - "'collectory' in group_names"
+    - "'species_lists' in group_names"
+    - "'logger' in group_names"
+    - "'alerts' in group_names"
 
 - name: "Database volumes: Create PostgreSQL external volume"
   docker_volume:
@@ -28,6 +35,12 @@
   tags:
     - db-init
     - docker-volumes
+  run_once: true
+  when:
+    - "'spatial' in group_names"
+    - "'images' in group_names"
+    - "'doi' in group_names"
+    - "'dataQuality' in group_names"
 
 - name: "Database volumes: Create MongoDB external volume"
   docker_volume:
@@ -38,7 +51,11 @@
   tags:
     - db-init
     - docker-volumes
-
+  run_once: true
+  when:
+    - "'cas' in group_names"
+    - "'ecodata' in group_names"
+    
 - name: "Database volumes: Create Gatus external volume"
   docker_volume:
     name: la_gatus-data
@@ -48,6 +65,9 @@
   tags:
     - db-init
     - docker-volumes
+  when:
+    - "'gatus' in group_names"
+  run_once: true
 
 - name: "Database volumes: Create Solr external volume"
   docker_volume:
@@ -58,6 +78,9 @@
   tags:
     - db-init
     - docker-volumes
+  when:
+    - "'solr' in group_names"
+  run_once: true
 
 - name: "Database volumes: Create Cassandra external volume"
   docker_volume:
@@ -68,6 +91,9 @@
   tags:
     - db-init
     - docker-volumes
+  when:
+    - "'cassandra' in group_names"
+  run_once: true
 
 - name: "Database volumes: Create Elasticsearch external volume"
   docker_volume:
@@ -78,6 +104,12 @@
   tags:
     - db-init
     - docker-volumes
+  when:
+    - "'images' in group_names"
+    - "'events' in group_names"
+    - "'doi' in group_names"
+    - "'ecodata' in group_names"
+  run_once: true
 
 - name: "Database volumes: Create SSL certificates external volume"
   docker_volume:
@@ -89,14 +121,4 @@
   tags:
     - db-init
     - docker-volumes
-
-
-
-
-
-
-
-
-
-
-
+  run_once: true

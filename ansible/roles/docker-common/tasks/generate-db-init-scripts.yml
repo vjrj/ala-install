@@ -1,144 +1,104 @@
 ---
 
-- name: "Database volumes: Ensure all external named volumes exist"
-  include_tasks: ensure-db-volumes.yml
+- name: Database initialization
+  block:
+    - name: "Database volumes: Ensure all external named volumes exist"
+      include_tasks: ensure-db-volumes.yml
+      tags:
+        - docker-volumes
+
+    - name: "Database initialization: Set Docker socket path"
+      set_fact:
+        docker_socket: "{{ lookup('env', 'DOCKER_HOST') | default('unix:///var/run/docker.sock') }}"
+
+    - name: "Database initialization: Set flag to expose ports"
+      set_fact:
+        expose_db_ports_for_init: true
+
+    - name: "Database initialization: Regenerate docker-compose.yml with exposed ports"
+      include_tasks: generate-compose.yml
+
+    - name: "Database initialization: Start database containers with exposed ports"
+      shell: |
+        export DOCKER_HOST="{{ docker_socket }}"
+        cd "{{ data_dir }}" && docker compose up -d mysql postgres mongodb
+      environment:
+        DOCKER_HOST: "{{ docker_socket }}"
+      changed_when: false
+
+    - name: "Database initialization: Wait for databases to be ready"
+      wait_for:
+        host: 127.0.0.1
+        port: "{{ item }}"
+        delay: 2
+        timeout: 60
+      loop:
+        - 3306
+        - 5432
+        - 27017
+
+    - name: CAS-specific database initialization
+      block:
+        - name: "Database initialization: Initialize CAS5 databases"
+          include_tasks: ../../cas5-dbs/tasks/main.yml
+          vars:
+            # Use localhost from Ansible host (maps to 127.0.0.1:3306, etc via docker-compose port mappings)
+            cas_db_hostname: "127.0.0.1"
+            user_store_db_hostname: "127.0.0.1"
+            apikey_db_hostname: "127.0.0.1"
+            ticket_registry_db_hostname: "127.0.0.1"
+            cas_audit_host: "127.0.0.1"
+            cas_spring_session_host: "127.0.0.1"
+            cas_tickets_host: "127.0.0.1"
+            cas_services_host: "127.0.0.1"
+            cas_mysql_src_host: '%'
+            apikey_mysql_src_host: '%'
+
+        - name: "Database initialization: Initialize CAS Management OIDC configuration"
+          include_tasks: ../../cas-management/tasks/oidc-tasks.yml
+          tags:
+            - cas-oidc
+      when: use_cas | default(true) | bool
+      tags:
+        - cas-dbs
+
+    - name: "Database initialization: Validate database initialization"
+      include_tasks: validate-db-init.yml
+      tags:
+        - db-validation
+
+    - name: "Database initialization: Reset flag to hide ports"
+      set_fact:
+        expose_db_ports_for_init: false
+
+    - name: "Database initialization: Regenerate docker-compose.yml without exposed ports"
+      include_tasks: generate-compose.yml
+
+    - name: "Database initialization: Restart containers with secure configuration"
+      shell: |
+        export DOCKER_HOST="{{ docker_socket }}"
+        cd "{{ data_dir }}" && docker compose up -d mysql postgres mongodb
+      environment:
+        DOCKER_HOST: "{{ docker_socket }}"
+      changed_when: false
+
+    - name: "Database initialization: Verify containers are healthy"
+      wait_for:
+        host: 127.0.0.1
+        port: 3306
+        delay: 2
+        timeout: 30
+      ignore_errors: yes
+
+    - name: "Database initialization: Summary"
+      debug:
+        msg: |
+          ✅ Database initialization complete!
+          - All databases initialized successfully
+          - CAS5 databases, users, and schemas created
+          - CAS5 admin account configured
+          - CAS Management OIDC configuration applied
+          - Temporary exposed ports have been removed
+          - Containers running with secure internal network only
   tags:
     - db-init
-    - docker-volumes
-
-- name: "Database initialization: Set Docker socket path"
-  set_fact:
-    docker_socket: "{{ lookup('env', 'DOCKER_HOST') | default('unix:///var/run/docker.sock') }}"
-  tags:
-    - db-init
-
-- name: "Database initialization: Set flag to expose ports"
-  set_fact:
-    expose_db_ports_for_init: true
-  tags:
-    - db-init
-
-- name: "Database initialization: Regenerate docker-compose.yml with exposed ports"
-  include_tasks: generate-compose.yml
-
-  tags:
-    - db-init
-
-- name: "Database initialization: Start database containers with exposed ports"
-  shell: |
-    export DOCKER_HOST="{{ docker_socket }}"
-    cd "{{ data_dir }}" && docker compose up -d mysql postgres mongodb
-  environment:
-    DOCKER_HOST: "{{ docker_socket }}"
-  changed_when: false
-  run_once: true
-  tags:
-    - db-init
-
-- name: "Database initialization: Wait for databases to be ready"
-  wait_for:
-    host: 127.0.0.1
-    port: "{{ item }}"
-    delay: 2
-    timeout: 60
-  loop:
-    - 3306
-    - 5432
-    - 27017
-  run_once: true
-  tags:
-    - db-init
-
-- name: "Database initialization: Initialize CAS5 databases"
-  include_tasks: ../../cas5-dbs/tasks/main.yml
-  vars:
-    # Use localhost from Ansible host (maps to 127.0.0.1:3306, etc via docker-compose port mappings)
-    cas_db_hostname: "127.0.0.1"
-    user_store_db_hostname: "127.0.0.1"
-    apikey_db_hostname: "127.0.0.1"
-    ticket_registry_db_hostname: "127.0.0.1"
-    cas_audit_host: "127.0.0.1"
-    cas_spring_session_host: "127.0.0.1"
-    cas_tickets_host: "127.0.0.1"
-    cas_services_host: "127.0.0.1"
-    cas_mysql_src_host: '%'
-    apikey_mysql_src_host: '%'
-  tags:
-    - db-init
-    - cas-dbs
-  run_once: true
-
-# TODO
-# This fails because checks that the service is up to use the roles and works only in vm deployments
-#- name: "Database initialization: Initialize CAS5 admin account"
-#  include_tasks: ../../cas5/tasks/admin-account.yml
-#  vars:
-#    cas_db_hostname: "127.0.0.1"
-#  tags:
-#    - db-init
-#    - cas-dbs
-#  run_once: true
-
-- name: "Database initialization: Initialize CAS Management OIDC configuration"
-  include_tasks: ../../cas-management/tasks/oidc-tasks.yml
-  tags:
-    - db-init
-    - cas-dbs
-    - cas-oidc
-  run_once: true
-
-- name: "Database initialization: Validate database initialization"
-  include_tasks: validate-db-init.yml
-  tags:
-    - db-init
-    - db-validation
-  run_once: true
-
-- name: "Database initialization: Reset flag to hide ports"
-  set_fact:
-    expose_db_ports_for_init: false
-  tags:
-    - db-init
-
-- name: "Database initialization: Regenerate docker-compose.yml without exposed ports"
-  include_tasks: generate-compose.yml
-  run_once: true
-  tags:
-    - db-init
-
-- name: "Database initialization: Restart containers with secure configuration"
-  shell: |
-    export DOCKER_HOST="{{ docker_socket }}"
-    cd "{{ data_dir }}" && docker compose up -d mysql postgres mongodb
-  environment:
-    DOCKER_HOST: "{{ docker_socket }}"
-  changed_when: false
-  run_once: true
-  tags:
-    - db-init
-
-- name: "Database initialization: Verify containers are healthy"
-  wait_for:
-    host: 127.0.0.1
-    port: 3306
-    delay: 2
-    timeout: 30
-  ignore_errors: yes
-  run_once: true
-  tags:
-    - db-init
-
-- name: "Database initialization: Summary"
-  debug:
-    msg: |
-      ✅ Database initialization complete!
-      - All databases initialized successfully
-      - CAS5 databases, users, and schemas created
-      - CAS5 admin account configured
-      - CAS Management OIDC configuration applied
-      - Temporary exposed ports have been removed
-      - Containers running with secure internal network only
-  run_once: true
-  tags:
-    - db-init
-
