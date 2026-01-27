@@ -1,16 +1,16 @@
 ---
 
-- name: Database initialization
+- name: "Database initialization: Set Docker socket path"
+  set_fact:
+    docker_socket: "{{ lookup('env', 'DOCKER_HOST') | default('unix:///var/run/docker.sock') }}"
+
+- name: "Database volumes: Ensure all external named volumes exist"
+  include_tasks: ensure-db-volumes.yml
+  tags:
+    - docker-volumes
+
+- name: Databases initialization
   block:
-    - name: "Database volumes: Ensure all external named volumes exist"
-      include_tasks: ensure-db-volumes.yml
-      tags:
-        - docker-volumes
-
-    - name: "Database initialization: Set Docker socket path"
-      set_fact:
-        docker_socket: "{{ lookup('env', 'DOCKER_HOST') | default('unix:///var/run/docker.sock') }}"
-
     - name: "Database initialization: Set flag to expose ports"
       set_fact:
         expose_db_ports_for_init: true
@@ -33,7 +33,7 @@
         delay: 2
         timeout: 60
       loop:
-        - 3306
+        - 3306        
         - 5432
         - 27017
 
@@ -58,14 +58,16 @@
           include_tasks: ../../cas-management/tasks/oidc-tasks.yml
           tags:
             - cas-oidc
-      when: use_cas | default(true) | bool
+        - name: "Database initialization: Validate database initialization"
+          include_tasks: validate-db-init.yml
+          tags:
+            - db-validation
+
+      when:
+        - use_cas | default(true) | bool
+        - "'cas-servers' in group_names"
       tags:
         - cas-dbs
-
-    - name: "Database initialization: Validate database initialization"
-      include_tasks: validate-db-init.yml
-      tags:
-        - db-validation
 
     - name: "Database initialization: Reset flag to hide ports"
       set_fact:
@@ -102,3 +104,6 @@
           - Containers running with secure internal network only
   tags:
     - db-init
+  when: 
+    - "'cas' in group_names"
+  run_once: true

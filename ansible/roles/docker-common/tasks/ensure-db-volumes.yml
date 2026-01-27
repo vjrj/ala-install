@@ -22,9 +22,9 @@
   when:
     - "'cas-servers' in group_names"
     - "'collectory' in group_names"
-    - "'species_lists' in group_names"
-    - "'logger' in group_names"
-    - "'alerts' in group_names"
+    - "'species-list' in group_names"
+    - "'logger-service-service' in group_names"
+    - "'alerts-service' in group_names"
 
 - name: "Database volumes: Create PostgreSQL external volume"
   docker_volume:
@@ -38,9 +38,9 @@
   run_once: true
   when:
     - "'spatial' in group_names"
-    - "'images' in group_names"
-    - "'doi' in group_names"
-    - "'dataQuality' in group_names"
+    - "'image-services' in group_names"
+    - "'doi-service' in group_names"
+    - "'data_quality_filter_service' in group_names"
 
 - name: "Database volumes: Create MongoDB external volume"
   docker_volume:
@@ -53,7 +53,8 @@
     - docker-volumes
   run_once: true
   when:
-    - "'cas' in group_names"
+    - "'cas-servers' in group_names"
+    # WARN: ecodata use host group all
     - "'ecodata' in group_names"
     
 - name: "Database volumes: Create Gatus external volume"
@@ -79,7 +80,8 @@
     - db-init
     - docker-volumes
   when:
-    - "'solr' in group_names"
+    - "'solrcloud' in group_names"
+    - "'solr' in group_names"      
   run_once: true
 
 - name: "Database volumes: Create Cassandra external volume"
@@ -92,7 +94,7 @@
     - db-init
     - docker-volumes
   when:
-    - "'cassandra' in group_names"
+    - "'cassandra5' in group_names"
   run_once: true
 
 - name: "Database volumes: Create Elasticsearch external volume"
@@ -105,9 +107,9 @@
     - db-init
     - docker-volumes
   when:
-    - "'images' in group_names"
+    - "'image-services' in group_names"
     - "'events' in group_names"
-    - "'doi' in group_names"
+    - "'doi-service' in group_names"
     - "'ecodata' in group_names"
   run_once: true
 
