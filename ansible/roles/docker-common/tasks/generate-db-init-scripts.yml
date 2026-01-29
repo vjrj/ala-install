@@ -105,5 +105,5 @@
   tags:
     - db-init
   when: 
-    - "'cas' in group_names"
+    - "'cas-servers' in group_names"
   run_once: true

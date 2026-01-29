@@ -154,6 +154,7 @@
       when:
         - deployment_type == 'container'
         - db_init_enabled | default(true) | bool
+        - when: "'cas-servers' in group_names"
       tags:
         - db-init
         - cas-dbs
