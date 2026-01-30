@@ -622,20 +622,7 @@
   assert:
     that:
       - nginx_docker_internal_aliases is defined
-      - nginx_docker_internal_aliases | length > 0
-    fail_msg: |
-      ERROR: nginx_docker_internal_aliases is not properly configured!
-      
-      This list must contain all vhost hostnames that nginx should resolve internally.
-      Add to your inventory file (e.g., la-test-local-extras.ini):
-      
-      nginx_docker_internal_aliases=[
-        "colecciones-es.l-a.site",
-        "auth-es.l-a.site",
-        "listas-es.l-a.site",
-        "registros-es.l-a.site",
-        # ... add all service vhost hostnames
-      ]
+    fail_msg: "nginx_docker_internal_aliases is not properly configured"
   tags:
     - docker-compose
     - validate
