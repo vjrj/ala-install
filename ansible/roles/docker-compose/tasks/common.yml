@@ -1,0 +1,14 @@
+---
+
+- name: ensure nginx directories exist for docker vhost generation
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
+  with_items:
+    - "{{ nginx_conf_dir }}/conf.d"
+    - "{{ nginx_conf_dir }}/sites-enabled"
+    - "{{ nginx_conf_dir }}/sites-available"
+  tags:
+    - docker-compose
