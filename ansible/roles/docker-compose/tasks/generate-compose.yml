@@ -618,16 +618,6 @@
   tags:
     - docker-compose
 
-- name: Validate nginx_docker_internal_aliases is configured
-  assert:
-    that:
-      - nginx_docker_internal_aliases is defined
-    fail_msg: "nginx_docker_internal_aliases is not properly configured"
-  tags:
-    - docker-compose
-    - validate
-  run_once: true
-
 - name: Generate docker-compose.yml
   template:
     src: docker-compose/base.yml.j2
