@@ -62,7 +62,7 @@ build_images=true  # Optional: let docker-compose build the image
 
 ```bash
 cd ansible
-ansible-playbook -i inventories/your-inventory docker-compose-deploy.yml
+ansible-playbook -i inventories/your-inventory docker-compose.yml
 ```
 
 ### 3. Build and Start

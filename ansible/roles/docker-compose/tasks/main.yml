@@ -2,6 +2,30 @@
 # Docker Compose Role - Main Tasks
 # Orchestrates docker-compose generation and deployment for Living Atlas
 
+- name: Load variables from collectory group
+  include_vars:
+    file: "{{ playbook_dir }}/roles/collectory/vars/main.yml"
+  when: "'collectory' in group_names"
+  tags:
+    - always
+    - only
+
+- name: Load variables from cas group
+  include_vars:
+    file: "{{ playbook_dir }}/roles/cas5/vars/main.yml"
+  when: "'cas-servers' in group_names"
+  tags:
+    - always
+    - only
+
+- name: Calculate collectory_app based on version
+  set_fact:
+    collectory_app: "{{ 'collectory' if collectory_version is version('3', '>=') else 'ala-collectory' }}"
+  when: "'collectory' in group_names and collectory_version is defined"
+  tags:
+    - always
+    - only
+
 - name: Include generate-compose tasks
   include_tasks: generate-compose.yml
   tags:

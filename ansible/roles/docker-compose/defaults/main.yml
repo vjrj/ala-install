@@ -1,107 +1,174 @@
 ---
-# Docker Common Role Defaults
-# Using existing ala-install variable patterns
+# Docker Compose Role Defaults
+# Variables for docker-compose deployment
 
-# Deployment type (existing from PR #675)
-deployment_type: vm  # Options: vm, container, swarm
+# ============================================
+# Core Configuration
+# ============================================
+
+# Deployment type and environment
+deployment_type: container  # Fixed for docker-compose
 deployment_env: production  # Options: dev, staging, production
 
-# Build configuration
-build_images: false  # Set to true to build from source instead of pulling from registry
-docker_registry: ""  # Empty means local builds, set to registry URL for push/pull
+# User for docker operations (uses current user or 'ubuntu' for VM)
+docker_default_user: "{{ docker_user | default(ansible_user_id) }}"
 
-# Docker image tagging strategy:
-# Priority: 1) collectory_branch (for git branches like 'develop')
-#           2) collectory_version (for releases like '5.2.0')
-#           3) Default: 'develop'
-# This allows flexibility: use branches for dev, versions for production
+# Skip handlers as we're generating docker-compose files, not deploying to VMs
+skip_handlers: true
+
+# ============================================
+# i18n Configuration
+# ============================================
+
+i18n:
+  enabled: true
+  strategy: volume
+  volume:
+    name: ala-i18n-data
+    source: init-container
+
+# ============================================
+# Docker Compose Container Names
+# ============================================
+
+# MySQL and MongoDB container names
+cas_db_hostname: mysql
+collectory_db_host_address: mysql
+collectory_db_host: mysql
+user_store_db_hostname: mysql
+apikey_db_hostname: mysql
+specieslist_db_hostname: mysql
+
+# MongoDB container names for CAS
+ticket_registry_db_hostname: mongodb
+cas_audit_host: mongodb
+cas_spring_session_host: mongodb
+cas_tickets_host: mongodb
+cas_services_host: mongodb
+
+# ============================================
+# Docker Users
+# ============================================
+
+tomcat_user: "{{ docker_default_user }}"
+nginx_user: "{{ docker_default_user }}"
+cas_user: "{{ docker_default_user }}"
+collectory_user: "{{ docker_default_user }}"
+userdetails_user: "{{ docker_default_user }}"
+apikey_user: "{{ docker_default_user }}"
+species_list_user: "{{ docker_default_user }}"
+
+# ============================================
+# Directory Configuration
+# ============================================
+
+data_dir: /opt/docker-compose
+nginx_conf_dir: "{{ data_dir }}/nginx"
+docker_output_dir: "{{ docker_compose_output_dir | default('docker-compose-output') }}"
+
+# ============================================
+# Build Configuration
+# ============================================
+
+build_images: false
+docker_registry: ""
 docker_tag: "{{ collectory_branch | default(collectory_version | default('develop')) }}"
-docker_image_tag: "{{ docker_tag }}"  # Alias for docker_tag
-docker_cache_tag: "buildcache"  # Cache tag for layer caching
-
-# Docker build cache directory (persistent across builds)
-# Using ~/.cache/docker-buildx instead of /tmp for persistence
+docker_image_tag: "{{ docker_tag }}"
+docker_cache_tag: "buildcache"
 docker_build_cache_dir: "{{ ansible_env.HOME }}/.cache/docker-buildx"
 
-# Docker network configuration (existing from PR #675)
-# Network name will be prefixed with compose project name (e.g., la_internal when name: la)
+# ============================================
+# Network Configuration
+# ============================================
+
 docker_network: internal
 docker_network_mtu: 1500
 
-# Services to enable (determines which services are included in docker-compose.yml)
+# ============================================
+# Java Memory Configuration
+# ============================================
+
+tomcat_java_opts: "-Xmx2g -Xms2g -Xss512k -Djava.awt.headless=true"
+set_sql_mode: true
+
+# ============================================
+# Docker Service Internal Ports  
+# ============================================
+
+cas_port: 9000
+cas_management_port: 8070
+userdetails_port: 9001
+apikey_port: 9002
+collectory_port: 8080
+bie_hub_port: 8080
+bie_index_port: 8080
+biocache_hub_port: 8080
+biocache_service_port: 8080
+image_service_port: 8080
+logger_service_port: 8080
+namematching_service_port: 8080
+doi_service_port: 8080
+sensitive_data_service_port: 8080
+species_list_port: 8080
+
+# ============================================
+# Docker Container Hostnames for Nginx
+# ============================================
+
+cas_docker_host: la_cas
+userdetails_docker_host: la_userdetails
+cas_management_docker_host: la_cas-management
+apikey_docker_host: la_apikey
+collectory_docker_host: la_collectory
+bie_hub_docker_host: la_bie-hub
+bie_index_docker_host: la_bie-index
+biocache_hub_docker_host: la_biocache-hub
+biocache_service_docker_host: la_biocache-service
+image_service_docker_host: la_image-service
+logger_service_docker_host: la_logger-service
+namematching_service_docker_host: la_namematching-service
+doi_service_docker_host: la_doi-service
+sensitive_data_service_docker_host: la_sensitive-data-service
+species_list_docker_host: la_species-list
+
+# ============================================
+# Service-Specific Configuration
+# ============================================
+
+biocache_hub: ala-hub
+grouped_facets_json: grouped_facets_ala.json
+biocache_hub_tomcat_server_address: "0.0.0.0"
+
+# ============================================
+# Services Configuration
+# ============================================
+
 services_enabled: []
-  # - nginx
-  # - collectory
-  # - biocache-service
-  # - bie-hub
-  # etc.
-
-# i18n configuration
-# See I18N_DOCKER_STRATEGIES.md for detailed explanation
-i18n:
-  enabled: true
-  # Strategy options:
-  #   - 'host-mount': (RECOMMENDED) Reuses Ansible i18n role, mounts /opt/atlas/i18n from host
-  #                   Requires i18n role to be run on the host first
-  #   - 'volume':     Uses Docker volume with init-container (portable but duplicates Ansible logic)
-  strategy: host-mount
-  volume:
-    name: ala-i18n-data
-    source: init-container  # Only used when strategy='volume'
-
-# Nginx configuration (existing variables)
-nginx_conf_dir: "{{ data_dir }}/nginx"
-nginx_user: nginx
-
-# Data directories (existing variable)
-data_dir: /opt/docker-compose
-
-# Monitoring (existing from gatus role)
-monitoring_enabled: false
-
-# Deprecated variables (no longer used in container deployment)
-i18n_package_enabled: false  # Replaced by i18n.strategy
-
-# Docker output directory for generated Dockerfiles
-docker_output_dir: "{{ docker_compose_output_dir | default('docker-compose-output') }}"
-
-# Nginx Docker image configuration
-docker_nginx_debug: false  # Set to true to use nginx-debug image with additional debugging tools
-docker_nginx_version: "latest"  # Version tag for nginx images
 
 # ============================================
-# Branding Configuration (Docker deployment)
+# Nginx Configuration
 # ============================================
-use_branding: false  # Enable branding deployment
 
-# Branding source - can be a local path or git URL
-# Examples:
-#   Local: ../la-test-branding
-#   Git: https://github.com/living-atlases/base-branding.git
+docker_nginx_debug: false
+docker_nginx_version: "latest"
+
+# ============================================
+# Branding Configuration
+# ============================================
+
+use_branding: false
 branding_source: null
-
-# Branding URL/hostname (used for nginx vhost)
 branding_url: "branding"
-
-# Node.js version for building branding assets
 branding_node_version: "18"
-
-# Branding version tag for docker image
 branding_version: "latest"
-
-# Git reference (branch, tag, or commit) when branding_source is a git URL
 branding_git_ref: "master"
-
-# Development mode - enables hot-reload (only for local development)
 branding_dev_mode: false
-
-# Development server port (only used if branding_dev_mode=true)
 branding_dev_port: "3000"
-
-# Git repository watcher - monitors for changes and signals rebuild
-# Only applies when branding_source is a git URL
 branding_git_watch: false
-
-# Git check interval in seconds (default: 300 = 5 minutes)
 branding_git_check_interval: "300"
 
+# ============================================
+# Monitoring
+# ============================================
+
+monitoring_enabled: false
