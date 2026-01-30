@@ -11,7 +11,11 @@ El objectivo es que el PR futuro a upstream tenga los mínimos cambios en el có
 En ../ala-install-trd está upstream/master donde se puede comparar el rol docker-common en especial.
 
 No hagas commits de git.
-* Por otro lado no me gusta que se genere el directorio docker, creo que se debería crear docker_compose_output_dir/docker y los Dockerfile que no se generan con templates, que sean directamente ficheros
+* Por otro lado:
+
+- no me gusta que se genere el directorio docker, creo que se debería crear docker_compose_output_dir/docker y los Dockerfile que no se generan con templates, que sean directamente ficheros.
+- ahora ya hay inventarios generados por generator-docker-compose correctamente, ver /data/la-toolkit/config/lademo/lademo-inventories/ y /data/la-toolkit/config/lademo/lademo-branding y en vez de docker/ala vamos a usar el ansiblew docker_compose que debe hacer los mismo que docker/ala.
+
 * DONE Tengo estos errores
 RUNNING HANDLER [common : reload nginx] *********************************************************************************************************************************************
 fatal: [localhost.collectory]: FAILED! => changed=false
