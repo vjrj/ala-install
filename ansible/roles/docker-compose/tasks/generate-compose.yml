@@ -4,10 +4,10 @@
 
 - name: Set docker facts for all services
   set_fact:
-    docker_default_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(ansible_user_id) }}"
+    docker_default_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(docker_compose_userid) }}"
     # Core user variables for all services
-    tomcat_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(ansible_user_id) }}"
-    nginx_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(ansible_user_id) }}"
+    tomcat_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(docker_compose_userid) }}"
+    nginx_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(docker_compose_userid) }}"
     nginx_conf_dir: "{{ data_dir }}/nginx"
   run_once: true
   tags:
@@ -16,10 +16,10 @@
 
 - name: Set docker facts for cas services
   set_fact:
-    cas_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(ansible_user_id) }}"
-    collectory_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(ansible_user_id) }}"
-    userdetails_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(ansible_user_id) }}"
-    apikey_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(ansible_user_id) }}"
+    cas_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(docker_compose_userid) }}"
+    collectory_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(docker_compose_userid) }}"
+    userdetails_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(docker_compose_userid) }}"
+    apikey_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(docker_compose_userid) }}"
     cas_add_mongo_users: "{{ cas_add_mongo_users | default(true) }}"
   tags:
     - always
@@ -28,7 +28,7 @@
 
 - name: Set docker facts for namematching service
   set_fact:
-    namematching_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(ansible_user_id) }}"
+    namematching_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(docker_compose_userid) }}"
   tags:
     - always
     - docker-compose    
@@ -36,7 +36,7 @@
 
 - name: Set docker facts for sensitive data service
   set_fact:
-    sensitive_data_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(ansible_user_id) }}"
+    sensitive_data_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(docker_compose_userid) }}"
   tags:
     - always
     - docker-compose
@@ -105,8 +105,8 @@
     path: "{{ data_dir }}"
     state: directory
     mode: '0755'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   run_once: true
   tags:
     - docker-compose
@@ -116,8 +116,8 @@
     path: "{{ data_dir }}/cert-validator"
     state: directory
     mode: '0755'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   run_once: true
   tags:
     - docker-compose
@@ -127,8 +127,8 @@
     src: cert-validator.sh
     dest: "{{ data_dir }}/cert-validator/cert-validator.sh"
     mode: '0755'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   run_once: true
   tags:
     - docker-compose
@@ -261,8 +261,8 @@
     path: "{{ nginx_conf_dir }}"
     state: directory
     mode: '0755'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   when: "'nginx' in services_enabled"
   run_once: true
   tags:
@@ -273,8 +273,8 @@
     path: "{{ nginx_conf_dir }}/conf.d"
     state: directory
     mode: '0755'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   when: "'nginx' in services_enabled"
   run_once: true
   tags:
@@ -285,8 +285,8 @@
     path: "{{ nginx_conf_dir }}/sites-enabled"
     state: directory
     mode: '0755'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   when: "'nginx' in services_enabled"
   run_once: true
   tags:
@@ -367,8 +367,8 @@
         path: "{{ data_dir }}/srv/{{ branding_url }}/www"
         state: directory
         mode: '0755'
-        owner: "{{ ansible_user_id }}"
-        group: "{{ ansible_user_gid }}"
+        owner: "{{ docker_compose_userid }}"
+        group: "{{ docker_compose_usergid }}"
 
     - name: Create branding nginx vhost
       include_role:
@@ -524,8 +524,8 @@
     path: "{{ item }}"
     state: directory
     mode: '0755'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   loop:
     - "{{ data_dir }}/db-backups"
     - "{{ data_dir }}/mysql/init"
@@ -612,8 +612,8 @@
     src: docker-compose.env.j2
     dest: "{{ data_dir }}/.env"
     mode: '0644'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   run_once: true
   tags:
     - docker-compose
@@ -646,8 +646,8 @@
     src: docker-compose/base.yml.j2
     dest: "{{ data_dir }}/docker-compose.yml"
     mode: '0644'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   run_once: true
   tags:
     - docker-compose
@@ -658,8 +658,8 @@
     path: "{{ data_dir }}/infrastructure"
     state: directory
     mode: '0755'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   run_once: true
   tags:
     - docker-compose
@@ -669,8 +669,8 @@
     path: "{{ data_dir }}/services"
     state: directory
     mode: '0755'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   run_once: true
   tags:
     - docker-compose
@@ -681,8 +681,8 @@
     path: "{{ data_dir }}/logs"
     state: directory
     mode: '0755'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   run_once: true
   tags:
     - docker-compose
@@ -692,8 +692,8 @@
     path: "{{ data_dir }}/logs/{{ item }}"
     state: directory
     mode: '0755'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   loop:
     - cas
     - userdetails
@@ -709,8 +709,8 @@
     src: docker-compose/infrastructure/i18n.yml.j2
     dest: "{{ data_dir }}/infrastructure/i18n.yml"
     mode: '0644'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   tags:
     - i18n
     - docker-compose
@@ -721,8 +721,8 @@
     src: docker-compose/infrastructure/nginx.yml.j2
     dest: "{{ data_dir }}/infrastructure/nginx.yml"
     mode: '0644'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   when: "'nginx' in services_enabled"
   tags:
     - nginx
@@ -759,8 +759,8 @@
     path: "{{ data_dir }}/branding-build"
     state: directory
     mode: '0755'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   when: use_branding | bool
   tags:
     - branding
@@ -820,8 +820,8 @@
     src: docker-compose/infrastructure/branding.yml.j2
     dest: "{{ data_dir }}/infrastructure/branding.yml"
     mode: '0644'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   when: use_branding | bool
   run_once: true
   tags:
@@ -889,8 +889,8 @@
     src: docker-compose/infrastructure/mongodb.yml.j2
     dest: "{{ data_dir }}/infrastructure/mongodb.yml"
     mode: '0644'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   run_once: true
   tags:
     - docker-compose
@@ -900,8 +900,8 @@
     src: docker-compose/infrastructure/solr.yml.j2
     dest: "{{ data_dir }}/infrastructure/solr.yml"
     mode: '0644'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   run_once: true
   tags:
     - solr
@@ -912,8 +912,8 @@
     src: docker-compose/infrastructure/cassandra.yml.j2
     dest: "{{ data_dir }}/infrastructure/cassandra.yml"
     mode: '0644'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   run_once: true
   tags:
     - cassandra
@@ -924,8 +924,8 @@
     src: docker-compose/infrastructure/elasticsearch.yml.j2
     dest: "{{ data_dir }}/infrastructure/elasticsearch.yml"
     mode: '0644'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   run_once: true
   tags:
     - elasticsearch
@@ -937,8 +937,8 @@
     src: docker-compose/infrastructure/mysql.yml.j2
     dest: "{{ data_dir }}/infrastructure/mysql.yml"
     mode: '0644'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   run_once: true
   when: "'collectory' in services_enabled or 'cas' in services_enabled"
   tags:
@@ -949,8 +949,8 @@
     src: docker-compose/infrastructure/postgres.yml.j2
     dest: "{{ data_dir }}/infrastructure/postgres.yml"
     mode: '0644'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   run_once: true
   tags:
     - docker-compose
@@ -960,8 +960,8 @@
     src: docker-compose/infrastructure/db-backup.yml.j2
     dest: "{{ data_dir }}/infrastructure/db-backup.yml"
     mode: '0644'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   run_once: true
   tags:
     - docker-compose
@@ -971,8 +971,8 @@
     src: docker-compose/infrastructure/gatus.yml.j2
     dest: "{{ data_dir }}/infrastructure/gatus.yml"
     mode: '0644'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   run_once: true
   when: "'gatus' in services_enabled or gatus_enabled | default(true)"
   tags:
@@ -983,8 +983,8 @@
     path: "{{ item }}"
     state: directory
     mode: '0755'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   loop:
     - "{{ data_dir }}/solr/init"
     - "{{ data_dir }}/cassandra/init"
@@ -1000,8 +1000,8 @@
     src: "{{ playbook_dir }}/roles/solrcloud_config/files/"
     dest: "{{ data_dir }}/solr/init/"
     mode: '0644'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   tags:
     - solr
     - docker-compose-docker
@@ -1013,8 +1013,8 @@
     src: "{{ playbook_dir }}/roles/biocache3-db/files/cassandra/cassandra3-schema.txt"
     dest: "{{ data_dir }}/cassandra/init/schema.cql"
     mode: '0644'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   tags:
     - cassandra
     - docker-compose-docker
@@ -1026,8 +1026,8 @@
     src: docker-compose/infrastructure/db-cas-init.yml.j2
     dest: "{{ data_dir }}/infrastructure/db-cas-init.yml"
     mode: '0644'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   tags:
     - db-init
     - config-docker
@@ -1039,8 +1039,8 @@
     src: mysql/init/cas-init.sh.j2
     dest: "{{ data_dir }}/mysql/init/cas-init.sh"
     mode: '0755'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   when: "'cas' in services_enabled"
   tags:
     - db-init
@@ -1054,8 +1054,8 @@
     src: docker-compose/infrastructure/mailhog.yml.j2
     dest: "{{ data_dir }}/infrastructure/mailhog.yml"
     mode: '0644'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   when: docker_mail_development_mode | default(false) | bool
   tags:
     - mail
@@ -1067,8 +1067,8 @@
     src: docker-compose/services/cas.yml.j2
     dest: "{{ data_dir }}/services/cas.yml"
     mode: '0644'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   when: "'cas' in services_enabled or groups['cas-servers'] is defined"
   run_once: true
   tags:
@@ -1079,8 +1079,8 @@
     src: docker-compose/services/userdetails.yml.j2
     dest: "{{ data_dir }}/services/userdetails.yml"
     mode: '0644'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   when: "'cas' in services_enabled or groups['cas-servers'] is defined"
   run_once: true
   tags:
@@ -1091,8 +1091,8 @@
     src: docker-compose/services/apikey.yml.j2
     dest: "{{ data_dir }}/services/apikey.yml"
     mode: '0644'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   when: "'cas' in services_enabled"
   run_once: true
   tags:
@@ -1103,8 +1103,8 @@
     src: docker-compose/services/cas-management.yml.j2
     dest: "{{ data_dir }}/services/cas-management.yml"
     mode: '0644'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   when: "'cas' in services_enabled"
   run_once: true
   tags:
@@ -1115,8 +1115,8 @@
     src: docker-compose/services/species-list.yml.j2
     dest: "{{ data_dir }}/services/species-list.yml"
     mode: '0644'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   when: "'species_lists' in services_enabled"
   run_once: true
   tags:
@@ -1127,8 +1127,8 @@
     src: docker-compose/services/collectory.yml.j2
     dest: "{{ data_dir }}/services/collectory.yml"
     mode: '0644'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   when: "'collectory' in services_enabled"
   run_once: true
   tags:
@@ -1139,8 +1139,8 @@
     src: docker-compose/services/bie-hub.yml.j2
     dest: "{{ data_dir }}/services/bie-hub.yml"
     mode: '0644'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   when: "'ala_bie' in services_enabled"
   tags:
     - bie-hub
@@ -1152,8 +1152,8 @@
     src: docker-compose/services/bie-index.yml.j2
     dest: "{{ data_dir }}/services/bie-index.yml"
     mode: '0644'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   when: "'bie_index' in services_enabled"
   tags:
     - bie-index
@@ -1165,8 +1165,8 @@
     src: docker-compose/services/biocache-hub.yml.j2
     dest: "{{ data_dir }}/services/biocache-hub.yml"
     mode: '0644'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   when: "'ala_hub' in services_enabled"
   tags:
     - biocache-hub
@@ -1178,8 +1178,8 @@
     src: docker-compose/services/biocache-service.yml.j2
     dest: "{{ data_dir }}/services/biocache-service.yml"
     mode: '0644'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   when: "'biocache_service' in services_enabled"
   tags:
     - biocache-service
@@ -1333,8 +1333,8 @@
     src: docker-bake.hcl.j2
     dest: "{{ data_dir }}/docker-bake.hcl"
     mode: '0644'
-    owner: "{{ ansible_user_id }}"
-    group: "{{ ansible_user_gid }}"
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
   run_once: true
   when: build_images | default(false)
   tags:
