@@ -3,7 +3,7 @@
 # Generate docker-compose configuration for Living Atlas
 
 - hosts: docker_compose
-  connection: local
+
   become: false
 
   roles:
