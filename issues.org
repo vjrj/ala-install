@@ -1,0 +1,206 @@
+#+title: #+COMMENT: Read-only for AI agents. Propose changes as diffs only. Ignore DONE tasks.
+* DONE Mover POC del docker-common a nuevo rol docker-compose
+En la rama docker-compose-poc he ido haciendo un POC de como integrar docker-compose en ala-install, pero lo hice principalmente en el rol docker-common.
+
+Ahora me gustaría dejar ese rol docker-common intacto respecto a upstream, ya que pertenecia a otro POC de uso de docker-swarm e incluir mis cambios en ese rol docker-common en otro rol y playbook nuevo llamado docker-compose con estructura clásica, defaults, vars, tasks/main.yml, templates
+
+El playbook que usa docker/ala me gustaría que se renombrara a docker-compose.
+
+El objectivo es que el PR futuro a upstream tenga los mínimos cambios en el código existente en upstream.
+
+En ../ala-install-trd está upstream/master donde se puede comparar el rol docker-common en especial.
+
+No hagas commits de git.
+* Por otro lado no me gusta que se genere el directorio docker, creo que se debería crear docker_compose_output_dir/docker y los Dockerfile que no se generan con templates, que sean directamente ficheros
+* DONE Tengo estos errores
+RUNNING HANDLER [common : reload nginx] *********************************************************************************************************************************************
+fatal: [localhost.collectory]: FAILED! => changed=false
+  msg: 'Could not find the requested service nginx: host'
+me temo que no le pasa el tema de que no use los handlers e intenta en modo container haecer un reload de nginx
+
+creo que pasa lo mismo en alguna otra tarea, así que esto debería ser algo global y no tener run_once
+RUNNING HANDLER [common : reload nginx] *********************************************************************************************************************************************
+fatal: [localhost.image-service]: FAILED! =>
+  msg: |-
+    The task includes an option with an undefined variable. The error was: 'nginx' is undefined
+
+    The error appears to be in '/home/vjrj/proyectos/gbif/dev/ala-install/ansible/roles/common/handlers/main.yml': line 18, column 3, but may
+    be elsewhere in the file depending on the exact syntax problem.
+
+    The offending line appears to be:
+
+
+    - name: reload nginx
+      ^ here
+  
+* DONE Aliases
+ALA instalaba en
+VMs un solo servicio con inventarios por cada servicio, pero al usar mismos servicios en una máquina se mezclan variables y es aún más problematico pq mismas variables son usadas con diferentes valores. Esto se complica más si usamos docker ya que todos los roles y grupos se mezclan en localhost.
+
+Hasta ahora optaba por renombrar variables pero ahora veo que quizás podemos usar otra estrategia. Usar alias para nombrar de forma diferente un mismo host.
+https://github.com/living-atlases/generator-living-atlas/issues/10
+
+He visto que puede usar una solución:
+https://chatgpt.com/share/6974ef97-8e98-8000-bf5c-97b4ae457d6c
+
+Entonces para un docker compose en localhost, debería haber alias tipo
+localhost.solr
+localhost.images
+localhost.collectory
+etc
+la-test-inventories/inventory-docker.ini
+
+Esto afectará a otros proyectos como generator-living-atlas y la_toolkit para generar inventarios con esta forma, una vez bien testeado.
+
+* DONE Error en cas-management (necesita escribir en un directorio)
+2026-01-23 00:09:53,876 ERROR [org.apereo.cas.support.saml.services.idp.metadata.cache.resolver.UrlResourceMetadataResolver] - Unable to create metadata backup directory [/etc/cas/saml/metadata-backups] to store downloaded metadata. This is likely due to a permission issue
+2026-01-23 00:09:53,902 ERROR [org.apereo.cas.support.saml.services.idp.metadata.cache.resolver.UrlResourceMetadataResolver] - Unable to create metadata backup directory [/etc/cas/saml/metadata-backups] to store downloaded metadata. This is likely due to a permission issue
+* DONE Hay puertos expuestos que no quiero que lo esten, solo quiero que sean internos (cas, cas-management, apikeys, userdetails)
+* DONE En nginx vhost creado aparece la_cas_management en vez de la_cas-management
+* DONE Necesito un servicio de correo de prueba bien configurado para desarrollo configurable opcionalmente con una variable.
+
+La variable debe ser
+
+docker_mail_development_mode port, y creo que deberia hacer expose en vez de ports.
+Necesito, al igual que branding, que añada un vhost the docker_mail_development_url
+
+En este caso hay que hacer un set_facts inicial de algo como
+mail_smtp_host = localhost
+mail_smtp_port = 25
+mail_host = containerName
+o como el container este configurado para que los servicios se configure correctamente.
+
+    docker_mail_development_mode: true
+    docker_mail_development_url: "mailhog.l-a.site"
+    mail_smtp_host: mailhog
+    mail_smtp_port: 1025
+    mail_host: mailhog
+se debe configurar solo opcionalmente, y la url debe ir al inventario.
+
+* DONE El healthcheck the cas-management y mongo no está bien
+	"Health": {
+			"Status": "unhealthy",
+			"FailingStreak": 16,
+			"Log": [
+				{
+					"Start": "2026-01-23T07:27:33.235161129Z",
+					"End": "2026-01-23T07:27:33.314439281Z",
+					"ExitCode": 1,
+					"Output": ""
+				},
+				{
+					"Start": "2026-01-23T07:28:03.316505896Z",
+					"End": "2026-01-23T07:28:03.392547938Z",
+					"ExitCode": 1,
+					"Output": ""
+				},
+				{
+					"Start": "2026-01-23T07:28:33.397299305Z",
+					"End": "2026-01-23T07:28:33.48136539Z",
+					"ExitCode": 1,
+					"Output": ""
+				},
+				{
+					"Start": "2026-01-23T07:29:03.484732082Z",
+					"End": "2026-01-23T07:29:03.645068561Z",
+					"ExitCode": 1,
+					"Output": ""
+				},
+				{
+					"Start": "2026-01-23T07:29:33.649432423Z",
+					"End": "2026-01-23T07:29:33.731664987Z",
+					"ExitCode": 1,
+					"Output": ""
+				}
+			]
+		}
+                aunque el servicio está levantado y el check desde el navegador muestra UP. Quizá es cuestion de tiempos
+* DONE Sigo con procesos no healthly
+la_gatus_service    twinproduction/gatus:latest   "/gatus"                 gatus            52 minutes ago       Up 2 minutes (unhealthy)           8080/tcp
+la_mailhog          mailhog/mailhog:latest        "MailHog"                mailhog          40 minutes ago       Up 2 minutes (unhealthy)           1025/tcp, 8025/tcp
+* DONE Los puertos de healthcheck de cas-management no es el 8080
+Version: 0.0.46
+root@fef48c911bc6 /opt/atlas/cas-management [la_cas-management]
+docker > nc 127.0.0.1 80 -v
+nc: connect to 127.0.0.1 port 80 (tcp) failed: Connection refused
+root@fef48c911bc6 /opt/atlas/cas-management [la_cas-management]
+docker > nc 127.0.0.1 8080 -v
+nc: connect to 127.0.0.1 port 8080 (tcp) failed: Connection refused
+root@fef48c911bc6 /opt/atlas/cas-management [la_cas-management]
+docker > nc 127.0.0.1 8070 -v
+Connection to 127.0.0.1 8070 port [tcp/*] succeeded!
+* DONE Igual que con collectory y cas, incluyes las tareas de species list de su rol species-list
+fíjate en ansible/species-list-docker.yml para las variables especificas de este rol, importante!
+Por ejemplo la base de datos está a localhost! mira como hacemos en cas etc con las dbs
+* DONE el vhost de branding debe incluir la configuración de cors para evitar errores de cors. Hay un fragment para ello
+Me da este error:
+la_nginx  | 2026/01/23 14:01:41 [emerg] 1#1: open() "/etc/nginx/../conf.d/ala_cors_branding" failed (2: No such file or directory) in /etc/nginx/sites-enabled/branding.l-a.site.conf:92
+* DONE collectory (y probleblmente otros como species lists) no arranca:
+la_collectory  | Caused by: java.lang.IllegalStateException: Logback configuration error detected:
+la_collectory  | ERROR in ch.qos.logback.core.rolling.RollingFileAppender[TOMCAT_LOG] - Failed to create parent directories for [/var/log/tomcat10/collectory.log]
+la_collectory  | ERROR in ch.qos.logback.core.rolling.RollingFileAppender[TOMCAT_LOG] - openFile(/var/log/tomcat10/collectory.log,true) call failed. java.io.FileNotFoundException: /var/log/tomcat10/collectory.log (No such file or directory)
+* DONE el vhost de collectory y creo que de species list no está bien:
+
+
+}
+    location / {
+        if ($blocked_ip) {
+            return 403;
+        }
+        if ($blocked_user_agent) {
+            return 444;
+        }
+        # proxy_set_header Host $host;
+        proxy_set_header Host colecciones-es.l-a.site;
+        proxy_set_header X-Forwarded-Host colecciones-es.l-a.site;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header X-Forwarded-Port $server_port;
+            proxy_read_timeout 10m;
+                                          resolver 127.0.0.11 ipv6=off;
+
+        set $backend_proto "http";
+        set $backend_host "la_collectory";
+        set $backend_port "8080";
+        proxy_pass $backend_proto://$backend_host:$backend_port;
+
+    }
+}
+
+el upstream creo que es incorrecto
+* DONE Necesito que se haga la tarea de ../ansible/roles/docker-common/tasks/generate-db-init-scripts.yml:#
+de otra forma una vez que cas esta healthly. Probablemente desde un container nuevo de un solo uso que comprueba que cas está levantado y se ejecuta.
+
+* DONE Necesito trabajar en el backend de nuestro docker compose : solr, cassandra y elasticsearch, para ello inspirate en como crea esos servicios otro respositorio:
+../vlaams-biodiversiteitsportaal/docker/docker-compose*
+* DONE Añade bie-hub, bie-index biocache-hub biocache-service una vez que esté el backend levantado reusando los roles existentes, fíjate y reusa:
+
+ansible/biocache-hub-standalone-docker.yml
+ansible/bie-index-docker.yml
+ansible/bie-hub-docker.yml
+ansible/biocache-hub-standalone-docker.yml
+
+y las variables que usa para que se configure correctamente como hemos hecho con cas, userdetails, etc
+* DONE Estaba usando unas imagenes custom de nginx para debug que activaba con una variable, vamos a empeza a usar nginx normal sin esas imagenes ni Dockerfiles
+* DONE La memoria de cada servicio debe ser configurable y ahora mismo no está ajustada pq muere de vez en cuando los procesos
+debe ser configurable via tomcat_java_opts en cada servicio o group y debe funcionar por defecto. Existe otra var biocache_opts
+tomcat_java_opts: -Xmx2g -Xms2g -Xss512k -Djava.awt.headless=true es el valor por defecto según se lee en ansible/roles/tomcat/defaults/main.yml estaría bien reusar ese código.
+* DONE Necesito que los roles de servicios usen nginx_vhost_fast_mode=true salvo el de cas, userdetails, apikey, cas-management para que la parte generación de nginx vaya rapida. Lo mismo con mailhog
+* DONE Estoy trabajando en docker-common. Necesito inicializar solr y cassandra de igual forma a la que lo hacen los roles
+ansible/solrcloud-docker.yml
+ansible/cassandra5.yml
+pero ahora estoy con el deployment_type=container (docker compose)
+* DONE No entiendo pq no se construyen las imagenes de bie-index bie-hub biocache-service y biocache-hub en bake
+* DONE biocache-hub falla pq está ejecutando tareas típicamente de deployment_type vm:
+TASK [biocache-hub : create tomcat vhost] *******************************************************************************************************************************************
+fatal: [localhost]: FAILED! => changed=false
+  msg: the python augeas module is required
+
+PLAY RECAP **************************************************************************************************************************************************************************
+localhost                  : ok=607  changed=12   unreachable=0    failed=1    skipped=821  rescued=0    ignored=0
+
+❌ Error: Failed to generate configuration
+
+Creo que:
+ ansible/roles/biocache-hub/tasks/main.yml tiene tareas de VM que deberían estar en  ansible/roles/biocache-hub/tasks/vm-tasks.yml
+habría que hacer que para deployment type container no las ejecute. Para ello remover duplicadas y/o mover las que faltan a vm-tasks

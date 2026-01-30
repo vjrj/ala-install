@@ -1,0 +1,20 @@
+---
+# Docker Compose Role - Main Tasks
+# Orchestrates docker-compose generation and deployment for Living Atlas
+
+- name: Include generate-compose tasks
+  include_tasks: generate-compose.yml
+  tags:
+    - always
+    - only
+    - docker-compose
+
+- name: Include database initialization tasks
+  include_tasks: generate-db-init-scripts.yml
+  when:
+    - deployment_type == 'container'
+    - db_init_enabled | default(true) | bool
+    - "'cas-servers' in group_names"
+  tags:
+    - db-init
+    - cas-dbs

@@ -221,7 +221,7 @@ load_config() {
 INVENTORIES_DIR="la-test-inventories"
 REGISTRY="livingatlases"
 DATA_DIR="docker-compose-output"
-PLAYBOOK="$PROJECT_ROOT/ansible/docker-compose-deploy.yml"
+PLAYBOOK="$PROJECT_ROOT/ansible/docker-compose.yml"
 SSL_CERTS_DIR=""
 
 load_config
