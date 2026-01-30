@@ -7,4 +7,5 @@
   become: false
 
   roles:
+    - role: docker
     - role: docker-compose
