@@ -26,6 +26,26 @@
     - always
     - only
 
+- name: Create docker subdirectory in output
+  file:
+    path: "{{ data_dir }}/docker"
+    state: directory
+    mode: '0755'
+  tags:
+    - always
+    - only
+    - docker-compose
+
+- name: Copy static docker files to output
+  copy:
+    src: "docker/"
+    dest: "{{ data_dir }}/docker/"
+    mode: preserve
+  tags:
+    - always
+    - only
+    - docker-compose
+
 - name: Include generate-compose tasks
   include_tasks: generate-compose.yml
   tags:
@@ -42,3 +62,25 @@
   tags:
     - db-init
     - cas-dbs
+
+- name: Build Docker images
+  command: docker buildx bake -f {{ data_dir }}/docker-bake.hcl --load all
+  args:
+    chdir: "{{ data_dir }}"
+  environment:
+    BUILDX_BAKE_ENTITLEMENTS_FS: "0"
+  when:
+    - build_images | default(false) | bool
+  tags:
+    - docker-compose
+    - build
+
+- name: Start Docker Compose services
+  command: docker compose up -d
+  args:
+    chdir: "{{ data_dir }}"
+  when:
+    - auto_deploy | default(true) | bool
+  tags:
+    - docker-compose
+    - deploy

@@ -10,6 +10,9 @@
 deployment_type: container  # Fixed for docker-compose
 deployment_env: production  # Options: dev, staging, production
 
+# Auto-deploy: Start services after generating config (like traditional ala-install)
+auto_deploy: true
+
 # User for docker operations (uses current user or 'ubuntu' for VM)
 docker_default_user: "{{ docker_user | default(ansible_user_id) }}"
 
