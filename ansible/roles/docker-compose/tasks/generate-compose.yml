@@ -1367,6 +1367,7 @@
     cd "{{ data_dir }}" && docker compose up -d nginx 2>&1 || true
   environment:
     DOCKER_HOST: "{{ docker_socket }}"
+  become: true
   when: not use_la_site_certs | bool
   tags:
     - nginx-validation
@@ -1375,6 +1376,7 @@
 - name: "SSL Certificates: Wait briefly and check nginx is running"
   shell: |
     sleep 5 && docker ps | grep -q la_nginx && echo "nginx running"
+  become: true
   when: not use_la_site_certs | bool
   register: nginx_check
   tags:

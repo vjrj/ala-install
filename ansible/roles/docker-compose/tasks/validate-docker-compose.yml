@@ -16,6 +16,7 @@
 - name: "Validation: Check YAML syntax"
   shell: |
     cd "{{ data_dir }}" && docker compose config >/dev/null 2>&1
+  become: true
   changed_when: false
   register: compose_syntax
 
@@ -83,6 +84,7 @@
 - name: "Validation: Check Docker daemon availability"
   shell: |
     docker ps > /dev/null 2>&1
+  become: true
   changed_when: false
   register: docker_daemon_check
   failed_when: false
@@ -90,6 +92,7 @@
 - name: "Validation: Check if external volumes actually exist"
   shell: |
     docker volume ls | grep -q "la_{{ item }}-data" && echo "EXISTS" || echo "MISSING"
+  become: true
   loop:
     - "mysql"
     - "postgres"
@@ -104,13 +107,12 @@
   debug:
     msg: |
       ✅ All validation tests passed!
-      
+
       Generated files:
         ✓ docker-compose.yml (valid YAML syntax)
         ✓ .env (with database passwords)
         ✓ infrastructure/*.yml files
         ✓ logs/ directories
-      
+
       Configuration:
         ✓ External volumes configured
-

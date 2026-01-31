@@ -4,8 +4,6 @@
 
 - hosts: docker_compose
 
-  become: false
-
   roles:
-    - role: docker
+    - { role: docker, become: true }
     - role: docker-compose

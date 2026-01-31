@@ -15,6 +15,7 @@
     driver: local
     docker_host: "{{ docker_socket }}"
     state: present
+  become: true
   tags:
     - db-init
     - docker-volumes
@@ -32,6 +33,7 @@
     driver: local
     docker_host: "{{ docker_socket }}"
     state: present
+  become: true
   tags:
     - db-init
     - docker-volumes
@@ -48,6 +50,7 @@
     driver: local
     docker_host: "{{ docker_socket }}"
     state: present
+  become: true
   tags:
     - db-init
     - docker-volumes
@@ -63,6 +66,7 @@
     driver: local
     docker_host: "{{ docker_socket }}"
     state: present
+  become: true
   tags:
     - db-init
     - docker-volumes
@@ -76,6 +80,7 @@
     driver: local
     docker_host: "{{ docker_socket }}"
     state: present
+  become: true
   tags:
     - db-init
     - docker-volumes
@@ -90,6 +95,7 @@
     driver: local
     docker_host: "{{ docker_socket }}"
     state: present
+  become: true
   tags:
     - db-init
     - docker-volumes
@@ -103,6 +109,7 @@
     driver: local
     docker_host: "{{ docker_socket }}"
     state: present
+  become: true
   tags:
     - db-init
     - docker-volumes

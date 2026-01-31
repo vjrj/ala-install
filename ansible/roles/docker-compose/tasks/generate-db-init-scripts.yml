@@ -24,6 +24,7 @@
         cd "{{ data_dir }}" && docker compose up -d mysql postgres mongodb
       environment:
         DOCKER_HOST: "{{ docker_socket }}"
+      become: true
       changed_when: false
 
     - name: "Database initialization: Wait for databases to be ready"
@@ -82,6 +83,7 @@
         cd "{{ data_dir }}" && docker compose up -d mysql postgres mongodb
       environment:
         DOCKER_HOST: "{{ docker_socket }}"
+      become: true
       changed_when: false
 
     - name: "Database initialization: Verify containers are healthy"

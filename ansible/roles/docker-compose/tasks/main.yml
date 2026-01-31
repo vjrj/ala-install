@@ -10,6 +10,7 @@
     - always
     - only
     - docker-compose
+  become: false
 
 - name: Load variables from collectory group
   include_vars:
@@ -44,6 +45,7 @@
         mode: '0755'
         owner: "{{ docker_compose_userid }}"
         group: "{{ docker_compose_usergid }}"
+      become: true
       tags:
         - always
         - only
@@ -56,6 +58,7 @@
         mode: preserve
         owner: "{{ docker_compose_userid }}"
         group: "{{ docker_compose_usergid }}"
+      become: true
       tags:
         - always
         - only
@@ -84,6 +87,7 @@
         chdir: "{{ data_dir }}"
       environment:
         BUILDX_BAKE_ENTITLEMENTS_FS: "0"
+      become: true
       when:
         - build_images | default(false) | bool
       tags:
@@ -94,9 +98,9 @@
       command: docker compose up -d
       args:
         chdir: "{{ data_dir }}"
+      become: true
       when:
         - auto_deploy | default(true) | bool
       tags:
         - docker-compose
         - deploy
-  become: true
