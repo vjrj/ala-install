@@ -378,7 +378,7 @@
         hostname: "{{ branding_url }}"
         context_path: "/"
         nginx_root: "/srv/{{ branding_url }}/www/"
-        use_gatos: true
+        use_gatus: true
         nginx_vhost_fast_mode: true
         nginx_cors_origin_regexp: "{{ branding_nginx_cors_origin_regexp | default('^https?:\\/\\/(localhost|l-a\\.site|.*\\.l-a\\.site)') }}"
         nginx_paths:
@@ -843,7 +843,7 @@
         hostname: "{{ docker_mail_development_url }}"
         context_path: "/"
         nginx_root: "/srv/{{ docker_mail_development_url }}/www/"
-        use_gatos: true
+        use_gatus: true
         nginx_vhost_fast_mode: true
         nginx_paths:
           - path: "/"
