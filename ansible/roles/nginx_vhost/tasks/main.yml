@@ -152,10 +152,13 @@
 - name: add gatus monitor of nginx_paths
   template:
     src: ../../gatus/templates/http.j2
-    dest: "{{ gatus_config_dir }}/{{appname}}-http.yaml"
+    dest: "{{ hostvars[groups['gatus'][0]]['gatus_config_dir'] | default(gatus_config_dir) }}/{{appname}}-http.yaml"
   with_items:
     - "{{ nginx_paths}}"
-  when: use_gatus is defined and use_gatus
+  when: 
+    - use_gatus is defined and use_gatus
+    - groups['gatus'] is defined and groups['gatus'] | length > 0
+  delegate_to: "{{ groups['gatus'][0] }}"
   tags:
     - nginx_vhost
     - gatus
