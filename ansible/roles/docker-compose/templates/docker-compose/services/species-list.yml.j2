@@ -2,6 +2,7 @@
 services:
   species-list:
     container_name: la_species-list
+    extra_hosts: {{ docker_extra_hosts | default([]) | to_json }}
 {% if build_images | default(false) %}
     image: {{ docker_registry | default('') }}species-list:{{ species_list_version | default('latest') }}
     pull_policy: never

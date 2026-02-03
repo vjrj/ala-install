@@ -3,6 +3,7 @@ services:
   postgres:
     container_name: la_postgres
     image: postgres:16-alpine
+    extra_hosts: {{ docker_extra_hosts | default([]) | to_json }}
     volumes:
       - la_postgres-data:/var/lib/postgresql/data
     environment:

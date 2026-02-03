@@ -2,6 +2,7 @@
 services:
   userdetails:
     container_name: la_userdetails
+    extra_hosts: {{ docker_extra_hosts | default([]) | to_json }}
 {% if build_images | default(false) %}
     # Using locally built image
     image: userdetails:{{ user_details_version | default('3.2.1') }}

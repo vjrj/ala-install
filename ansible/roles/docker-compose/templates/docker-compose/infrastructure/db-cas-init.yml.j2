@@ -4,6 +4,7 @@ services:
   db-cas-init:
     image: mysql:8.0
     container_name: la_db_cas_init
+    extra_hosts: {{ docker_extra_hosts | default([]) | to_json }}
     restart: "no"
     depends_on:
       cas:

@@ -2,6 +2,7 @@
 services:
   apikey:
     container_name: la_apikey
+    extra_hosts: {{ docker_extra_hosts | default([]) | to_json }}
 {% if build_images | default(false) %}
     # Using locally built image
     image: apikey:{{ apikey_version | default('1.7.0') }}

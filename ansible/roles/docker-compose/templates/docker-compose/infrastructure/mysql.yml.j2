@@ -3,6 +3,7 @@ services:
   mysql:
     container_name: la_mysql
     image: mysql:8.0-debian
+    extra_hosts: {{ docker_extra_hosts | default([]) | to_json }}
     volumes:
       - la_mysql-data:/var/lib/mysql
       - ../mysql/init:/docker-entrypoint-initdb.d:ro
