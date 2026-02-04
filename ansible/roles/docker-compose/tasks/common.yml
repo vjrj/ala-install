@@ -2,15 +2,16 @@
 
 - name: ensure gatus configuration directory exists on gatus host
   file:
-    path: "{{ hostvars[groups['gatus'][0]]['gatus_config_dir'] | default(gatus_config_dir) }}"
+    path: "{{ hostvars[item]['gatus_config_dir'] | default(gatus_config_dir) }}"
     state: directory
-    owner: "{{ hostvars[groups['gatus'][0]]['docker_compose_userid'] | default(docker_compose_userid) }}"
-    group: "{{ hostvars[groups['gatus'][0]]['docker_compose_usergid'] | default(docker_compose_usergid) }}"
+    owner: "{{ hostvars[item]['docker_compose_userid'] | default(docker_compose_userid) }}"
+    group: "{{ hostvars[item]['docker_compose_usergid'] | default(docker_compose_usergid) }}"
+  loop: "{{ groups['gatus'] | default([]) }}"
+  delegate_to: "{{ item }}"
+  run_once: true
   when: 
     - use_gatus | default(true) | bool
     - groups['gatus'] is defined and groups['gatus'] | length > 0
-  delegate_to: "{{ groups['gatus'][0] }}"
-  run_once: true
   tags:
     - docker-compose
     - gatus

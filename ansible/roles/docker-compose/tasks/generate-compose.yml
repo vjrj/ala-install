@@ -94,6 +94,13 @@
     - only
     - docker-compose
 
+# Load common role variables early for common.yml tasks
+- name: Load common role variables
+  include_vars:
+    file: "{{ playbook_dir }}/roles/common/vars/main.yml"
+  tags:
+    - docker-compose
+
 # Create common directories BEFORE any role tries to use them
 - name: Run common directory and config setup
   include_tasks: common.yml
@@ -292,11 +299,6 @@
   tags:
     - docker-compose
 
-- name: Load common role variables
-  include_vars:
-    file: "{{ playbook_dir }}/roles/common/vars/main.yml"
-  tags:
-    - docker-compose
 
 - name: Run gatus configuration generation
   include_role:
