@@ -13,10 +13,6 @@ services:
     depends_on:
       mysql:
         condition: service_healthy
-      cassandra:
-        condition: service_healthy
-      solr:
-        condition: service_healthy
     networks:
       default: {}
       {{ docker_network | default('internal') }}:
