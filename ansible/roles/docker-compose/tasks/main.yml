@@ -51,6 +51,7 @@
         - always
         - only
         - docker-compose
+        - build
 
     - name: Copy static docker files to output (builders)
       copy:
@@ -64,6 +65,7 @@
         - always
         - only
         - docker-compose
+        - build
 
     - name: Include generate-compose tasks
       include_tasks: generate-compose.yml

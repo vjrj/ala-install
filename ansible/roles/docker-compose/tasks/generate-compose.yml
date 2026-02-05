@@ -7,7 +7,9 @@
     data_dir: "/data/docker-compose"
   tags:
     - always
+    - only
     - docker-compose
+    - build
 
 - name: Ensure nginx_docker_internal_aliases is a list
   set_fact:
@@ -190,7 +192,10 @@
 - name: Determine Java versions for services
   include_tasks: determine-java-versions.yml
   tags:
+    - always
+    - only
     - docker-compose
+    - build
 
 # Create clean dictionaries for easy access to software and Java versions
 # Uses version_variable from docker_services_desc dynamically
@@ -202,7 +207,10 @@
   loop_control:
     label: "{{ item.key }}"
   tags:
+    - always
+    - only
     - docker-compose
+    - build
 
 - name: Build Java versions dictionary from determined java versions
   set_fact:
@@ -213,12 +221,13 @@
         })
       }}
   loop: "{{ docker_services_desc | dict2items }}"
-  when:
-    - vars.get(item.key.replace('-', '_') + '_java_version') is defined or item.value.get('java_version') is defined
   loop_control:
     label: "{{ item.key }}"
   tags:
+    - always
+    - only
     - docker-compose
+    - build
 
 - name: Fetch latest ala-i18n version from apt.gbif.es repository
   block:
@@ -308,7 +317,45 @@
   debug:
     msg: "Services enabled: {{ services_enabled }}"
   tags:
+    - always
     - docker-compose
+    - build
+
+- name: Determine services present in the inventory (cluster-wide)
+  set_fact:
+    cluster_services: >-
+      {{
+        (cluster_services | default([])) +
+        ([item.key] if (item.value.group in groups and (groups[item.value.group] | length > 0)) else [])
+      }}
+  loop: "{{ docker_services_desc | dict2items }}"
+  loop_control:
+    label: "{{ item.key }}"
+  tags: [always, only, docker-compose, build]
+
+- name: Add non-standard services to cluster_services
+  set_fact:
+    cluster_services: >-
+      {{
+        (cluster_services | default([])) +
+        (['branding'] if ('branding' in groups and (groups['branding'] | length > 0)) else []) +
+        (['ala-i18n'] if (i18n.enabled | default(false)) else [])
+      }}
+  tags: [always, only, docker-compose, build]
+
+- name: Set services to build on this host
+  set_fact:
+    services_to_build: "{{ cluster_services | unique if (inventory_hostname == (groups['docker_compose'] | first)) else services_enabled }}"
+  tags: [always, only, docker-compose, build]
+
+- name: Debug - Show services to build
+  debug:
+    msg: "Services to build on this host: {{ services_to_build }}"
+  tags:
+    - always
+    - only
+    - docker-compose
+    - build
 
 # Create nginx directories BEFORE any role tries to use nginx_vhost
 - name: Ensure nginx config directory exists
@@ -783,7 +830,7 @@
 - name: Copy branding source to build directory
   synchronize:
     src: "{{ branding_source_path }}/"
-    dest: "{{ data_dir }}/branding-build/"
+    dest: "{{ data_dir }}/dockerfiles/branding/"
     delete: no
     recursive: yes
     rsync_opts:
@@ -798,7 +845,7 @@
 - name: Copy branding Dockerfile to build directory
   copy:
     src: "{{ playbook_dir | dirname }}/docker/branding/Dockerfile"
-    dest: "{{ data_dir }}/branding-build/Dockerfile"
+    dest: "{{ data_dir }}/dockerfiles/branding/Dockerfile"
     mode: '0644'
   when: "'branding' in group_names"
   tags:
@@ -807,7 +854,7 @@
 - name: Copy branding nginx.conf
   copy:
     src: "{{ playbook_dir | dirname }}/docker/branding/nginx.conf"
-    dest: "{{ data_dir }}/branding-build/nginx.conf"
+    dest: "{{ data_dir }}/dockerfiles/branding/nginx.conf"
     mode: '0644'
   when: "'branding' in group_names"
   tags:
@@ -1180,7 +1227,8 @@
 
 # Paths are now correctly set to dockerfiles/ in templates, no fix needed
 
-# Create directories for enabled services with build tools
+# Create directories for all services that HAVE a build tool in the description
+# This ensures the builder node (first node) has all contexts ready for docker-bake.hcl
 - name: Create directories for Dockerfile generation
   file:
     path: "{{ data_dir }}/dockerfiles/{{ docker_services_desc[item].role }}"
@@ -1189,10 +1237,16 @@
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
   become: true
-  loop: "{{ services_enabled }}"
+  loop: "{{ services_to_build }}"
   when:
     - item in docker_services_desc
     - docker_services_desc[item].get('buildTool') in ['gradle', 'maven']
+    - docker_services_desc[item].get('role') is defined
+  tags:
+    - always
+    - only
+    - docker-compose
+    - build
 
 # Generate Gradle Dockerfiles using already-determined Java versions
 - name: Generate Gradle Dockerfiles
@@ -1203,7 +1257,7 @@
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
   become: true
-  loop: "{{ services_enabled }}"
+  loop: "{{ services_to_build }}"
   vars:
     service_name: "{{ item }}"
     description: "{{ docker_services_desc[item].desc }}"
@@ -1224,6 +1278,9 @@
     - docker_services_desc[item].get('buildTool') == 'gradle'
     - docker_services_desc[item].get('artifacts') is defined
     - docker_services_desc[item].get('role') is defined
+  tags:
+    - docker-compose
+    - build
 
 # Copy download-artifact.sh script to docker directories
 - name: Copy download-artifact.sh script
@@ -1234,12 +1291,15 @@
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
   become: true
-  loop: "{{ services_enabled }}"
+  loop: "{{ services_to_build }}"
   when:
     - item in docker_services_desc
     - docker_services_desc[item].get('buildTool') in ['gradle', 'maven']
     - docker_services_desc[item].get('role') is defined
     - docker_services_desc[item].get('artifacts') is defined
+  tags:
+    - docker-compose
+    - build
 
 # Generate Maven Dockerfiles using already-determined Java versions
 - name: Generate Maven Dockerfiles
@@ -1250,7 +1310,7 @@
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
   become: true
-  loop: "{{ services_enabled }}"
+  loop: "{{ services_to_build }}"
   loop_control:
     label: "{{ item }}"
   vars:
@@ -1258,7 +1318,7 @@
     description: "{{ docker_services_desc[item].desc }}"
     artifact_id: "{{ docker_services_desc[item].artifacts }}"
     # Java version from service_java_dict
-    java_version: "{{ service_java_dict.get(item) }}"
+    java_version: "{{ service_java_dict.get(item, '11') }}"
     repo: "{{ docker_services_desc[item].repository | default('') }}"
     branch: "develop"
     port: "8080"
@@ -1273,6 +1333,9 @@
     - docker_services_desc[item].get('buildTool') == 'maven'
     - docker_services_desc[item].get('artifacts') is defined
     - docker_services_desc[item].get('role') is defined
+  tags:
+    - docker-compose
+    - build
 
 # Entrypoint scripts are no longer generated - services use CMD directly
 # See Dockerfile.gradle.j2 and Dockerfile.maven.j2 for direct CMD execution
@@ -1281,8 +1344,8 @@
   debug:
     msg: |
       ✅ Generated Dockerfiles:
-      {% for service in services_enabled %}
-      {% if service in docker_services_desc and docker_services_desc[service].get('build_tool') in ['gradle', 'maven'] %}
+      {% for service in services_to_build %}
+      {% if service in docker_services_desc and docker_services_desc[service].get('buildTool') in ['gradle', 'maven'] %}
       {% set svc_version = (
         collectory_version if service == 'collectory' else
         cas_version if service == 'cas' else
@@ -1305,12 +1368,15 @@
         data_quality_filter_service_version if service == 'data-quality' else
         'develop'
       ) | default('develop') %}
-      {% set svc_java = vars[service.replace('-', '_') + '_java_version'] | default(docker_services_desc[service].java_version) %}
-      - docker/{{ service }}/Dockerfile ({{ docker_services_desc[service].build_tool }}) v{{ svc_version }} (Java {{ svc_java }})
+      {% set svc_java = service_java_dict.get(service, '11') %}
+      - dockerfiles/{{ docker_services_desc[service].role }}/Dockerfile ({{ docker_services_desc[service].buildTool }}) v{{ svc_version }} (Java {{ svc_java }})
       {% endif %}
       {% endfor %}
   tags:
+    - always
+    - only
     - docker-compose
+    - build
 
 - name: Remove old docker-bake.hcl to force regeneration
   file:
@@ -1319,6 +1385,7 @@
   when: build_images | default(false)
   tags:
     - docker-compose
+    - build
 
 - name: Generate docker-bake.hcl for optimized builds
   template:
@@ -1330,10 +1397,14 @@
   when: build_images | default(false)
   tags:
     - docker-compose
+    - build
 
 - name: Include build-images tasks
   include_tasks: build-images.yml
   when: build_images | default(false)
+  tags:
+    - docker-compose
+    - build
 
 # ============================================================================
 # Final Validation and Health Checks (AFTER all generation)
