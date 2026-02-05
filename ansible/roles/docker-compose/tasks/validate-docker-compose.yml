@@ -15,7 +15,7 @@
 
 - name: "Validation: Check YAML syntax"
   shell: |
-    cd "{{ data_dir }}" && docker compose config >/dev/null 2>&1
+    cd "{{ data_dir }}" && docker compose config
   become: true
   changed_when: false
   register: compose_syntax
