@@ -36,10 +36,14 @@ services:
       i18n-init:
         condition: service_completed_successfully
 {% endif %}
+{% if enable_mysql | default(false) | bool %}
       mysql:
         condition: service_healthy
+{% endif %}
+{% if enable_mongo | default(false) | bool %}
       mongodb:
         condition: service_healthy
+{% endif %}
       cas:
         condition: service_healthy
     healthcheck:

@@ -30,9 +30,11 @@ services:
       i18n-init:
         condition: service_completed_successfully
 {% endif %}
+{% if enable_mysql | default(false) | bool %}
       mysql:
         condition: service_healthy
-{% if 'cas' in services_enabled or groups['cas-servers'] is defined %}
+{% endif %}
+{% if 'cas' in services_enabled %}
       cas:
         condition: service_healthy
       userdetails:
