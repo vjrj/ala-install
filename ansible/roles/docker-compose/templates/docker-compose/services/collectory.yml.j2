@@ -8,7 +8,7 @@ services:
     image: {{ docker_registry | default('') }}collectory:{{ collectory_version | default('latest') }}
     pull_policy: never
     build:
-      context: ../../docker/collectory
+      context: ../../dockerfiles/collectory
       dockerfile: Dockerfile
 {% else %}
     # Use locally built image (from docker buildx bake)

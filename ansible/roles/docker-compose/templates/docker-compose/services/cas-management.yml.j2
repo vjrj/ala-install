@@ -8,7 +8,7 @@ services:
     image: cas-management:{{ cas_management_version | default('6.5.5-2') }}
     pull_policy: never
     build:
-      context: ../../docker/cas-management
+      context: ../../dockerfiles/cas-management
       dockerfile: Dockerfile
       args:
         CAS_MANAGEMENT_VERSION: {{ cas_management_version | default('6.5.5-2') }}

@@ -7,7 +7,7 @@ services:
     image: {{ docker_registry | default('') }}species-list:{{ species_list_version | default('latest') }}
     pull_policy: never
     build:
-      context: ../../docker/species-list
+      context: ../../dockerfiles/species-list
       dockerfile: Dockerfile
 {% else %}
     # Use locally built image (from docker buildx bake)

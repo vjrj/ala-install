@@ -485,7 +485,6 @@
             alias: "/srv/{{ branding_url }}/www/"
   when:
     - "'branding' in group_names"
-    - "'branding' in group_names"
   tags:
     - branding
     - nginx_vhost

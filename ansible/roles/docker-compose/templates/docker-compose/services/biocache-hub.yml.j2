@@ -1,7 +1,10 @@
+```
   # Biocache Hub - Records search frontend
 services:
   biocache-hub:
     image: ala-hub:{{ biocache_hub_version | default('latest') }}
+    build:
+      context: ../../dockerfiles/biocache-hub
     container_name: la_biocache-hub
     extra_hosts: {{ docker_extra_hosts_dict | default({}) | to_json }}
     restart: unless-stopped

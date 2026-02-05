@@ -1,7 +1,9 @@
+```
   # BIE Hub - Species search frontend
 services:
   bie-hub:
     image: bie-hub:{{ bie_hub_version | default('latest') }}
+    context: ../../dockerfiles/bie-hub
     container_name: la_bie-hub
     extra_hosts: {{ docker_extra_hosts_dict | default({}) | to_json }}
     restart: unless-stopped
