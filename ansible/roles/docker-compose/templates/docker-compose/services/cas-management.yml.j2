@@ -2,7 +2,7 @@
 services:
   cas-management:
     container_name: la_cas-management
-    extra_hosts: {{ docker_extra_hosts | default([]) | to_json }}
+    extra_hosts: {{ docker_extra_hosts_dict | default({}) | to_json }}
 {% if build_images | default(false) %}
     # Using locally built image
     image: cas-management:{{ cas_management_version | default('6.5.5-2') }}

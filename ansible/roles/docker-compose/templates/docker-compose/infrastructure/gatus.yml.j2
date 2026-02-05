@@ -3,7 +3,7 @@ services:
   gatus:
     container_name: la_gatus_service
     image: twinproduction/gatus:latest
-    extra_hosts: {{ docker_extra_hosts | default([]) | to_json }}
+    extra_hosts: {{ docker_extra_hosts_dict | default({}) | to_json }}
     volumes:
       - ../gatus/config:/config
       - la_gatus-data:/data

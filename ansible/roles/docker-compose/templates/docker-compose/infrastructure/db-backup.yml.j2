@@ -3,7 +3,7 @@ services:
   db-backup:
     container_name: la_db-backup
     image: tiredofit/db-backup:latest
-    extra_hosts: {{ docker_extra_hosts | default([]) | to_json }}
+    extra_hosts: {{ docker_extra_hosts_dict | default({}) | to_json }}
     volumes:
       - ../db-backups:/backup
     networks:

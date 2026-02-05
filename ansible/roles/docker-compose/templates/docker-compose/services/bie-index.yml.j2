@@ -3,7 +3,7 @@ services:
   bie-index:
     image: bie-index:{{ bie_index_version | default('latest') }}
     container_name: la_bie-index
-    extra_hosts: {{ docker_extra_hosts | default([]) | to_json }}
+    extra_hosts: {{ docker_extra_hosts_dict | default({}) | to_json }}
     restart: unless-stopped
     expose:
       - 8080

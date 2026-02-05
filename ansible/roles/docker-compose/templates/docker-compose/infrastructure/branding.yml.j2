@@ -3,7 +3,7 @@ services:
   # This is an init container that runs once to populate the volume
   branding-init:
     container_name: la_branding-init
-    extra_hosts: {{ docker_extra_hosts | default([]) | to_json }}
+    extra_hosts: {{ docker_extra_hosts_dict | default({}) | to_json }}
 {% if build_images is defined and (build_images | bool or build_images == 'true') %}
     # Build from source when build_images is enabled
     build:
