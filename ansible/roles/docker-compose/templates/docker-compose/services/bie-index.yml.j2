@@ -10,11 +10,6 @@ services:
     environment:
       TZ: {{ server_tz | default('UTC') }}
       JAVA_OPTS: ${BIE_INDEX_JAVA_OPTS}
-    depends_on:
-      mysql:
-        condition: service_healthy
-      solr:
-        condition: service_healthy
     networks:
       default: {}
       {{ docker_network | default('internal') }}:

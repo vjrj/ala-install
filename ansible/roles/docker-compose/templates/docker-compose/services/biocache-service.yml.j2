@@ -10,9 +10,6 @@ services:
     environment:
       TZ: {{ server_tz | default('UTC') }}
       JAVA_OPTS: ${BIOCACHE_SERVICE_JAVA_OPTS}
-    depends_on:
-      mysql:
-        condition: service_healthy
     networks:
       default: {}
       {{ docker_network | default('internal') }}:
