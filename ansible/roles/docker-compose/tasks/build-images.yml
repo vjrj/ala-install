@@ -63,7 +63,7 @@
     --set *.cache-from=type=local,src={{ docker_build_cache_dir }}
     --set *.cache-to=type=local,dest={{ docker_build_cache_dir }},mode=max
     --allow=fs={{ ansible_env.HOME }}/.cache
-    --allow=fs.read=../docker
+    --allow=fs.read=dockerfiles
     --progress=plain
     --load
     builders
@@ -154,7 +154,7 @@
     --set *.cache-from=type=local,src={{ docker_build_cache_dir }}
     --set *.cache-to=type=local,dest={{ docker_build_cache_dir }},mode=max
     --allow=fs={{ ansible_env.HOME }}/.cache
-    --allow=fs.read=../docker
+    --allow=fs.read=dockerfiles
     --progress=plain
     --load
     services

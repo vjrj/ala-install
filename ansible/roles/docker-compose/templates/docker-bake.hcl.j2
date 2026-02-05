@@ -21,7 +21,7 @@ variable "DOCKER_REPO" {
 # Gradle builder for JDK 8 services
 target "gradle-builder-jdk8" {
   dockerfile = "Dockerfile"
-  context = "../docker/gradle"
+  context = "dockerfiles/gradle"
   args = {
     JDK_VERSION = "8"
     GRADLE_VERSION = "7"
@@ -37,7 +37,7 @@ target "gradle-builder-jdk8" {
 # Gradle builder for JDK 11 services (for Gradle 5.x compatibility - collectory, species-list)
 target "gradle-builder-jdk11" {
   dockerfile = "Dockerfile"
-  context = "../docker/gradle"
+  context = "dockerfiles/gradle"
   args = {
     JDK_VERSION = "11"
     GRADLE_VERSION = "7"
@@ -53,7 +53,7 @@ target "gradle-builder-jdk11" {
 # Gradle builder for JDK 17 services (default for all current ALA services)
 target "gradle-builder-jdk17" {
   dockerfile = "Dockerfile"
-  context = "../docker/gradle"
+  context = "dockerfiles/gradle"
   args = {
     JDK_VERSION = "17"
     GRADLE_VERSION = "7"
@@ -69,7 +69,7 @@ target "gradle-builder-jdk17" {
 # Gradle builder for JDK 21 services (future-proofing)
 target "gradle-builder-jdk21" {
   dockerfile = "Dockerfile"
-  context = "../docker/gradle"
+  context = "dockerfiles/gradle"
   args = {
     JDK_VERSION = "21"
     GRADLE_VERSION = "8"
@@ -89,7 +89,7 @@ target "gradle-builder-jdk21" {
 # Maven builder for JDK 8 services
 target "maven-builder-jdk8" {
   dockerfile = "Dockerfile"
-  context = "../docker/maven"
+  context = "dockerfiles/maven"
   args = {
     JDK_VERSION = "8"
     MAVEN_VERSION = "3.9"
@@ -105,7 +105,7 @@ target "maven-builder-jdk8" {
 # Maven builder for JDK 11 services
 target "maven-builder-jdk11" {
   dockerfile = "Dockerfile"
-  context = "../docker/maven"
+  context = "dockerfiles/maven"
   args = {
     JDK_VERSION = "11"
     MAVEN_VERSION = "3.9"
@@ -121,7 +121,7 @@ target "maven-builder-jdk11" {
 # Maven builder for JDK 17 services (default for all current ALA services)
 target "maven-builder-jdk17" {
   dockerfile = "Dockerfile"
-  context = "../docker/maven"
+  context = "dockerfiles/maven"
   args = {
     JDK_VERSION = "17"
     MAVEN_VERSION = "3.9"
@@ -137,7 +137,7 @@ target "maven-builder-jdk17" {
 # Maven builder for JDK 21 services (future-proofing)
 target "maven-builder-jdk21" {
   dockerfile = "Dockerfile"
-  context = "../docker/maven"
+  context = "dockerfiles/maven"
   args = {
     JDK_VERSION = "21"
     MAVEN_VERSION = "3.9"
@@ -157,7 +157,7 @@ target "maven-builder-jdk21" {
 {% if i18n.enabled %}
 target "ala-i18n" {
   dockerfile = "Dockerfile"
-  context = "../docker/i18n"
+  context = "dockerfiles/i18n"
   args = {}
 {% if docker_registry and docker_registry != '' %}
   tags = ["{{ docker_registry }}/ala-i18n:{{ i18n_version }}", "{{ docker_registry }}/ala-i18n:latest"]
@@ -202,7 +202,7 @@ target "branding" {
 {% if 'collectory' in services_enabled %}
 target "collectory" {
   dockerfile = "Dockerfile"
-  context = "../docker/{{ docker_services_desc['collectory'].role }}"
+  context = "dockerfiles/{{ docker_services_desc['collectory'].role }}"
   contexts = {
     "gradle-builder:jdk{{ collectory_java_version | default('17') }}" = "target:gradle-builder-jdk{{ collectory_java_version | default('17') }}"
   }
@@ -233,7 +233,7 @@ target "collectory" {
 {% if 'userdetails' in services_enabled %}
 target "userdetails" {
   dockerfile = "Dockerfile"
-  context = "../docker/{{ docker_services_desc['userdetails'].role }}"
+  context = "dockerfiles/{{ docker_services_desc['userdetails'].role }}"
   contexts = {
     "gradle-builder:jdk{{ userdetails_java_version | default('11') }}" = "target:gradle-builder-jdk{{ userdetails_java_version | default('11') }}"
   }
@@ -259,7 +259,7 @@ target "userdetails" {
 {% if 'cas' in services_enabled %}
 target "cas" {
   dockerfile = "Dockerfile"
-  context = "../docker/{{ docker_services_desc['cas'].role }}"
+  context = "dockerfiles/{{ docker_services_desc['cas'].role }}"
   contexts = {
     "maven-builder:jdk{{ cas_java_version | default('11') }}" = "target:maven-builder-jdk{{ cas_java_version | default('11') }}"
   }
@@ -285,7 +285,7 @@ target "cas" {
 {% if 'apikey' in services_enabled %}
 target "apikey" {
   dockerfile = "Dockerfile"
-  context = "../docker/{{ docker_services_desc['apikey'].role }}"
+  context = "dockerfiles/{{ docker_services_desc['apikey'].role }}"
   contexts = {
     "gradle-builder:jdk{{ apikey_java_version | default('11') }}" = "target:gradle-builder-jdk{{ apikey_java_version | default('11') }}"
   }
@@ -311,7 +311,7 @@ target "apikey" {
 {% if 'cas' in services_enabled %}
 target "cas-management" {
   dockerfile = "Dockerfile"
-  context = "../docker/{{ docker_services_desc['cas_management'].role }}"
+  context = "dockerfiles/{{ docker_services_desc['cas_management'].role }}"
   contexts = {
     "gradle-builder:jdk{{ cas_management_java_version | default('11') }}" = "target:gradle-builder-jdk{{ cas_management_java_version | default('11') }}"
   }
@@ -339,7 +339,7 @@ target "cas-management" {
 # {% if 'gatus' in services_enabled %}
 # target "gatus" {
 #   dockerfile = "Dockerfile"
-#   context = "../docker/gatus"
+#   context = "dockerfiles/gatus"
 #   args = {}
 # {% if docker_registry and docker_registry != '' %}
 #   tags = ["{{ docker_registry }}/gatus:${TAG}", "{{ docker_registry }}/gatus:latest"]
@@ -354,7 +354,7 @@ target "cas-management" {
 {% if 'species_lists' in services_enabled or groups['species-list'] is defined %}
 target "species-list" {
   dockerfile = "Dockerfile"
-  context = "../docker/{{ docker_services_desc['species_lists'].role }}"
+  context = "dockerfiles/{{ docker_services_desc['species_lists'].role }}"
   contexts = {
     "gradle-builder:jdk{{ species_list_java_version | default('17') }}" = "target:gradle-builder-jdk{{ species_list_java_version | default('17') }}"
   }
@@ -378,7 +378,7 @@ target "species-list" {
 {% if 'ala_bie' in services_enabled or bie_hub_enabled | default(false) %}
 target "bie-hub" {
   dockerfile = "Dockerfile"
-  context = "../docker/bie-hub"
+  context = "dockerfiles/bie-hub"
   contexts = {
     "gradle-builder:jdk{{ bie_hub_java_version | default('17') }}" = "target:gradle-builder-jdk{{ bie_hub_java_version | default('17') }}"
   }
@@ -401,7 +401,7 @@ target "bie-hub" {
 {% if 'bie_index' in services_enabled or bie_index_enabled | default(false) %}
 target "bie-index" {
   dockerfile = "Dockerfile"
-  context = "../docker/bie-index"
+  context = "dockerfiles/bie-index"
   contexts = {
     "gradle-builder:jdk{{ bie_index_java_version | default('17') }}" = "target:gradle-builder-jdk{{ bie_index_java_version | default('17') }}"
   }
@@ -425,7 +425,7 @@ target "bie-index" {
 {% if 'ala_hub' in services_enabled or biocache_hub_enabled | default(false) %}
 target "biocache-hub" {
   dockerfile = "Dockerfile"
-  context = "../docker/biocache-hub"
+  context = "dockerfiles/biocache-hub"
   contexts = {
     "gradle-builder:jdk{{ biocache_hub_java_version | default('17') }}" = "target:gradle-builder-jdk{{ biocache_hub_java_version | default('17') }}"
   }
@@ -448,7 +448,7 @@ target "biocache-hub" {
 {% if 'biocache_service' in services_enabled or biocache_service_enabled | default(false) %}
 target "biocache-service" {
   dockerfile = "Dockerfile"
-  context = "../docker/biocache-service"
+  context = "dockerfiles/biocache-service"
   contexts = {
     "gradle-builder:jdk{{ biocache_service_java_version | default('17') }}" = "target:gradle-builder-jdk{{ biocache_service_java_version | default('17') }}"
   }
@@ -462,6 +462,57 @@ target "biocache-service" {
   tags = ["{{ docker_registry }}/biocache-service:{{ biocache_service_version | default('latest') }}", "{{ docker_registry }}/biocache-service:latest"]
 {% else %}
   tags = ["biocache-service:{{ biocache_service_version | default('latest') }}", "biocache-service:latest"]
+{% endif %}
+  cache-to = ["type=inline"]
+  platforms = ["linux/amd64"]
+}
+{% endif %}
+
+# Name Matching and Sensitive Data Services
+{% if 'namematching-service' in services_enabled or 'namematchingService' in services_enabled %}
+target "namematching-service" {
+  dockerfile = "Dockerfile"
+  context = "dockerfiles/namematching-service"
+  contexts = {
+    "maven-builder:jdk{{ ala_namematching_service_java_version | default('17') }}" = "target:maven-builder-jdk{{ ala_namematching_service_java_version | default('17') }}"
+  }
+  args = {
+    MAVEN_BUILDER_IMAGE = "maven-builder:jdk{{ ala_namematching_service_java_version | default('17') }}"
+    RUNTIME_IMAGE = "eclipse-temurin:{{ ala_namematching_service_java_version | default('17') }}-jre-jammy"
+    VERSION = "{{ ala_namematching_service_version | default('develop') }}"
+    REPO = "https://github.com/AtlasOfLivingAustralia/ala-namematching-service.git"
+    BRANCH = "master"
+    BUILD_DIR = "{{ docker_services_desc['namematchingService'].buildDir }}"
+  }
+{% if docker_registry and docker_registry != '' %}
+  tags = ["{{ docker_registry }}/ala-namematching-server:{{ ala_namematching_service_version | default('latest') }}", "{{ docker_registry }}/ala-namematching-server:latest"]
+{% else %}
+  tags = ["ala-namematching-server:{{ ala_namematching_service_version | default('latest') }}", "ala-namematching-server:latest"]
+{% endif %}
+  cache-to = ["type=inline"]
+  platforms = ["linux/amd64"]
+}
+{% endif %}
+
+{% if 'sensitive-data-service' in services_enabled or 'sensitiveDataService' in services_enabled %}
+target "sensitive-data-service" {
+  dockerfile = "Dockerfile"
+  context = "dockerfiles/sensitive-data-service"
+  contexts = {
+    "maven-builder:jdk{{ ala_sensitive_data_service_java_version | default('17') }}" = "target:maven-builder-jdk{{ ala_sensitive_data_service_java_version | default('17') }}"
+  }
+  args = {
+    MAVEN_BUILDER_IMAGE = "maven-builder:jdk{{ ala_sensitive_data_service_java_version | default('17') }}"
+    RUNTIME_IMAGE = "eclipse-temurin:{{ ala_sensitive_data_service_java_version | default('17') }}-jre-jammy"
+    VERSION = "{{ ala_sensitive_data_service_version | default('develop') }}"
+    REPO = "https://github.com/AtlasOfLivingAustralia/ala-sensitive-data-service.git"
+    BRANCH = "master"
+    BUILD_DIR = "{{ docker_services_desc['sensitiveDataService'].buildDir }}"
+  }
+{% if docker_registry and docker_registry != '' %}
+  tags = ["{{ docker_registry }}/ala-sensitive-data-server:{{ ala_sensitive_data_service_version | default('latest') }}", "{{ docker_registry }}/ala-sensitive-data-server:latest"]
+{% else %}
+  tags = ["ala-sensitive-data-server:{{ ala_sensitive_data_service_version | default('latest') }}", "ala-sensitive-data-server:latest"]
 {% endif %}
   cache-to = ["type=inline"]
   platforms = ["linux/amd64"]
@@ -525,6 +576,12 @@ group "all" {
 {% if 'biocache_service' in services_enabled or biocache_service_enabled | default(false) %}
     "biocache-service",
 {% endif %}
+{% if 'namematching-service' in services_enabled or 'namematchingService' in services_enabled %}
+    "namematching-service",
+{% endif %}
+{% if 'sensitive-data-service' in services_enabled or 'sensitiveDataService' in services_enabled %}
+    "sensitive-data-service",
+{% endif %}
 # Gatus is launched directly from docker-compose without custom Dockerfile
 {% if 'gatus' in services_enabled %}
 {% endif %}
@@ -566,6 +623,12 @@ group "services" {
 {% endif %}
 {% if 'biocache_service' in services_enabled or biocache_service_enabled | default(false) %}
     "biocache-service",
+{% endif %}
+{% if 'namematching-service' in services_enabled or 'namematchingService' in services_enabled %}
+    "namematching-service",
+{% endif %}
+{% if 'sensitive-data-service' in services_enabled or 'sensitiveDataService' in services_enabled %}
+    "sensitive-data-service",
 {% endif %}
 # Gatus is launched directly from docker-compose without custom Dockerfile
 {% if 'gatus' in services_enabled %}

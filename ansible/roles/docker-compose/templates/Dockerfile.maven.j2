@@ -21,12 +21,16 @@
 # ============================================
 # GLOBAL BUILD ARGUMENTS
 # ============================================
+# ============================================
+# GLOBAL BUILD ARGUMENTS
+# ============================================
 ARG BUILDER_IMAGE=maven-builder:jdk{{ java_version }}
 ARG BUILD_METHOD=nexus
 ARG BUILD_TOOL=maven
 ARG RUN_TOOL=java-jar
 ARG HTTP_PROXY
 ARG HTTPS_PROXY
+ARG BUILD_DIR=.
 
 # ============================================
 # Stage 1: Base builder image
@@ -75,6 +79,7 @@ FROM base-builder AS builder-repo-branch
 ARG REPO={{ repo }}
 ARG BRANCH={{ branch }}
 ARG BUILD_TOOL=maven
+ARG BUILD_DIR=.
 
 RUN echo "🔍 Cloning repository..." && \
     echo "   Repo: ${REPO}"
@@ -89,13 +94,14 @@ RUN git checkout "${BRANCH}" && \
     git log -1 --oneline && \
     echo "✅ Branch checked out"
 
-RUN echo "🔨 Building with ${BUILD_TOOL}..."
+RUN echo "🔨 Building with ${BUILD_TOOL} in ${BUILD_DIR}..."
 
 RUN --mount=type=cache,target=/root/.m2 \
+    cd "${BUILD_DIR}" && \
     mvn clean package -DskipTests -P war && \
-    mv target/*.war artifact.war
+    mv target/*.war /build/artifact.war
 
-RUN ls -lh artifact.war && \
+RUN ls -lh /build/artifact.war && \
     echo "✅ Build completed successfully"
 
 # ============================================
@@ -106,6 +112,7 @@ FROM base-builder AS builder-repo-commit
 ARG REPO={{ repo }}
 ARG COMMIT=HEAD
 ARG BUILD_TOOL=maven
+ARG BUILD_DIR=.
 
 RUN echo "🔍 Cloning repository..." && \
     echo "   Repo: ${REPO}"
@@ -120,13 +127,14 @@ RUN git checkout "${COMMIT}" && \
     git log -1 --oneline && \
     echo "✅ Commit checked out"
 
-RUN echo "🔨 Building with ${BUILD_TOOL}..."
+RUN echo "🔨 Building with ${BUILD_TOOL} in ${BUILD_DIR}..."
 
 RUN --mount=type=cache,target=/root/.m2 \
+    cd "${BUILD_DIR}" && \
     mvn clean package -DskipTests -P war && \
-    mv target/*.war artifact.war
+    mv target/*.war /build/artifact.war
 
-RUN ls -lh artifact.war && \
+RUN ls -lh /build/artifact.war && \
     echo "✅ Build completed successfully"
 
 # ============================================

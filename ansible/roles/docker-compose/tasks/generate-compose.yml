@@ -1178,21 +1178,17 @@
     - biocache-service
     - docker-compose
 
-- name: Fix docker-compose build paths in base file (relative to docker-compose-output/)
-  replace:
-    path: "{{ data_dir }}/docker-compose.yml"
-    regexp: 'context: \./docker/'
-    replace: 'context: ../docker/'
-  when: data_dir is defined
-  tags:
-    - docker-compose
+# Paths are now correctly set to dockerfiles/ in templates, no fix needed
 
 # Create directories for enabled services with build tools
 - name: Create directories for Dockerfile generation
   file:
-    path: "{{ playbook_dir | dirname }}/docker/{{ docker_services_desc[item].role }}"
+    path: "{{ data_dir }}/dockerfiles/{{ docker_services_desc[item].role }}"
     state: directory
     mode: '0755'
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
+  become: true
   loop: "{{ services_enabled }}"
   when:
     - item in docker_services_desc
@@ -1202,8 +1198,11 @@
 - name: Generate Gradle Dockerfiles
   template:
     src: "Dockerfile.gradle.j2"
-    dest: "{{ playbook_dir | dirname }}/docker/{{ docker_services_desc[item].role }}/Dockerfile"
+    dest: "{{ data_dir }}/dockerfiles/{{ docker_services_desc[item].role }}/Dockerfile"
     mode: '0644'
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
+  become: true
   loop: "{{ services_enabled }}"
   vars:
     service_name: "{{ item }}"
@@ -1219,6 +1218,7 @@
     service_version: "{{ service_versions_dict.get(item, 'develop') }}"
     log_dir: "{{ docker_services_desc[item].get('log_dir', '') }}"
     log_config_filename: "{{ docker_services_desc[item].get('log_config_filename', '') }}"
+    build_dir: "{{ docker_services_desc[item].get('buildDir', '.') }}"
   when:
     - item in docker_services_desc
     - docker_services_desc[item].get('buildTool') == 'gradle'
@@ -1229,8 +1229,11 @@
 - name: Copy download-artifact.sh script
   copy:
     src: "download-artifact.sh"
-    dest: "{{ playbook_dir | dirname }}/docker/{{ docker_services_desc[item].role }}/download-artifact.sh"
+    dest: "{{ data_dir }}/dockerfiles/{{ docker_services_desc[item].role }}/download-artifact.sh"
     mode: '0755'
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
+  become: true
   loop: "{{ services_enabled }}"
   when:
     - item in docker_services_desc
@@ -1242,8 +1245,11 @@
 - name: Generate Maven Dockerfiles
   template:
     src: "Dockerfile.maven.j2"
-    dest: "{{ playbook_dir | dirname }}/docker/{{ docker_services_desc[item].role }}/Dockerfile"
+    dest: "{{ data_dir }}/dockerfiles/{{ docker_services_desc[item].role }}/Dockerfile"
     mode: '0644'
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
+  become: true
   loop: "{{ services_enabled }}"
   loop_control:
     label: "{{ item }}"
@@ -1257,6 +1263,7 @@
     branch: "develop"
     port: "8080"
     service_classifier: "{{ docker_services_desc[item].get('classifier') | default('') }}"
+    build_dir: "{{ docker_services_desc[item].get('buildDir', '.') }}"
     # Version from service_versions_dict
     service_version: "{{ service_versions_dict.get(item, 'develop') }}"
     log_dir: "{{ docker_services_desc[item].get('log_dir', '') }}"

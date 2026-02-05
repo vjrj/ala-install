@@ -39,9 +39,9 @@
 - name: Generate and Deploy Docker Compose
   when: "inventory_hostname in groups['docker_compose']"
   block:
-    - name: Create docker subdirectory in output
+    - name: Create dockerfiles subdirectory in output
       file:
-        path: "{{ data_dir }}/docker"
+        path: "{{ data_dir }}/dockerfiles"
         state: directory
         mode: '0755'
         owner: "{{ docker_compose_userid }}"
@@ -52,10 +52,10 @@
         - only
         - docker-compose
 
-    - name: Copy static docker files to output
+    - name: Copy static docker files to output (builders)
       copy:
         src: "docker/"
-        dest: "{{ data_dir }}/docker/"
+        dest: "{{ data_dir }}/dockerfiles/"
         mode: preserve
         owner: "{{ docker_compose_userid }}"
         group: "{{ docker_compose_usergid }}"
@@ -82,7 +82,25 @@
         - db-init
         - cas-dbs
 
-    - name: Build Docker images
+    # Build images - when registry is configured, build+push on first node only
+    - name: Build and push Docker images to registry (first node only)
+      command: docker buildx bake -f {{ data_dir }}/docker-bake.hcl --push all
+      args:
+        chdir: "{{ data_dir }}"
+      environment:
+        BUILDX_BAKE_ENTITLEMENTS_FS: "0"
+      become: true
+      run_once: true
+      delegate_to: "{{ groups['docker_compose'] | first }}"
+      when:
+        - build_images | default(false) | bool
+        - docker_registry is defined and docker_registry != ''
+      tags:
+        - docker-compose
+        - build
+
+    # Build images locally when no registry configured
+    - name: Build Docker images locally (no registry)
       command: docker buildx bake -f {{ data_dir }}/docker-bake.hcl --load all
       args:
         chdir: "{{ data_dir }}"
@@ -91,9 +109,25 @@
       become: true
       when:
         - build_images | default(false) | bool
+        - docker_registry is not defined or docker_registry == ''
       tags:
         - docker-compose
         - build
+
+    # Pull images from registry on other nodes
+    - name: Pull Docker images from registry (other nodes)
+      command: docker compose pull
+      args:
+        chdir: "{{ data_dir }}"
+      become: true
+      when:
+        - build_images | default(false) | bool
+        - docker_registry is defined and docker_registry != ''
+        - inventory_hostname != groups['docker_compose'] | first
+      tags:
+        - docker-compose
+        - build
+
 
     - name: Start Docker Compose services
       command: docker compose up -d
