@@ -2,6 +2,13 @@
 # Generate docker-compose.yml from templates
 # Using existing ala-install variables
 
+- name: Ensure nginx_docker_internal_aliases is a list
+  set_fact:
+    nginx_docker_internal_aliases: "{{ nginx_docker_internal_aliases | from_json if nginx_docker_internal_aliases is string else (nginx_docker_internal_aliases | default([])) }}"
+  tags:
+    - always
+    - docker-compose
+
 - name: Set docker facts for all services
   set_fact:
     docker_default_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(docker_compose_userid) }}"
@@ -221,6 +228,7 @@
   loop_control:
     label: "{{ item.key }}"
   tags:
+    - always
     - docker-compose
 
 # Debug after detecting services
@@ -245,6 +253,7 @@
   set_fact:
     services_enabled: "{{ (['nginx'] + services_enabled) | unique }}"
   tags:
+    - always
     - docker-compose
 
 - name: Debug - Show services configuration
@@ -618,6 +627,7 @@
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
   tags:
+    - always
     - docker-compose
 
 - name: Create services directory for docker-compose files
@@ -628,6 +638,7 @@
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
   tags:
+    - always
     - docker-compose
 
 # Create logs directories for all services
@@ -677,6 +688,7 @@
     group: "{{ docker_compose_usergid }}"
   when: "'nginx' in services_enabled"
   tags:
+    - always
     - nginx
     - docker-compose
 
