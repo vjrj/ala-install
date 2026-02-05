@@ -20,11 +20,7 @@
     - db-init
     - docker-volumes
   when:
-    - "'cas-servers' in group_names"
-    - "'collectory' in group_names"
-    - "'species-list' in group_names"
-    - "'logger-service-service' in group_names"
-    - "'alerts-service' in group_names"
+    - "'cas-servers' in group_names or 'collectory' in group_names or 'species-list' in group_names or 'logger-service' in group_names or 'alerts-service' in group_names"
 
 - name: "Database volumes: Create PostgreSQL external volume"
   docker_volume:
@@ -37,10 +33,7 @@
     - db-init
     - docker-volumes
   when:
-    - "'spatial' in group_names"
-    - "'image-services' in group_names"
-    - "'doi-service' in group_names"
-    - "'data_quality_filter_service' in group_names"
+    - "'spatial' in group_names or 'image-service' in group_names or 'doi-service' in group_names or 'data_quality_filter_service' in group_names"
 
 - name: "Database volumes: Create MongoDB external volume"
   docker_volume:
@@ -53,9 +46,7 @@
     - db-init
     - docker-volumes
   when:
-    - "'cas-servers' in group_names"
-    # WARN: ecodata use host group all
-    - "'ecodata' in group_names"
+    - "'cas-servers' in group_names or 'ecodata' in group_names"
     
 - name: "Database volumes: Create Gatus external volume"
   docker_volume:
@@ -81,8 +72,7 @@
     - db-init
     - docker-volumes
   when:
-    - "'solrcloud' in group_names"
-    - "'solr' in group_names"      
+    - "'solrcloud' in group_names or 'solr' in group_names"
 
 - name: "Database volumes: Create Cassandra external volume"
   docker_volume:
@@ -108,10 +98,7 @@
     - db-init
     - docker-volumes
   when:
-    - "'image-services' in group_names"
-    - "'events' in group_names"
-    - "'doi-service' in group_names"
-    - "'ecodata' in group_names"
+    - "'image-service' in group_names or 'events' in group_names or 'doi-service' in group_names or 'ecodata' in group_names"
 
 - name: "Database volumes: Create SSL certificates external volume"
   docker_volume:
