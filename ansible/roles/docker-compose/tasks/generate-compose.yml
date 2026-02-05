@@ -260,6 +260,16 @@
     - always
     - docker-compose
 
+- name: DEBUG - Inspect services detection
+  debug:
+    msg: 
+      - "Group Names: {{ group_names }}"
+      - "Services Enabled: {{ services_enabled }}"
+      - "Enable MySQL (before calculation): {{ enable_mysql | default('undefined') }}"
+      - "Services Desc MySQL group: {{ docker_services_desc['collectory'].group }}"
+  tags:
+    - docker-compose
+
 - name: Determine if MySQL is required
   set_fact:
     enable_mysql: "{{ 'mysql' in group_names or 'cas-servers' in group_names or 'collectory' in group_names or 'species-list' in group_names or 'logger-service' in group_names or 'alerts-service' in group_names }}"
