@@ -80,7 +80,9 @@ services:
       default: {}
       {{ docker_network | default('internal') }}:
         aliases:
-          - {{ nginx_docker_internal_aliases | join('\n          - ') }}
+{% for alias in nginx_docker_internal_aliases %}
+          - {{ alias }}
+{% endfor %}
           # These aliases allow services to reach nginx on the internal network using vhost hostnames
           # Example: service can resolve auth-es.l-a.site to nginx container internally
     healthcheck:
