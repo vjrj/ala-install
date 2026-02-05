@@ -1,0 +1,25 @@
+version: '3.7'
+
+services:
+  namematching-service:
+    image: {{ docker_registry }}/ala-namematching-server:{{ ala_namematching_service_version }}
+    ports:
+      - "{{ namematching_service_port }}:9179"
+      - "{{ namematching_admin_port }}:9180"
+    environment:
+      - JAVA_OPTS=-Xmx2g -Xms1g
+      - NAMEMATCHING_SERVICE_JAVA_OPTS=-Xmx2g -Xms1g
+    volumes:
+      - "{{ data_dir }}/lucene/namematching-nm:/data/lucene/namematching-nm:ro"
+      - "{{ data_dir }}/ala-namematching-service/config:/data/ala-namematching-server/config:ro"
+    networks:
+      - ala-network
+    deploy:
+      mode: replicated
+      replicas: 1
+      labels:
+        # Dashboard
+        - "traefik.enable=true"
+        - "traefik.http.routers.namematching-service.rule=Host(`{{ namematching_service_hostname }}`) && PathPrefix(`/`)"
+        - "traefik.http.routers.namematching-service.entrypoints=web"
+        - "traefik.http.services.namematching-service.loadbalancer.server.port=9179"

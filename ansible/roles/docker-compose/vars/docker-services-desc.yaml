@@ -337,10 +337,15 @@ docker_services_desc:
     group: 'namematching-service'
     desc: 'namematching webservice'
     optional: true
-    artifacts: 'namematchingService'
+    artifacts: 'ala-namematching-server'
+    groupId: 'au.org.ala.names'
+    buildTool: 'maven'
+    classifier: 'exec'
+    repository: 'https://github.com/AtlasOfLivingAustralia/ala-namematching-service'
     sample: 'https://namematching-ws.ala.org.au/'
     allowMultipleDeploys: true
     version_variable: 'ala_namematching_service_version'
+    log_config_filename: 'logback.xml'
   sensitiveDataService:
     name: 'sensitive-data-service'
     nameInt: 'sensitive_data_service'
@@ -348,10 +353,15 @@ docker_services_desc:
     group: 'sensitive-data-service'
     desc: 'Web services for sensitive data evaluation'
     optional: true
-    artifacts: 'sensitiveDataService'
+    artifacts: 'ala-sensitive-data-server'
+    groupId: 'au.org.ala.sds'
+    buildTool: 'maven'
+    classifier: 'exec'
+    repository: 'https://github.com/AtlasOfLivingAustralia/ala-sensitive-data-service'
     sample: 'https://sensitive-ws-test.ala.org.au'
     allowMultipleDeploys: true
     version_variable: 'ala_sensitive_data_service_version'
+    log_config_filename: 'logback.xml'
   dataQuality:
     name: 'data-quality'
     nameInt: 'data_quality'

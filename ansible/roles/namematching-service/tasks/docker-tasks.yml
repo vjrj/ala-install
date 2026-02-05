@@ -21,3 +21,4 @@
   vars:
     stack: la_namematching_service
     docker_compose_data_dir: "{{ ala_namematching_service_docker_dir }}"
+    deployment_type: "{{ deployment_type }}"

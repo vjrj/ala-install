@@ -1,0 +1,27 @@
+version: '3.7'
+
+services:
+  sensitive-data-service:
+    image: {{ docker_registry }}/ala-sensitive-data-server:{{ ala_sensitive_data_service_version }}
+    ports:
+      - "{{ sensitive_data_service_port }}:9189"
+      - "{{ sensitive_data_admin_port }}:9190"
+    environment:
+      - JAVA_OPTS=-Xmx2g -Xms1g
+      - SENSITIVE_DATA_SERVICE_JAVA_OPTS=-Xmx2g -Xms1g
+    volumes:
+      - "{{ data_dir }}/lucene/namematching-nm:/data/lucene/namematching-nm:ro"
+      - "{{ data_dir }}/sds:/data/sds:ro"
+      - "{{ data_dir }}/biocache/layers:/data/biocache/layers:ro"
+      - "{{ data_dir }}/ala-sensitive-data-service/config:/data/ala-sensitive-data-server/config:ro"
+    networks:
+      - ala-network
+    deploy:
+      mode: replicated
+      replicas: 1
+      labels:
+        # Dashboard
+        - "traefik.enable=true"
+        - "traefik.http.routers.sensitive-data-service.rule=Host(`{{ sensitive_data_service_hostname }}`) && PathPrefix(`/`)"
+        - "traefik.http.routers.sensitive-data-service.entrypoints=web"
+        - "traefik.http.services.sensitive-data-service.loadbalancer.server.port=9189"
