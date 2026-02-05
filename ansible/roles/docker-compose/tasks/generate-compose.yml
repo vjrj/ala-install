@@ -246,12 +246,12 @@
   tags:
     - docker-compose
 
-- name: Detect enabled services from optional flag and use_* inventory variables
+- name: Detect enabled services from host groups (based on group defined in docker_services_desc)
   set_fact:
     services_enabled: "{{ services_enabled | default([]) + ([item.key] if (
       (not item.value.optional | default(true)) or 
-      (item.value.isSubService | default(false) and vars.get('use_' + docker_services_desc[item.value.parentService].nameInt, false) | bool) or
-      (not item.value.isSubService | default(false) and vars.get('use_' + item.value.nameInt, false) | bool)
+      (item.value.isSubService | default(false) and docker_services_desc[item.value.parentService].group in group_names) or
+      (not item.value.isSubService | default(false) and item.value.group in group_names)
     ) else []) }}"
   loop: "{{ docker_services_desc | dict2items }}"
   loop_control:
@@ -333,7 +333,7 @@
     deployment_type: container
     nginx_vhost_fast_mode: true
   when: 
-  - "'gatus' in services_enabled or use_gatus | default(true) | bool"
+  - "'gatus' in services_enabled or 'gatus' in group_names"
   - "'gatus' in group_names"
   tags:
     - gatus
@@ -418,7 +418,7 @@
             is_proxy: false
             alias: "/srv/{{ branding_url }}/www/"
   when:
-    - use_branding | bool
+    - "'branding' in group_names"
     - "'branding' in group_names"
   tags:
     - branding
@@ -722,11 +722,6 @@
     - docker-compose
 
 # Branding preparation and generation
-- name: Check if branding is enabled
-  set_fact:
-    use_branding: "{{ use_branding | default(false) }}"
-  tags:
-    - branding
 
 - name: Detect if branding_source is a git URL
   set_fact:
@@ -739,7 +734,7 @@
 - name: Set branding source path for local builds
   set_fact:
     branding_source_path: "{{ branding_source if not (branding_is_git_url | default(false)) else '/tmp/branding-git-checkout' }}"
-  when: use_branding | bool
+  when: "'branding' in group_names"
   tags:
     - branding
 
@@ -750,7 +745,7 @@
     mode: '0755'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
-  when: use_branding | bool
+  when: "'branding' in group_names"
   tags:
     - branding
 
@@ -762,7 +757,7 @@
     update: yes
     force: yes
   become: false
-  when: use_branding | bool and branding_is_git_url | bool
+  when: "'branding' in group_names and branding_is_git_url | bool"
   tags:
     - branding
 
@@ -777,7 +772,7 @@
       - "--exclude=.git"
       - "--exclude=public"
       - "--exclude=dist"
-  when: use_branding | bool
+  when: "'branding' in group_names"
   tags:
     - branding
 
@@ -786,7 +781,7 @@
     src: "{{ playbook_dir | dirname }}/docker/branding/Dockerfile"
     dest: "{{ data_dir }}/branding-build/Dockerfile"
     mode: '0644'
-  when: use_branding | bool
+  when: "'branding' in group_names"
   tags:
     - branding
 
@@ -795,7 +790,7 @@
     src: "{{ playbook_dir | dirname }}/docker/branding/nginx.conf"
     dest: "{{ data_dir }}/branding-build/nginx.conf"
     mode: '0644'
-  when: use_branding | bool
+  when: "'branding' in group_names"
   tags:
     - branding
 
@@ -806,7 +801,7 @@
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
-  when: use_branding | bool
+  when: "'branding' in group_names"
   tags:
     - branding
     - docker-compose
@@ -814,7 +809,7 @@
 - name: Add branding hostname to nginx_docker_internal_aliases
   set_fact:
     nginx_docker_internal_aliases: "{{ nginx_docker_internal_aliases | default([]) | union([branding_url]) | unique }}"
-  when: use_branding | bool and branding_url is defined
+  when: "'branding' in group_names and branding_url is defined"
   tags:
     - branding
 

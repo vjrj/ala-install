@@ -65,7 +65,6 @@
             - db-validation
 
       when:
-        - use_cas | default(true) | bool
         - "'cas-servers' in group_names"
       tags:
         - cas-dbs

@@ -12,7 +12,7 @@ include:
 {% if 'nginx' in services_enabled %}
   - ./infrastructure/nginx.yml
 {% endif %}
-{% if use_branding | default(false) %}
+{% if 'branding' in group_names %}
   - ./infrastructure/branding.yml
 {% endif %}
 {% if docker_mail_development_mode | default(false) %}
@@ -57,7 +57,7 @@ include:
 {% if 'biocache_service' in services_enabled %}
   - ./services/biocache-service.yml
 {% endif %}
-{% if 'gatus' in services_enabled or gatus_enabled | default(true) %}
+{% if 'gatus' in group_names %}
   - ./infrastructure/gatus.yml
 {% endif %}
 {% if 'cas' in services_enabled %}
@@ -93,11 +93,11 @@ volumes:
     external: true
   la_elasticsearch-data:
     external: true
-{% if 'gatus' in services_enabled or gatus_enabled | default(true) %}
+{% if 'gatus' in group_names %}
   la_gatus-data:
     external: true
 {% endif %}
-{% if use_branding | default(false) %}
-  branding-assets:
-    driver: local
+{% if 'branding' in group_names %}
+  la_branding-assets:
+    external: true
 {% endif %}

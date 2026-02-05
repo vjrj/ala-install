@@ -10,7 +10,7 @@
   delegate_to: "{{ item }}"
   run_once: true
   when: 
-    - use_gatus | default(true) | bool
+    - "'gatus' in group_names"
     - groups['gatus'] is defined and groups['gatus'] | length > 0
   tags:
     - docker-compose

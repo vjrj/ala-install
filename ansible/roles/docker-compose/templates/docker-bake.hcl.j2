@@ -137,7 +137,7 @@ target "ala-i18n" {
 }
 {% endif %}
 
-{% if use_branding | default(false) %}
+{% if 'branding' in group_names %}
 target "branding" {
   dockerfile = "Dockerfile"
   context = "branding-build"
@@ -458,7 +458,7 @@ group "all" {
 {% if i18n.enabled %}
     "ala-i18n",
 {% endif %}
-{% if use_branding | default(false) %}
+{% if 'branding' in group_names %}
     "branding",
 {% endif %}
 {% if 'collectory' in services_enabled %}
@@ -500,7 +500,7 @@ group "all" {
 # Build only services (assumes builders exist)
 group "services" {
   targets = [
-{% if use_branding | default(false) %}
+{% if 'branding' in group_names %}
     "branding",
 {% endif %}
 {% if 'collectory' in services_enabled %}
