@@ -258,7 +258,6 @@
 - name: Detect enabled services from host groups (based on group defined in docker_services_desc)
   set_fact:
     services_enabled: "{{ services_enabled | default([]) + ([item.key] if (
-      (not item.value.optional | default(true)) or 
       (item.value.isSubService | default(false) and docker_services_desc[item.value.parentService].group in group_names) or
       (not item.value.isSubService | default(false) and item.value.group in group_names)
     ) else []) }}"
