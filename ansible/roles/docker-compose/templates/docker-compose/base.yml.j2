@@ -17,6 +17,8 @@ include:
 {% endif %}
 {% if docker_mail_development_mode | default(false) %}
   - ./infrastructure/mailhog.yml
+{% else %}
+  - ./infrastructure/postfix.yml
 {% endif %}
 {% if 'collectory' in services_enabled or 'cas' in services_enabled %}
   - ./infrastructure/mysql.yml

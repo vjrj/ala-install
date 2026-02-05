@@ -795,6 +795,15 @@
   tags:
     - mail
 
+- name: Set mail configuration variables when docker_mail_development_mode is disabled
+  set_fact:
+    mail_smtp_host: postfix
+    mail_smtp_port: 25
+    mail_host: postfix
+  when: not (docker_mail_development_mode | default(false) | bool)
+  tags:
+    - mail
+
 - name: Configure mailhog nginx vhost (Docker development mode)
   block:
     - name: Create mailhog nginx vhost using nginx_vhost role
@@ -982,6 +991,18 @@
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
   when: docker_mail_development_mode | default(false) | bool
+  tags:
+    - mail
+    - docker-compose
+
+- name: Generate postfix.yml
+  template:
+    src: docker-compose/infrastructure/postfix.yml.j2
+    dest: "{{ data_dir }}/infrastructure/postfix.yml"
+    mode: '0644'
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
+  when: not (docker_mail_development_mode | default(false) | bool)
   tags:
     - mail
     - docker-compose
