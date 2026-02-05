@@ -19,7 +19,6 @@
   tags:
     - db-init
     - docker-volumes
-  run_once: true
   when:
     - "'cas-servers' in group_names"
     - "'collectory' in group_names"
@@ -37,7 +36,6 @@
   tags:
     - db-init
     - docker-volumes
-  run_once: true
   when:
     - "'spatial' in group_names"
     - "'image-services' in group_names"
@@ -54,7 +52,6 @@
   tags:
     - db-init
     - docker-volumes
-  run_once: true
   when:
     - "'cas-servers' in group_names"
     # WARN: ecodata use host group all
@@ -72,7 +69,6 @@
     - docker-volumes
   when:
     - "'gatus' in group_names"
-  run_once: true
 
 - name: "Database volumes: Create Solr external volume"
   docker_volume:
@@ -87,7 +83,6 @@
   when:
     - "'solrcloud' in group_names"
     - "'solr' in group_names"      
-  run_once: true
 
 - name: "Database volumes: Create Cassandra external volume"
   docker_volume:
@@ -101,7 +96,6 @@
     - docker-volumes
   when:
     - "'cassandra5' in group_names"
-  run_once: true
 
 - name: "Database volumes: Create Elasticsearch external volume"
   docker_volume:
@@ -118,7 +112,6 @@
     - "'events' in group_names"
     - "'doi-service' in group_names"
     - "'ecodata' in group_names"
-  run_once: true
 
 - name: "Database volumes: Create SSL certificates external volume"
   docker_volume:
@@ -130,4 +123,3 @@
   tags:
     - db-init
     - docker-volumes
-  run_once: true

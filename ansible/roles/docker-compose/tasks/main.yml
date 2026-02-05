@@ -37,6 +37,7 @@
     - only
 
 - name: Generate and Deploy Docker Compose
+  when: "inventory_hostname in groups['docker_compose']"
   block:
     - name: Create docker subdirectory in output
       file:

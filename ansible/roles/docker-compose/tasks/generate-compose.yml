@@ -9,7 +9,6 @@
     tomcat_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(docker_compose_userid) }}"
     nginx_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(docker_compose_userid) }}"
     nginx_conf_dir: "{{ data_dir }}/nginx"
-  run_once: true
   tags:
     - always
     - docker-compose
@@ -88,7 +87,6 @@
       Docker users - tomcat: {{ tomcat_user }}, nginx: {{ nginx_user }}, cas: {{ cas_user }}, collectory: {{ collectory_user }}, userdetails: {{ userdetails_user }}, apikey: {{ apikey_user }}
       Nginx Docker Internal Resolver: {{ nginx_docker_internal_resolver }}
       Deployment Type: {{ deployment_type }}
-  run_once: true
   tags:
     - always
     - only
@@ -114,7 +112,6 @@
     mode: '0755'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
-  run_once: true
   tags:
     - docker-compose
 
@@ -125,7 +122,6 @@
     mode: '0755'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
-  run_once: true
   tags:
     - docker-compose
 
@@ -136,7 +132,6 @@
     mode: '0755'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
-  run_once: true
   tags:
     - docker-compose
 
@@ -212,7 +207,6 @@
     - name: Display fetched i18n version
       debug:
         msg: "Latest ala-i18n version from apt.gbif.es: {{ i18n_version | default('unable to fetch') }}"      
-  run_once: true
   tags:
     - docker-compose
 
@@ -235,7 +229,6 @@
     msg: |
       Services detected after Detect enabled services task:
       {{ services_enabled }}
-  run_once: true
   tags:
     - docker-compose
 
@@ -244,7 +237,6 @@
     msg: |
       use_gatus variable: {{ use_gatus | default('NOT SET - will use default true') }}
       use_gatus | default(true) | bool: {{ use_gatus | default(true) | bool }}
-  run_once: true
   tags:
     - docker-compose
 
@@ -258,7 +250,6 @@
 - name: Debug - Show services configuration
   debug:
     msg: "Services enabled: {{ services_enabled }}"
-  run_once: true
   tags:
     - docker-compose
 
@@ -271,7 +262,6 @@
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
   when: "'nginx' in services_enabled"
-  run_once: true
   tags:
     - docker-compose
 
@@ -283,7 +273,6 @@
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
   when: "'nginx' in services_enabled"
-  run_once: true
   tags:
     - docker-compose
 
@@ -295,7 +284,6 @@
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
   when: "'nginx' in services_enabled"
-  run_once: true
   tags:
     - docker-compose
 
@@ -312,7 +300,6 @@
   tags:
     - gatus
     - config
-  run_once: true
 
 - name: Run cas configuration generation
   include_role:
@@ -395,7 +382,6 @@
   when:
     - use_branding | bool
     - "'branding' in group_names"
-  run_once: true
   tags:
     - branding
     - nginx_vhost
@@ -537,7 +523,6 @@
     - "{{ data_dir }}/var-log-atlas/apikey"
     - "{{ data_dir }}/var-log-atlas/userdetails"
     - "{{ data_dir }}/var-log-atlas/image-service"
-  run_once: true
   tags:
     - docker-compose
 
@@ -571,7 +556,6 @@
             (vars.get('java_security_opts', '-Dlog4j2.formatMsgNoLookups=true'))
     }) }}"
   loop: "{{ services_enabled | difference(['nginx', 'gatus', 'mysql', 'mongodb']) }}"
-  run_once: true
 
 # Build service_extra_params dict for templates
 - name: Build extra_params dict for services
@@ -580,12 +564,10 @@
       item: docker_services_desc.get(item, {}).get('extra_params', [])
     }) }}"
   loop: "{{ services_enabled | difference(['nginx', 'gatus', 'mysql', 'mongodb']) }}"
-  run_once: true
 
 - name: Set service_java_opts_dict from temp_java_opts
   set_fact:
     service_java_opts_dict: "{{ temp_java_opts }}"
-  run_once: true
   tags:
     - docker-compose
 
@@ -598,14 +580,12 @@
         {{ service }}: {{ extras | map(attribute='key') | list | join(', ') }}
       {% endif %}
       {% endfor %}
-  run_once: true
   tags:
     - docker-compose
 
 - name: Debug - Show generated JAVA_OPTS for services (BASE - extras added in template)
   debug:
     msg: "{{ service_java_opts_dict }}"
-  run_once: true
   tags:
     - docker-compose
 
@@ -616,7 +596,6 @@
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
-  run_once: true
   tags:
     - docker-compose
 
@@ -627,7 +606,6 @@
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
-  run_once: true
   tags:
     - docker-compose
 
@@ -639,7 +617,6 @@
     mode: '0755'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
-  run_once: true
   tags:
     - docker-compose
 
@@ -650,7 +627,6 @@
     mode: '0755'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
-  run_once: true
   tags:
     - docker-compose
 
@@ -662,7 +638,6 @@
     mode: '0755'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
-  run_once: true
   tags:
     - docker-compose
 
@@ -680,7 +655,6 @@
     - cas-management
     - collectory
     - species-list
-  run_once: true
 
 # Generate infrastructure service files
 - name: Generate i18n.yml if enabled
@@ -693,7 +667,6 @@
   tags:
     - i18n
     - docker-compose
-  run_once: true
 
 - name: Generate nginx.yml
   template:
@@ -706,7 +679,6 @@
   tags:
     - nginx
     - docker-compose
-  run_once: true
 
 # Branding preparation and generation
 - name: Check if branding is enabled
@@ -714,7 +686,6 @@
     use_branding: "{{ use_branding | default(false) }}"
   tags:
     - branding
-  run_once: true
 
 - name: Detect if branding_source is a git URL
   set_fact:
@@ -723,7 +694,6 @@
   when: use_branding | bool
   tags:
     - branding
-  run_once: true
 
 - name: Set branding source path for local builds
   set_fact:
@@ -731,7 +701,6 @@
   when: use_branding | bool
   tags:
     - branding
-  run_once: true
 
 - name: Ensure branding build directory exists
   file:
@@ -743,7 +712,6 @@
   when: use_branding | bool
   tags:
     - branding
-  run_once: true
 
 - name: Clone branding from git repository (if git URL)
   git:
@@ -756,7 +724,6 @@
   when: use_branding | bool and branding_is_git_url | bool
   tags:
     - branding
-  run_once: true 
 
 - name: Copy branding source to build directory
   synchronize:
@@ -770,7 +737,6 @@
       - "--exclude=public"
       - "--exclude=dist"
   when: use_branding | bool
-  run_once: true
   tags:
     - branding
 
@@ -782,7 +748,6 @@
   when: use_branding | bool
   tags:
     - branding
-  run_once: true
 
 - name: Copy branding nginx.conf
   copy:
@@ -792,7 +757,6 @@
   when: use_branding | bool
   tags:
     - branding
-  run_once: true
 
 - name: Generate branding.yml
   template:
@@ -802,7 +766,6 @@
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
   when: use_branding | bool
-  run_once: true
   tags:
     - branding
     - docker-compose
@@ -811,7 +774,6 @@
   set_fact:
     nginx_docker_internal_aliases: "{{ nginx_docker_internal_aliases | default([]) | union([branding_url]) | unique }}"
   when: use_branding | bool and branding_url is defined
-  run_once: true
   tags:
     - branding
 
@@ -819,7 +781,6 @@
   set_fact:
     nginx_docker_internal_aliases: "{{ nginx_docker_internal_aliases | default([]) | union([docker_mail_development_url]) | unique }}"
   when: docker_mail_development_mode | default(false) | bool and docker_mail_development_url is defined
-  run_once: true
   tags:
     - mail
 
@@ -831,7 +792,6 @@
     mail_http_port: 8025
     mail_host: mailhog
   when: docker_mail_development_mode | default(false) | bool
-  run_once: true
   tags:
     - mail
 
@@ -856,7 +816,6 @@
   when:
     - docker_mail_development_mode | default(false) | bool
     - docker_mail_development_url is defined
-  run_once: true
   tags:
     - mail
     - nginx_vhost
@@ -870,7 +829,6 @@
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
-  run_once: true
   tags:
     - docker-compose
 
@@ -881,7 +839,6 @@
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
-  run_once: true
   tags:
     - solr
     - docker-compose
@@ -893,7 +850,6 @@
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
-  run_once: true
   tags:
     - cassandra
     - docker-compose
@@ -905,7 +861,6 @@
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
-  run_once: true
   tags:
     - elasticsearch
     - docker-compose
@@ -918,7 +873,6 @@
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
-  run_once: true
   when: "'collectory' in services_enabled or 'cas' in services_enabled"
   tags:
     - docker-compose
@@ -930,7 +884,6 @@
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
-  run_once: true
   tags:
     - docker-compose
 
@@ -941,7 +894,6 @@
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
-  run_once: true
   tags:
     - docker-compose
 
@@ -952,7 +904,6 @@
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
-  run_once: true
   when: "'gatus' in services_enabled or gatus_enabled | default(true)"
   tags:
     - docker-compose
@@ -972,7 +923,6 @@
     - cassandra
     - docker-compose-docker
     - docker-compose
-  run_once: true
 
 - name: Copy Solr configuration files from solrcloud_config role
   copy:
@@ -985,7 +935,6 @@
     - solr
     - docker-compose-docker
     - docker-compose
-  run_once: true
 
 - name: Copy Cassandra schema from biocache3-db role
   copy:
@@ -998,7 +947,6 @@
     - cassandra
     - docker-compose-docker
     - docker-compose
-  run_once: true
 
 - name: Generate db-cas-init.yml
   template:
@@ -1011,7 +959,6 @@
     - db-init
     - config-docker
     - docker-compose
-  run_once: true
 
 - name: Generate CAS database initialization script
   template:
@@ -1026,7 +973,6 @@
     - cas
     - config-docker
     - docker-compose
-  run_once: true
 
 - name: Generate mailhog.yml
   template:
@@ -1039,7 +985,6 @@
   tags:
     - mail
     - docker-compose
-  run_once: true
 
 - name: Generate cas.yml
   template:
@@ -1049,7 +994,6 @@
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
   when: "'cas' in services_enabled or groups['cas-servers'] is defined"
-  run_once: true
   tags:
     - docker-compose
 
@@ -1061,7 +1005,6 @@
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
   when: "'cas' in services_enabled or groups['cas-servers'] is defined"
-  run_once: true
   tags:
     - docker-compose
 
@@ -1073,7 +1016,6 @@
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
   when: "'cas' in services_enabled"
-  run_once: true
   tags:
     - docker-compose
 
@@ -1085,7 +1027,6 @@
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
   when: "'cas' in services_enabled"
-  run_once: true
   tags:
     - docker-compose
 
@@ -1097,7 +1038,6 @@
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
   when: "'species_lists' in services_enabled"
-  run_once: true
   tags:
     - docker-compose
 
@@ -1109,7 +1049,6 @@
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
   when: "'collectory' in services_enabled"
-  run_once: true
   tags:
     - docker-compose
 
@@ -1124,7 +1063,6 @@
   tags:
     - bie-hub
     - docker-compose
-  run_once: true
 
 - name: Generate bie-index.yml
   template:
@@ -1137,7 +1075,6 @@
   tags:
     - bie-index
     - docker-compose
-  run_once: true
 
 - name: Generate biocache-hub.yml
   template:
@@ -1150,7 +1087,6 @@
   tags:
     - biocache-hub
     - docker-compose
-  run_once: true
 
 - name: Generate biocache-service.yml
   template:
@@ -1163,7 +1099,6 @@
   tags:
     - biocache-service
     - docker-compose
-  run_once: true
 
 - name: Fix docker-compose build paths in base file (relative to docker-compose-output/)
   replace:
@@ -1171,7 +1106,6 @@
     regexp: 'context: \./docker/'
     replace: 'context: ../docker/'
   when: data_dir is defined
-  run_once: true
   tags:
     - docker-compose
 
@@ -1185,7 +1119,6 @@
   when:
     - item in docker_services_desc
     - docker_services_desc[item].get('buildTool') in ['gradle', 'maven']
-  run_once: true
 
 # Generate Gradle Dockerfiles using already-determined Java versions
 - name: Generate Gradle Dockerfiles
@@ -1213,7 +1146,6 @@
     - docker_services_desc[item].get('buildTool') == 'gradle'
     - docker_services_desc[item].get('artifacts') is defined
     - docker_services_desc[item].get('role') is defined
-  run_once: true
 
 # Copy download-artifact.sh script to docker directories
 - name: Copy download-artifact.sh script
@@ -1227,7 +1159,6 @@
     - docker_services_desc[item].get('buildTool') in ['gradle', 'maven']
     - docker_services_desc[item].get('role') is defined
     - docker_services_desc[item].get('artifacts') is defined
-  run_once: true
 
 # Generate Maven Dockerfiles using already-determined Java versions
 - name: Generate Maven Dockerfiles
@@ -1257,7 +1188,6 @@
     - docker_services_desc[item].get('buildTool') == 'maven'
     - docker_services_desc[item].get('artifacts') is defined
     - docker_services_desc[item].get('role') is defined
-  run_once: true
 
 # Entrypoint scripts are no longer generated - services use CMD directly
 # See Dockerfile.gradle.j2 and Dockerfile.maven.j2 for direct CMD execution
@@ -1294,7 +1224,6 @@
       - docker/{{ service }}/Dockerfile ({{ docker_services_desc[service].build_tool }}) v{{ svc_version }} (Java {{ svc_java }})
       {% endif %}
       {% endfor %}
-  run_once: true
   tags:
     - docker-compose
 
@@ -1302,7 +1231,6 @@
   file:
     path: "{{ data_dir }}/docker-bake.hcl"
     state: absent
-  run_once: true
   when: build_images | default(false)
   tags:
     - docker-compose
@@ -1314,14 +1242,12 @@
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
-  run_once: true
   when: build_images | default(false)
   tags:
     - docker-compose
 
 - name: Include build-images tasks
   include_tasks: build-images.yml
-  run_once: true
   when: build_images | default(false)
 
 # ============================================================================
@@ -1333,14 +1259,12 @@
   tags:
     - validate
     - docker-volumes
-  run_once: true
 
 - name: "Validate docker-compose generation"
   include_tasks: validate-docker-compose.yml
   tags:
     - validate
     - docker-compose
-  run_once: true
 
 - name: "Display generated compose file location"
   debug:
@@ -1360,7 +1284,6 @@
         1. Review configuration: cat {{ data_dir }}/docker-compose.yml
         2. Start services: docker-compose -f {{ data_dir }}/docker-compose.yml up -d
         3. Access Gatus monitoring: http://your-domain/gatus/
-  run_once: true
   tags:
     - docker-compose
 
@@ -1373,7 +1296,6 @@
   when: not use_la_site_certs | bool
   tags:
     - nginx-validation
-  run_once: true
 
 - name: "SSL Certificates: Wait briefly and check nginx is running"
   shell: |
@@ -1383,7 +1305,6 @@
   register: nginx_check
   tags:
     - nginx-validation
-  run_once: true
 
 - name: "SSL Certificates: Verify certificate file exists in host"
   stat:
@@ -1392,7 +1313,6 @@
   when: not use_la_site_certs | bool
   tags:
     - nginx-validation
-  run_once: true
 
 - name: "SSL Certificates: Assert certificate file exists"
   assert:
@@ -1403,7 +1323,6 @@
   when: not use_la_site_certs | bool
   tags:
     - nginx-validation
-  run_once: true
 
 - name: "SSL Certificates: Verify key file exists in host"
   stat:
@@ -1412,7 +1331,6 @@
   when: not use_la_site_certs | bool
   tags:
     - nginx-validation
-  run_once: true
 
 - name: "SSL Certificates: Assert key file exists"
   assert:
@@ -1423,7 +1341,6 @@
   when: not use_la_site_certs | bool
   tags:
     - nginx-validation
-  run_once: true
 
 - name: "SSL Certificates: Display validation success for local certs"
   debug:
@@ -1440,7 +1357,6 @@
       ✓ Certificate file found in nginx
       ✓ Key file found in nginx
       ✓ Nginx container running with SSL enabled
-  run_once: true
   when: not use_la_site_certs | bool
   tags:
     - nginx-validation
@@ -1456,7 +1372,6 @@
       - Configure ssl_certificate_server_dir to match image certificate location
       
       Note: Certificate validation skipped (using Docker image source)
-  run_once: true
   when: use_la_site_certs | bool
   tags:
     - nginx-validation
@@ -1501,7 +1416,6 @@
       
       🚀 Ready to deploy with:
          docker-compose up -d
-  run_once: true
   tags:
     - validate
     - docker-compose

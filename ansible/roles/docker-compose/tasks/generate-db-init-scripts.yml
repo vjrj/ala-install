@@ -108,4 +108,3 @@
     - db-init
   when: 
     - "'cas-servers' in group_names"
-  run_once: true
