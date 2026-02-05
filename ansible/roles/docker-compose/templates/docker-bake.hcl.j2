@@ -18,6 +18,22 @@ variable "DOCKER_REPO" {
 # Builder Base Images (INBO pattern)
 # ============================================
 
+# Gradle builder for JDK 8 services
+target "gradle-builder-jdk8" {
+  dockerfile = "Dockerfile"
+  context = "../docker/gradle"
+  args = {
+    JDK_VERSION = "8"
+    GRADLE_VERSION = "7"
+  }
+  tags = ["gradle-builder:jdk8"]
+  output = ["type=docker"]
+{% if docker_registry and docker_registry != '' %}
+  cache-from = ["type=registry,ref={{ docker_registry }}/gradle-builder:jdk8-${CACHE_TAG}"]
+{% endif %}
+  cache-to = ["type=inline"]
+}
+
 # Gradle builder for JDK 11 services (for Gradle 5.x compatibility - collectory, species-list)
 target "gradle-builder-jdk11" {
   dockerfile = "Dockerfile"
@@ -69,6 +85,22 @@ target "gradle-builder-jdk21" {
 # ============================================
 # Maven Builder Base Images
 # ============================================
+
+# Maven builder for JDK 8 services
+target "maven-builder-jdk8" {
+  dockerfile = "Dockerfile"
+  context = "../docker/maven"
+  args = {
+    JDK_VERSION = "8"
+    MAVEN_VERSION = "3.9"
+  }
+  tags = ["maven-builder:jdk8"]
+  output = ["type=docker"]
+{% if docker_registry and docker_registry != '' %}
+  cache-from = ["type=registry,ref={{ docker_registry }}/maven-builder:jdk8-${CACHE_TAG}"]
+{% endif %}
+  cache-to = ["type=inline"]
+}
 
 # Maven builder for JDK 11 services
 target "maven-builder-jdk11" {
@@ -443,9 +475,11 @@ target "biocache-service" {
 # Build builders first
 group "builders" {
   targets = [
+    "gradle-builder-jdk8",
     "gradle-builder-jdk11",
     "gradle-builder-jdk17",
     "gradle-builder-jdk21",
+    "maven-builder-jdk8",
     "maven-builder-jdk11",
     "maven-builder-jdk17",
     "maven-builder-jdk21",
