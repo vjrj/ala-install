@@ -73,7 +73,10 @@
     executable: /bin/bash
   register: build_builders
   changed_when: true
-  when: services_enabled | length > 0 and builders_exist.rc != 0
+  when:
+    - services_to_build | length > 0
+    - builders_exist.rc != 0
+    - (inventory_hostname == (groups['docker_compose'] | first) or (docker_registry | default('') == ''))
   async: 1800
   poll: 0
 
@@ -156,15 +159,17 @@
     --allow=fs={{ ansible_env.HOME }}/.cache
     --allow=fs.read=dockerfiles
     --progress=plain
-    --load
-    services
+    {{ '--push' if (docker_registry | default('') != '') else '--load' }}
+    {{ 'all' if (inventory_hostname == (groups['docker_compose'] | first)) else 'services' }}
     2>&1 | tee /tmp/docker-build-services.log
   args:
     chdir: "{{ data_dir }}"
     executable: /bin/bash
   register: build_services
   changed_when: true
-  when: services_enabled | length > 0
+  when:
+    - services_to_build | length > 0
+    - (inventory_hostname == (groups['docker_compose'] | first) or (docker_registry | default('') == ''))
   async: 3600
   poll: 0
 
@@ -239,10 +244,16 @@
     - services_result.rc is defined
     - services_result.rc == 0
 
-- name: Stop service monitoring
-  async_status:
-    jid: "{{ monitor_services.ansible_job_id }}"
-    mode: cleanup
-  when: services_enabled | length > 0
-  ignore_errors: true
+- name: Pull Docker images on secondary nodes
+  command: docker compose pull
+  args:
+    chdir: "{{ data_dir }}"
+  become: true
+  when:
+    - build_images | default(false)
+    - docker_registry | default('') != ''
+    - inventory_hostname != (groups['docker_compose'] | first)
+  tags:
+    - build
+    - docker-compose
 
