@@ -20,16 +20,22 @@ include:
 {% else %}
   - ./infrastructure/postfix.yml
 {% endif %}
-{% if 'collectory' in services_enabled or 'cas' in services_enabled %}
+{% if 'cas-servers' in group_names or 'collectory' in group_names or 'species-list' in group_names or 'logger-service' in group_names or 'alerts-service' in group_names %}
   - ./infrastructure/mysql.yml
 {% endif %}
+{% if 'spatial' in group_names or 'image-service' in group_names or 'doi-service' in group_names or 'data_quality_filter_service' in group_names %}
   - ./infrastructure/postgres.yml
-{% if 'cas' in services_enabled %}
+{% endif %}
+{% if 'cas-servers' in group_names or 'ecodata' in group_names %}
   - ./infrastructure/mongodb.yml
 {% endif %}
+{% if 'solrcloud' in group_names or 'solr' in group_names %}
   - ./infrastructure/solr.yml
+{% endif %}
+{% if 'cassandra5' in group_names %}
   - ./infrastructure/cassandra.yml
-{% if 'image-service' in services_enabled %}
+{% endif %}
+{% if 'image-service' in group_names or 'events' in group_names or 'doi-service' in group_names or 'ecodata' in group_names %}
   - ./infrastructure/elasticsearch.yml
 {% endif %}
   - ./infrastructure/db-backup.yml
@@ -81,18 +87,30 @@ volumes:
   la-site-certs:
     external: true
 {% endif %}
+{% if 'cas-servers' in group_names or 'collectory' in group_names or 'species-list' in group_names or 'logger-service' in group_names or 'alerts-service' in group_names %}
   la_mysql-data:
     external: true
+{% endif %}
+{% if 'spatial' in group_names or 'image-service' in group_names or 'doi-service' in group_names or 'data_quality_filter_service' in group_names %}
   la_postgres-data:
     external: true
+{% endif %}
+{% if 'cas-servers' in group_names or 'ecodata' in group_names %}
   la_mongodb-data:
     external: true
+{% endif %}
+{% if 'solrcloud' in group_names or 'solr' in group_names %}
   la_solr-data:
     external: true
+{% endif %}
+{% if 'cassandra5' in group_names %}
   la_cassandra-data:
     external: true
+{% endif %}
+{% if 'image-service' in group_names or 'events' in group_names or 'doi-service' in group_names or 'ecodata' in group_names %}
   la_elasticsearch-data:
     external: true
+{% endif %}
 {% if 'gatus' in group_names %}
   la_gatus-data:
     external: true

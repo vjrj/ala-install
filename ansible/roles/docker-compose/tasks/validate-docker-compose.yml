@@ -69,14 +69,34 @@
   when: not item.stat.exists
   loop: "{{ log_dir_check.results }}"
 
+- name: "Validation: Initialize expected volumes list"
+  set_fact:
+    expected_volumes: []
+
+- name: "Validation: Check if MySQL volume is needed"
+  set_fact:
+    expected_volumes: "{{ expected_volumes + ['mysql'] }}"
+  when: "'cas-servers' in group_names or 'collectory' in group_names or 'species-list' in group_names or 'logger-service' in group_names or 'alerts-service' in group_names"
+
+- name: "Validation: Check if PostgreSQL volume is needed"
+  set_fact:
+    expected_volumes: "{{ expected_volumes + ['postgres'] }}"
+  when: "'spatial' in group_names or 'image-service' in group_names or 'doi-service' in group_names or 'data_quality_filter_service' in group_names"
+
+- name: "Validation: Check if MongoDB volume is needed"
+  set_fact:
+    expected_volumes: "{{ expected_volumes + ['mongodb'] }}"
+  when: "'cas-servers' in group_names or 'ecodata' in group_names"
+
+- name: "Validation: Check if Gatus volume is needed"
+  set_fact:
+    expected_volumes: "{{ expected_volumes + ['gatus'] }}"
+  when: "'gatus' in group_names"
+
 - name: "Validation: Check database volumes are external"
   shell: |
-    grep -A2 "{{ item }}-data:" "{{ data_dir }}/docker-compose.yml" | grep -q "external: true" || echo "NOT_EXTERNAL"
-  loop:
-    - "mysql"
-    - "postgres"
-    - "mongodb"
-    - "gatus"
+    grep -A2 "la_{{ item }}-data:" "{{ data_dir }}/docker-compose.yml" | grep -q "external: true" || echo "NOT_EXTERNAL"
+  loop: "{{ expected_volumes }}"
   changed_when: false
   register: external_volumes
   failed_when: "'NOT_EXTERNAL' in external_volumes.stdout"
@@ -93,11 +113,7 @@
   shell: |
     docker volume ls | grep -q "la_{{ item }}-data" && echo "EXISTS" || echo "MISSING"
   become: true
-  loop:
-    - "mysql"
-    - "postgres"
-    - "mongodb"
-    - "gatus"
+  loop: "{{ expected_volumes }}"
   changed_when: false
   register: volume_exists_check
   failed_when: "'MISSING' in volume_exists_check.stdout"
