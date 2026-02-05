@@ -260,6 +260,15 @@
     - always
     - docker-compose
 
+- name: Determine if MySQL is required
+  set_fact:
+    enable_mysql: "{{ 'mysql' in group_names or 'cas-servers' in group_names or 'collectory' in group_names or 'species-list' in group_names or 'logger-service' in group_names or 'alerts-service' in group_names }}"
+    enable_postgres: "{{ 'postgres' in group_names or 'spatial' in group_names or 'image-service' in group_names or 'doi-service' in group_names or 'data_quality_filter_service' in group_names }}"
+    enable_mongo: "{{ 'mongo' in group_names or 'mongodb' in group_names or 'cas-servers' in group_names or 'ecodata' in group_names }}"
+  tags:
+    - always
+    - docker-compose
+
 # Debug after detecting services
 - name: "DEBUG: Show services_enabled after detection"
   debug:
@@ -874,6 +883,7 @@
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
+  when: enable_mongo | bool
   tags:
     - docker-compose
 
@@ -918,7 +928,7 @@
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
-  when: "'collectory' in services_enabled or 'cas' in services_enabled"
+  when: enable_mysql | bool
   tags:
     - docker-compose
 
@@ -929,6 +939,7 @@
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
+  when: enable_postgres | bool
   tags:
     - docker-compose
 
