@@ -2,9 +2,9 @@
 # Generate docker-compose.yml from templates
 # Using existing ala-install variables
 
-- name: Force data_dir to /data/docker-compose for the docker-compose role
+- name: Ensure docker_compose_data_dir is set
   set_fact:
-    data_dir: "/data/docker-compose"
+    docker_compose_data_dir: "{{ docker_compose_data_dir | default('/data/docker-compose') }}"
   tags:
     - always
     - only
@@ -46,7 +46,7 @@
     # Core user variables for all services
     tomcat_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(docker_compose_userid) }}"
     nginx_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(docker_compose_userid) }}"
-    nginx_conf_dir: "{{ data_dir }}/nginx"
+    nginx_conf_dir: "{{ docker_compose_data_dir }}/nginx"
   tags:
     - always
     - docker-compose
@@ -145,7 +145,7 @@
 
 - name: Ensure output directory exists
   file:
-    path: "{{ data_dir }}"
+    path: "{{ docker_compose_data_dir }}"
     state: directory
     mode: '0755'
     owner: "{{ docker_compose_userid }}"
@@ -155,7 +155,7 @@
 
 - name: Ensure cert-validator directory exists
   file:
-    path: "{{ data_dir }}/cert-validator"
+    path: "{{ docker_compose_data_dir }}/cert-validator"
     state: directory
     mode: '0755'
     owner: "{{ docker_compose_userid }}"
@@ -166,7 +166,7 @@
 - name: Copy cert-validator script
   template:
     src: cert-validator.sh
-    dest: "{{ data_dir }}/cert-validator/cert-validator.sh"
+    dest: "{{ docker_compose_data_dir }}/cert-validator/cert-validator.sh"
     mode: '0755'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
@@ -646,14 +646,14 @@
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
   loop:
-    - "{{ data_dir }}/db-backups"
-    - "{{ data_dir }}/mysql/init"
-    - "{{ data_dir }}/mongodb/init"
-    - "{{ data_dir }}/var-log-atlas/cas"
-    - "{{ data_dir }}/var-log-atlas/cas-management"
-    - "{{ data_dir }}/var-log-atlas/apikey"
-    - "{{ data_dir }}/var-log-atlas/userdetails"
-    - "{{ data_dir }}/var-log-atlas/image-service"
+    - "{{ docker_compose_data_dir }}/db-backups"
+    - "{{ docker_compose_data_dir }}/mysql/init"
+    - "{{ docker_compose_data_dir }}/mongodb/init"
+    - "{{ docker_compose_data_dir }}/var-log-atlas/cas"
+    - "{{ docker_compose_data_dir }}/var-log-atlas/cas-management"
+    - "{{ docker_compose_data_dir }}/var-log-atlas/apikey"
+    - "{{ docker_compose_data_dir }}/var-log-atlas/userdetails"
+    - "{{ docker_compose_data_dir }}/var-log-atlas/image-service"
   tags:
     - docker-compose
 
@@ -735,7 +735,7 @@
 - name: Generate .env file with database passwords from inventories
   template:
     src: docker-compose.env.j2
-    dest: "{{ data_dir }}/.env"
+    dest: "{{ docker_compose_data_dir }}/.env"
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
@@ -745,7 +745,7 @@
 - name: Generate docker-compose.yml
   template:
     src: docker-compose/base.yml.j2
-    dest: "{{ data_dir }}/docker-compose.yml"
+    dest: "{{ docker_compose_data_dir }}/docker-compose.yml"
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
@@ -805,7 +805,7 @@
 - name: Generate i18n.yml if enabled
   template:
     src: docker-compose/infrastructure/i18n.yml.j2
-    dest: "{{ data_dir }}/infrastructure/i18n.yml"
+    dest: "{{ docker_compose_data_dir }}/infrastructure/i18n.yml"
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
@@ -816,7 +816,7 @@
 - name: Generate nginx.yml
   template:
     src: docker-compose/infrastructure/nginx.yml.j2
-    dest: "{{ data_dir }}/infrastructure/nginx.yml"
+    dest: "{{ docker_compose_data_dir }}/infrastructure/nginx.yml"
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
@@ -845,7 +845,7 @@
 
 - name: Ensure branding build directory exists
   file:
-    path: "{{ data_dir }}/branding-build"
+    path: "{{ docker_compose_data_dir }}/branding-build"
     state: directory
     mode: '0755'
     owner: "{{ docker_compose_userid }}"
@@ -869,7 +869,7 @@
 - name: Copy branding source to build directory
   synchronize:
     src: "{{ branding_source_path }}/"
-    dest: "{{ data_dir }}/dockerfiles/branding/"
+    dest: "{{ docker_compose_data_dir }}/dockerfiles/branding/"
     delete: no
     recursive: yes
     rsync_opts:
@@ -884,7 +884,7 @@
 - name: Copy branding Dockerfile to build directory
   copy:
     src: "{{ playbook_dir | dirname }}/docker/branding/Dockerfile"
-    dest: "{{ data_dir }}/dockerfiles/branding/Dockerfile"
+    dest: "{{ docker_compose_data_dir }}/dockerfiles/branding/Dockerfile"
     mode: '0644'
   when: "'branding' in group_names"
   tags:
@@ -893,7 +893,7 @@
 - name: Copy branding nginx.conf
   copy:
     src: "{{ playbook_dir | dirname }}/docker/branding/nginx.conf"
-    dest: "{{ data_dir }}/dockerfiles/branding/nginx.conf"
+    dest: "{{ docker_compose_data_dir }}/dockerfiles/branding/nginx.conf"
     mode: '0644'
   when: "'branding' in group_names"
   tags:
@@ -902,7 +902,7 @@
 - name: Generate branding.yml
   template:
     src: docker-compose/infrastructure/branding.yml.j2
-    dest: "{{ data_dir }}/infrastructure/branding.yml"
+    dest: "{{ docker_compose_data_dir }}/infrastructure/branding.yml"
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
@@ -975,7 +975,7 @@
 - name: Generate mongodb.yml
   template:
     src: docker-compose/infrastructure/mongodb.yml.j2
-    dest: "{{ data_dir }}/infrastructure/mongodb.yml"
+    dest: "{{ docker_compose_data_dir }}/infrastructure/mongodb.yml"
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
@@ -986,7 +986,7 @@
 - name: Generate solr.yml
   template:
     src: docker-compose/infrastructure/solr.yml.j2
-    dest: "{{ data_dir }}/infrastructure/solr.yml"
+    dest: "{{ docker_compose_data_dir }}/infrastructure/solr.yml"
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
@@ -997,7 +997,7 @@
 - name: Generate cassandra.yml
   template:
     src: docker-compose/infrastructure/cassandra.yml.j2
-    dest: "{{ data_dir }}/infrastructure/cassandra.yml"
+    dest: "{{ docker_compose_data_dir }}/infrastructure/cassandra.yml"
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
@@ -1008,7 +1008,7 @@
 - name: Generate elasticsearch.yml
   template:
     src: docker-compose/infrastructure/elasticsearch.yml.j2
-    dest: "{{ data_dir }}/infrastructure/elasticsearch.yml"
+    dest: "{{ docker_compose_data_dir }}/infrastructure/elasticsearch.yml"
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
@@ -1020,7 +1020,7 @@
 - name: Generate mysql.yml
   template:
     src: docker-compose/infrastructure/mysql.yml.j2
-    dest: "{{ data_dir }}/infrastructure/mysql.yml"
+    dest: "{{ docker_compose_data_dir }}/infrastructure/mysql.yml"
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
@@ -1031,7 +1031,7 @@
 - name: Generate postgres.yml
   template:
     src: docker-compose/infrastructure/postgres.yml.j2
-    dest: "{{ data_dir }}/infrastructure/postgres.yml"
+    dest: "{{ docker_compose_data_dir }}/infrastructure/postgres.yml"
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
@@ -1042,7 +1042,7 @@
 - name: Generate db-backup.yml
   template:
     src: docker-compose/infrastructure/db-backup.yml.j2
-    dest: "{{ data_dir }}/infrastructure/db-backup.yml"
+    dest: "{{ docker_compose_data_dir }}/infrastructure/db-backup.yml"
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
@@ -1053,7 +1053,7 @@
 - name: Generate gatus.yml
   template:
     src: docker-compose/infrastructure/gatus.yml.j2
-    dest: "{{ data_dir }}/infrastructure/gatus.yml"
+    dest: "{{ docker_compose_data_dir }}/infrastructure/gatus.yml"
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
@@ -1069,8 +1069,8 @@
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
   loop:
-    - "{{ data_dir }}/solr/init"
-    - "{{ data_dir }}/cassandra/init"
+    - "{{ docker_compose_data_dir }}/solr/init"
+    - "{{ docker_compose_data_dir }}/cassandra/init"
   tags:
     - solr
     - cassandra
@@ -1080,7 +1080,7 @@
 - name: Copy Solr configuration files from solrcloud_config role
   copy:
     src: "{{ playbook_dir }}/roles/solrcloud_config/files/"
-    dest: "{{ data_dir }}/solr/init/"
+    dest: "{{ docker_compose_data_dir }}/solr/init/"
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
@@ -1092,7 +1092,7 @@
 - name: Copy Cassandra schema from biocache3-db role
   copy:
     src: "{{ playbook_dir }}/roles/biocache3-db/files/cassandra/cassandra3-schema.txt"
-    dest: "{{ data_dir }}/cassandra/init/schema.cql"
+    dest: "{{ docker_compose_data_dir }}/cassandra/init/schema.cql"
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
@@ -1104,7 +1104,7 @@
 - name: Generate db-cas-init.yml
   template:
     src: docker-compose/infrastructure/db-cas-init.yml.j2
-    dest: "{{ data_dir }}/infrastructure/db-cas-init.yml"
+    dest: "{{ docker_compose_data_dir }}/infrastructure/db-cas-init.yml"
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
@@ -1116,7 +1116,7 @@
 - name: Generate CAS database initialization script
   template:
     src: mysql/init/cas-init.sh.j2
-    dest: "{{ data_dir }}/mysql/init/cas-init.sh"
+    dest: "{{ docker_compose_data_dir }}/mysql/init/cas-init.sh"
     mode: '0755'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
@@ -1130,7 +1130,7 @@
 - name: Generate mailhog.yml
   template:
     src: docker-compose/infrastructure/mailhog.yml.j2
-    dest: "{{ data_dir }}/infrastructure/mailhog.yml"
+    dest: "{{ docker_compose_data_dir }}/infrastructure/mailhog.yml"
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
@@ -1142,7 +1142,7 @@
 - name: Generate postfix.yml
   template:
     src: docker-compose/infrastructure/postfix.yml.j2
-    dest: "{{ data_dir }}/infrastructure/postfix.yml"
+    dest: "{{ docker_compose_data_dir }}/infrastructure/postfix.yml"
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
@@ -1154,7 +1154,7 @@
 - name: Generate cas.yml
   template:
     src: docker-compose/services/cas.yml.j2
-    dest: "{{ data_dir }}/services/cas.yml"
+    dest: "{{ docker_compose_data_dir }}/services/cas.yml"
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
@@ -1165,7 +1165,7 @@
 - name: Generate userdetails.yml
   template:
     src: docker-compose/services/userdetails.yml.j2
-    dest: "{{ data_dir }}/services/userdetails.yml"
+    dest: "{{ docker_compose_data_dir }}/services/userdetails.yml"
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
@@ -1176,7 +1176,7 @@
 - name: Generate apikey.yml
   template:
     src: docker-compose/services/apikey.yml.j2
-    dest: "{{ data_dir }}/services/apikey.yml"
+    dest: "{{ docker_compose_data_dir }}/services/apikey.yml"
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
@@ -1187,7 +1187,7 @@
 - name: Generate cas-management.yml
   template:
     src: docker-compose/services/cas-management.yml.j2
-    dest: "{{ data_dir }}/services/cas-management.yml"
+    dest: "{{ docker_compose_data_dir }}/services/cas-management.yml"
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
@@ -1198,7 +1198,7 @@
 - name: Generate species-list.yml
   template:
     src: docker-compose/services/species-list.yml.j2
-    dest: "{{ data_dir }}/services/species-list.yml"
+    dest: "{{ docker_compose_data_dir }}/services/species-list.yml"
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
@@ -1209,7 +1209,7 @@
 - name: Generate collectory.yml
   template:
     src: docker-compose/services/collectory.yml.j2
-    dest: "{{ data_dir }}/services/collectory.yml"
+    dest: "{{ docker_compose_data_dir }}/services/collectory.yml"
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
@@ -1220,7 +1220,7 @@
 - name: Generate bie-hub.yml
   template:
     src: docker-compose/services/bie-hub.yml.j2
-    dest: "{{ data_dir }}/services/bie-hub.yml"
+    dest: "{{ docker_compose_data_dir }}/services/bie-hub.yml"
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
@@ -1232,7 +1232,7 @@
 - name: Generate bie-index.yml
   template:
     src: docker-compose/services/bie-index.yml.j2
-    dest: "{{ data_dir }}/services/bie-index.yml"
+    dest: "{{ docker_compose_data_dir }}/services/bie-index.yml"
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
@@ -1244,7 +1244,7 @@
 - name: Generate biocache-hub.yml
   template:
     src: docker-compose/services/biocache-hub.yml.j2
-    dest: "{{ data_dir }}/services/biocache-hub.yml"
+    dest: "{{ docker_compose_data_dir }}/services/biocache-hub.yml"
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
@@ -1256,7 +1256,7 @@
 - name: Generate biocache-service.yml
   template:
     src: docker-compose/services/biocache-service.yml.j2
-    dest: "{{ data_dir }}/services/biocache-service.yml"
+    dest: "{{ docker_compose_data_dir }}/services/biocache-service.yml"
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
@@ -1271,7 +1271,7 @@
 # This ensures the builder node (first node) has all contexts ready for docker-bake.hcl
 - name: Create directories for Dockerfile generation
   file:
-    path: "{{ data_dir }}/dockerfiles/{{ docker_services_desc[item].role }}"
+    path: "{{ docker_compose_data_dir }}/dockerfiles/{{ docker_services_desc[item].role }}"
     state: directory
     mode: '0755'
     owner: "{{ docker_compose_userid }}"
@@ -1292,7 +1292,7 @@
 - name: Generate Gradle Dockerfiles
   template:
     src: "Dockerfile.gradle.j2"
-    dest: "{{ data_dir }}/dockerfiles/{{ docker_services_desc[item].role }}/Dockerfile"
+    dest: "{{ docker_compose_data_dir }}/dockerfiles/{{ docker_services_desc[item].role }}/Dockerfile"
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
@@ -1326,7 +1326,7 @@
 - name: Copy download-artifact.sh script
   copy:
     src: "download-artifact.sh"
-    dest: "{{ data_dir }}/dockerfiles/{{ docker_services_desc[item].role }}/download-artifact.sh"
+    dest: "{{ docker_compose_data_dir }}/dockerfiles/{{ docker_services_desc[item].role }}/download-artifact.sh"
     mode: '0755'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
@@ -1345,7 +1345,7 @@
 - name: Generate Maven Dockerfiles
   template:
     src: "Dockerfile.maven.j2"
-    dest: "{{ data_dir }}/dockerfiles/{{ docker_services_desc[item].role }}/Dockerfile"
+    dest: "{{ docker_compose_data_dir }}/dockerfiles/{{ docker_services_desc[item].role }}/Dockerfile"
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
@@ -1420,7 +1420,7 @@
 
 - name: Remove old docker-bake.hcl to force regeneration
   file:
-    path: "{{ data_dir }}/docker-bake.hcl"
+    path: "{{ docker_compose_data_dir }}/docker-bake.hcl"
     state: absent
   when: build_images | default(false)
   tags:
@@ -1430,7 +1430,7 @@
 - name: Generate docker-bake.hcl for optimized builds
   template:
     src: docker-bake.hcl.j2
-    dest: "{{ data_dir }}/docker-bake.hcl"
+    dest: "{{ docker_compose_data_dir }}/docker-bake.hcl"
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
@@ -1466,7 +1466,7 @@
   debug:
     msg: |
       ✅ Docker Compose configuration successfully generated and validated!
-      Location: {{ data_dir }}/
+      Location: {{ docker_compose_data_dir }}/
       
       Files created:
         ✓ docker-compose.yml (v3.8)
@@ -1485,7 +1485,7 @@
 
 - name: "SSL Certificates: Start nginx to validate local certificates"
   shell: |
-    cd "{{ data_dir }}" && docker compose up -d nginx 2>&1 || true
+    cd "{{ docker_compose_data_dir }}" && docker compose up -d nginx 2>&1 || true
   environment:
     DOCKER_HOST: "{{ docker_socket }}"
   become: true
@@ -1581,7 +1581,7 @@
 - name: "Validation: Check for ala-install references in generated files"
   shell: |
     set -o pipefail
-    cd {{ data_dir }}
+    cd {{ docker_compose_data_dir }}
     # Search for ala-install in generated files, excluding comments and specific files
     grep -r "ala-install" . 2>/dev/null | grep -v "# Generated" | grep -v "branding-build/deploy.sh" || true
   args:

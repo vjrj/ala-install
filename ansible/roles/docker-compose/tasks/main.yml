@@ -41,7 +41,7 @@
   block:
     - name: Create dockerfiles subdirectory in output
       file:
-        path: "{{ data_dir }}/dockerfiles"
+        path: "{{ docker_compose_data_dir }}/dockerfiles"
         state: directory
         mode: '0755'
         owner: "{{ docker_compose_userid }}"
@@ -56,7 +56,7 @@
     - name: Copy static docker files to output (builders)
       copy:
         src: "docker/"
-        dest: "{{ data_dir }}/dockerfiles/"
+        dest: "{{ docker_compose_data_dir }}/dockerfiles/"
         mode: preserve
         owner: "{{ docker_compose_userid }}"
         group: "{{ docker_compose_usergid }}"
@@ -94,9 +94,9 @@
         - build
 
     - name: Build and push Docker images to registry (first node only)
-      command: docker buildx bake -f {{ data_dir }}/docker-bake.hcl --push all
+      command: docker buildx bake -f {{ docker_compose_data_dir }}/docker-bake.hcl --push all
       args:
-        chdir: "{{ data_dir }}"
+        chdir: "{{ docker_compose_data_dir }}"
       environment:
         BUILDX_BAKE_ENTITLEMENTS_FS: "0"
       become: true
@@ -111,9 +111,9 @@
 
     # Build images locally when no registry configured
     - name: Build Docker images locally (no registry)
-      command: docker buildx bake -f {{ data_dir }}/docker-bake.hcl --load all
+      command: docker buildx bake -f {{ docker_compose_data_dir }}/docker-bake.hcl --load all
       args:
-        chdir: "{{ data_dir }}"
+        chdir: "{{ docker_compose_data_dir }}"
       environment:
         BUILDX_BAKE_ENTITLEMENTS_FS: "0"
       become: true
@@ -128,7 +128,7 @@
     - name: Pull Docker images from registry (other nodes)
       command: docker compose pull
       args:
-        chdir: "{{ data_dir }}"
+        chdir: "{{ docker_compose_data_dir }}"
       become: true
       when:
         - build_images | default(false) | bool
@@ -142,7 +142,7 @@
     - name: Start Docker Compose services
       command: docker compose up -d
       args:
-        chdir: "{{ data_dir }}"
+        chdir: "{{ docker_compose_data_dir }}"
       become: true
       when:
         - auto_deploy | default(true) | bool

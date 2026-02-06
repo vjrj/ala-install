@@ -26,7 +26,7 @@
       - "Building images with docker buildx bake"
       - "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
       - "  Configuration:"
-      - "    - Docker Bake File: {{ data_dir }}/docker-bake.hcl"
+      - "    - Docker Bake File: {{ docker_compose_data_dir }}/docker-bake.hcl"
       - "    - Registry: {{ docker_registry | default('(local)') }}"
       - "    - Tags: Using service-specific versions from inventory"
       - "      • CAS: {{ cas_version }}"
@@ -69,7 +69,7 @@
     builders
     2>&1 | tee /tmp/docker-build-builders.log
   args:
-    chdir: "{{ data_dir }}"
+    chdir: "{{ docker_compose_data_dir }}"
     executable: /bin/bash
   register: build_builders
   changed_when: true
@@ -163,7 +163,7 @@
     {{ 'all' if (inventory_hostname == (groups['docker_compose'] | first)) else 'services' }}
     2>&1 | tee /tmp/docker-build-services.log
   args:
-    chdir: "{{ data_dir }}"
+    chdir: "{{ docker_compose_data_dir }}"
     executable: /bin/bash
   register: build_services
   changed_when: true
@@ -237,7 +237,7 @@
 - name: Pull Docker images on secondary nodes
   command: docker compose pull
   args:
-    chdir: "{{ data_dir }}"
+    chdir: "{{ docker_compose_data_dir }}"
   become: true
   when:
     - build_images | default(false)

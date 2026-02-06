@@ -21,7 +21,7 @@
     - name: "Database initialization: Start database containers with exposed ports"
       shell: |
         export DOCKER_HOST="{{ docker_socket }}"
-        cd "{{ data_dir }}" && docker compose up -d mysql postgres mongodb
+        cd "{{ docker_compose_data_dir }}" && docker compose up -d mysql postgres mongodb
       environment:
         DOCKER_HOST: "{{ docker_socket }}"
       become: true
@@ -79,7 +79,7 @@
     - name: "Database initialization: Restart containers with secure configuration"
       shell: |
         export DOCKER_HOST="{{ docker_socket }}"
-        cd "{{ data_dir }}" && docker compose up -d mysql postgres mongodb
+        cd "{{ docker_compose_data_dir }}" && docker compose up -d mysql postgres mongodb
       environment:
         DOCKER_HOST: "{{ docker_socket }}"
       become: true

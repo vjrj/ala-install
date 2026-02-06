@@ -65,8 +65,9 @@ species_list_user: "{{ docker_default_user }}"
 # Directory Configuration
 # ============================================
 
-data_dir: /data/docker-compose
-nginx_conf_dir: "{{ data_dir }}/nginx"
+data_dir: /data
+docker_compose_data_dir: /data/docker-compose
+nginx_conf_dir: "{{ docker_compose_data_dir }}/nginx"
 docker_output_dir: "{{ docker_compose_output_dir | default('docker-compose-output') }}"
 
 # ============================================

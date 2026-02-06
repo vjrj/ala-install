@@ -5,17 +5,17 @@
 
 - name: "Validation: Check docker-compose.yml exists"
   stat:
-    path: "{{ data_dir }}/docker-compose.yml"
+    path: "{{ docker_compose_data_dir }}/docker-compose.yml"
   register: compose_file
 
 - name: "Validation: Fail if docker-compose.yml doesn't exist"
   fail:
-    msg: "docker-compose.yml not found at {{ data_dir }}/docker-compose.yml"
+    msg: "docker-compose.yml not found at {{ docker_compose_data_dir }}/docker-compose.yml"
   when: not compose_file.stat.exists
 
 - name: "Validation: Check YAML syntax"
   shell: |
-    cd "{{ data_dir }}" && docker compose config
+    cd "{{ docker_compose_data_dir }}" && docker compose config
   become: true
   changed_when: false
   register: compose_syntax
@@ -38,7 +38,7 @@
 
 - name: "Validation: Check infrastructure files exist"
   stat:
-    path: "{{ data_dir }}/infrastructure/{{ item }}"
+    path: "{{ docker_compose_data_dir }}/infrastructure/{{ item }}"
   register: infra_file_check
   loop: "{{ expected_infra_files }}"
 
@@ -50,17 +50,17 @@
 
 - name: "Validation: Check .env file exists and has passwords"
   stat:
-    path: "{{ data_dir }}/.env"
+    path: "{{ docker_compose_data_dir }}/.env"
   register: env_file
 
 - name: "Validation: Fail if .env doesn't exist"
   fail:
-    msg: ".env file not found at {{ data_dir }}/.env"
+    msg: ".env file not found at {{ docker_compose_data_dir }}/.env"
   when: not env_file.stat.exists
 
 - name: "Validation: Check .env contains required passwords"
   shell: |
-    grep -E "MYSQL_ROOT_PASSWORD|POSTGRES_PASSWORD|MONGODB_ROOT_PASSWORD" "{{ data_dir }}/.env"
+    grep -E "MYSQL_ROOT_PASSWORD|POSTGRES_PASSWORD|MONGODB_ROOT_PASSWORD" "{{ docker_compose_data_dir }}/.env"
   changed_when: false
   register: env_passwords
 
@@ -73,7 +73,7 @@
 
 - name: "Validation: Check logs directories created"
   stat:
-    path: "{{ data_dir }}/logs/{{ item }}"
+    path: "{{ docker_compose_data_dir }}/logs/{{ item }}"
   register: log_dir_check
   loop: "{{ expected_log_dirs }}"
   when: expected_log_dirs | length > 0
@@ -96,7 +96,7 @@
 
 - name: "Validation: Check database volumes are external"
   shell: |
-    grep -A2 "la_{{ item }}-data:" "{{ data_dir }}/docker-compose.yml" | grep -q "external: true" || echo "NOT_EXTERNAL"
+    grep -A2 "la_{{ item }}-data:" "{{ docker_compose_data_dir }}/docker-compose.yml" | grep -q "external: true" || echo "NOT_EXTERNAL"
   loop: "{{ expected_volumes }}"
   changed_when: false
   register: external_volumes
