@@ -231,18 +231,8 @@
     - services_result.rc is defined
     - services_result.rc != 0
 
-- name: Display build success message
-  debug:
-    msg: |
-      ✅ Service images built successfully!
-      
-      Built services: {{ services_enabled | join(', ') }}
-      
-      Next step: Start services with docker compose up -d
-  when:
-    - services_enabled | length > 0
-    - services_result.rc is defined
-    - services_result.rc == 0
+# Message removed - was confusing as it appeared before secondary node pulls
+# Build completion is logged by docker buildx bake output
 
 - name: Pull Docker images on secondary nodes
   command: docker compose pull

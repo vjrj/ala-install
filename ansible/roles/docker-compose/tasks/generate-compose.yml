@@ -255,11 +255,38 @@
   tags:
     - docker-compose
 
-- name: Detect enabled services from host groups (based on group defined in docker_services_desc)
+# Find all hosts that share the same physical server (ansible_host) as this docker_compose host
+- name: Find all service groups deployed on this physical server
+  set_fact:
+    physical_server_groups: >-
+      {%- set result = [] -%}
+      {%- for host in groups['all'] -%}
+        {%- if hostvars[host].get('ansible_host', host) == hostvars[inventory_hostname].get('ansible_host', inventory_hostname) -%}
+          {%- for group in hostvars[host].get('group_names', []) -%}
+            {%- if group not in ['all', 'docker_compose', 'docker-common', 'ungrouped'] and not group.endswith('_group') -%}
+              {%- set _ = result.append(group) -%}
+            {%- endif -%}
+          {%- endfor -%}
+        {%- endif -%}
+      {%- endfor -%}
+      {{ result | unique | list }}
+  tags:
+    - always
+    - docker-compose
+
+- name: DEBUG - Show physical server groups
+  debug:
+    msg:
+      - "Physical Server: {{ hostvars[inventory_hostname].get('ansible_host', inventory_hostname) }}"
+      - "Groups on this server: {{ physical_server_groups }}"
+  tags:
+    - docker-compose
+
+- name: Detect enabled services from physical server groups (based on group defined in docker_services_desc)
   set_fact:
     services_enabled: "{{ services_enabled | default([]) + ([item.key] if (
-      (item.value.isSubService | default(false) and docker_services_desc[item.value.parentService].group in group_names) or
-      (not item.value.isSubService | default(false) and item.value.group in group_names)
+      (item.value.isSubService | default(false) and docker_services_desc[item.value.parentService].group in physical_server_groups) or
+      (not item.value.isSubService | default(false) and item.value.group in physical_server_groups)
     ) else []) }}"
   loop: "{{ docker_services_desc | dict2items }}"
   loop_control:
@@ -271,7 +298,9 @@
 - name: DEBUG - Inspect services detection
   debug:
     msg: 
+      - "Host: {{ inventory_hostname }}"
       - "Group Names: {{ group_names }}"
+      - "Physical Server Groups: {{ physical_server_groups }}"
       - "Services Enabled: {{ services_enabled }}"
       - "Enable MySQL (before calculation): {{ enable_mysql | default('undefined') }}"
       - "Services Desc MySQL group: {{ docker_services_desc['collectory'].group }}"
@@ -280,9 +309,9 @@
 
 - name: Determine if MySQL is required
   set_fact:
-    enable_mysql: "{{ 'mysql' in group_names or 'cas-servers' in group_names or 'collectory' in group_names or 'species-list' in group_names or 'logger-service' in group_names or 'alerts-service' in group_names }}"
-    enable_postgres: "{{ 'postgres' in group_names or 'spatial' in group_names or 'image-service' in group_names or 'doi-service' in group_names or 'data_quality_filter_service' in group_names }}"
-    enable_mongo: "{{ 'mongo' in group_names or 'mongodb' in group_names or 'cas-servers' in group_names or 'ecodata' in group_names }}"
+    enable_mysql: "{{ 'mysql' in physical_server_groups or 'cas-servers' in physical_server_groups or 'collectory' in physical_server_groups or 'species-list' in physical_server_groups or 'logger-service' in physical_server_groups or 'alerts-service' in physical_server_groups }}"
+    enable_postgres: "{{ 'postgres' in physical_server_groups or 'spatial' in physical_server_groups or 'image-service' in physical_server_groups or 'doi-service' in physical_server_groups or 'data_quality_filter_service' in physical_server_groups }}"
+    enable_mongo: "{{ 'mongo' in physical_server_groups or 'mongodb' in physical_server_groups or 'cas-servers' in physical_server_groups or 'ecodata' in physical_server_groups }}"
   tags:
     - always
     - docker-compose
