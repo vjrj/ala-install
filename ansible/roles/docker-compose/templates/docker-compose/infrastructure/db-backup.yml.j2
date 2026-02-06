@@ -1,4 +1,4 @@
-  # Database Backup Service (MongoDB, MySQL, PostgreSQL)
+# Database Backup Service (MongoDB, MySQL, PostgreSQL)
 services:
   db-backup:
     container_name: la_db-backup
@@ -43,16 +43,16 @@ services:
     restart: unless-stopped
     {% if (enable_mysql | default(false) | bool) or (enable_postgres | default(false) | bool) or (enable_mongo | default(false) | bool) %}
     depends_on:
-    {% if enable_mysql | default(false) | bool %}
+      {% if enable_mysql | default(false) | bool %}
       mysql:
         condition: service_healthy
-    {% endif %}
-    {% if enable_postgres | default(false) | bool %}
+      {% endif %}
+      {% if enable_postgres | default(false) | bool %}
       postgres:
         condition: service_healthy
-    {% endif %}
-    {% if enable_mongo | default(false) | bool %}
+      {% endif %}
+      {% if enable_mongo | default(false) | bool %}
       mongodb:
         condition: service_healthy
-    {% endif %}
+      {% endif %}
     {% endif %}

@@ -1046,6 +1046,7 @@
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
+  when: enable_mysql | default(false) | bool or enable_postgres | default(false) | bool or enable_mongo | default(false) | bool
   tags:
     - docker-compose
 

@@ -41,7 +41,9 @@ include:
 {% if 'image-service' in all_groups or 'events' in all_groups or 'doi-service' in all_groups or 'ecodata' in all_groups %}
   - ./infrastructure/elasticsearch.yml
 {% endif %}
+{% if enable_mysql | default(false) | bool or enable_postgres | default(false) | bool or enable_mongo | default(false) | bool %}
   - ./infrastructure/db-backup.yml
+{% endif %}
 {% if 'cas' in services_enabled %}
   - ./services/cas.yml
   - ./services/userdetails.yml
