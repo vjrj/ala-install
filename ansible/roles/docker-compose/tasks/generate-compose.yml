@@ -524,7 +524,7 @@
             is_proxy: false
             alias: "/srv/{{ branding_url }}/www/"
   when:
-    - "'branding' in group_names"
+    - "'branding' in group_names or 'branding' in physical_server_groups"
   tags:
     - branding
     - nginx_vhost
@@ -918,7 +918,7 @@
     mode: '0644'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
-  when: "'branding' in group_names"
+  when: "'branding' in group_names or 'branding' in physical_server_groups"
   tags:
     - branding
     - docker-compose
