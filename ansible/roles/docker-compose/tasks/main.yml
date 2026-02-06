@@ -137,6 +137,55 @@
       tags:
         - docker-compose
         - build
+      register: build_and_push_result
+
+    # Verify images are available in registry before other nodes pull
+    - name: Verify pushed images are available in registry
+      shell: |
+        set -e
+        IMAGES=$(docker compose config --images 2>/dev/null | grep -v '^$' || true)
+        if [ -z "$IMAGES" ]; then
+          echo "No images to verify"
+          exit 0
+        fi
+        
+        echo "Verifying images in registry..."
+        for img in $IMAGES; do
+          # Skip images without registry prefix or local-only images
+          if [[ ! "$img" =~ ^{{ docker_registry | regex_escape }}/ ]]; then
+            echo "Skipping local image: $img"
+            continue
+          fi
+          
+          echo "Checking: $img"
+          retries=30
+          while [ $retries -gt 0 ]; do
+            if docker manifest inspect "$img" >/dev/null 2>&1; then
+              echo "✓ Available: $img"
+              break
+            fi
+            retries=$((retries - 1))
+            if [ $retries -eq 0 ]; then
+              echo "✗ Timeout waiting for: $img"
+              exit 1
+            fi
+            echo "  Waiting for image to be available in registry... ($retries retries left)"
+            sleep 2
+          done
+        done
+        echo "All images verified in registry"
+      args:
+        chdir: "{{ docker_compose_data_dir }}"
+      become: true
+      run_once: true
+      delegate_to: "{{ groups['docker_compose'] | first }}"
+      when:
+        - build_images | default(false) | bool
+        - docker_registry is defined and docker_registry != ''
+        - build_and_push_result is changed
+      tags:
+        - docker-compose
+        - build
 
     # Build images locally when no registry configured
     - name: Build Docker images locally (no registry)
@@ -153,7 +202,7 @@
         - docker-compose
         - build
 
-    # Pull images from registry on other nodes
+    # Pull images from registry on other nodes (after verification)
     - name: Pull Docker images from registry (other nodes)
       command: docker compose pull
       args:
