@@ -666,6 +666,12 @@
   loop: "{{ services_enabled | difference(['nginx', 'gatus', 'mysql', 'mongodb']) }}"
 
 # Build service_extra_params dict for templates
+- name: Initialize service_extra_params variable
+  set_fact:
+    service_extra_params: {}
+  tags:
+    - docker-compose
+
 - name: Build extra_params dict for services
   set_fact:
     service_extra_params: "{{ service_extra_params | default({}) | combine({
