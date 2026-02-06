@@ -149,12 +149,20 @@
   tags:
     - nginx_vhost
 
+- name: Resolve nginx_paths variables (force evaluation of all Jinja2 expressions)
+  set_fact:
+    nginx_paths_resolved: "{{ nginx_paths | to_json | from_json }}"
+  tags:
+    - nginx_vhost
+
 - name: add gatus monitor of nginx_paths
   template:
     src: ../../gatus/templates/http.j2
     dest: "{{ hostvars[groups['gatus'][0]]['gatus_config_dir'] | default(gatus_config_dir) }}/{{appname}}-http.yaml"
+  vars:
+    nginx_paths: "{{ nginx_paths_resolved }}"
   with_items:
-    - "{{ nginx_paths}}"
+    - "{{ nginx_paths_resolved }}"
   when: 
     - use_gatus is defined and use_gatus
     - groups['gatus'] is defined and groups['gatus'] | length > 0

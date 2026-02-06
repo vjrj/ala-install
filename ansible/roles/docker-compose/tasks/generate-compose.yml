@@ -495,6 +495,13 @@
 
 - name: Configure branding nginx vhost (Docker mode)
   block:
+    - name: Set branding variables from branding group if not in branding group
+      set_fact:
+        branding_url: "{{ hostvars[groups['branding'][0]]['branding_url'] }}"
+        branding_path: "{{ hostvars[groups['branding'][0]]['branding_path'] }}"
+        branding_nginx_cors_origin_regexp: "{{ hostvars[groups['branding'][0]].get('branding_nginx_cors_origin_regexp', '^https?:\\/\\/(localhost|l-a\\.site|.*\\.l-a\\.site)') }}"
+      when: "'branding' not in group_names"
+
     - name: Ensure branding srv directory exists for nginx_vhost
       file:
         path: "{{ data_dir }}/srv/{{ branding_url }}/www"
@@ -519,7 +526,7 @@
             sort_label: "1"
             is_proxy: false
             alias: "/srv/{{ branding_url }}/www/"
-          - path: "{{branding_path}}"
+          - path: "{{ branding_path }}"
             sort_label: "2"
             is_proxy: false
             alias: "/srv/{{ branding_url }}/www/"
@@ -530,6 +537,7 @@
     - nginx_vhost
     - config
     - config-docker
+
 
 - name: Load collectory role variables if needed
   include_vars:
