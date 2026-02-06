@@ -176,7 +176,7 @@ target "branding" {
   target = "builder-production"
   args = {
     BUILD_SOURCE = "{{ branding_build_source | default('local') }}"
-{% if branding_build_source == 'git' %}
+{% if (branding_build_source | default('local')) == 'git' %}
     GIT_URL = "{{ branding_source }}"
     GIT_REF = "{{ branding_git_ref | default('master') }}"
 {% endif %}
