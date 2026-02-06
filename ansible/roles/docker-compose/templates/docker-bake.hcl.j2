@@ -169,7 +169,7 @@ target "ala-i18n" {
 }
 {% endif %}
 
-{% if 'branding' in group_names %}
+{% if 'branding' in services_to_build %}
 target "branding" {
   dockerfile = "Dockerfile"
   context = "dockerfiles/branding"
@@ -196,10 +196,7 @@ target "branding" {
 }
 {% endif %}
 
-{% if 'collectory' in services_enabled %}
-{% endif %}
-
-{% if 'collectory' in services_enabled %}
+{% if 'collectory' in services_to_build %}
 target "collectory" {
   dockerfile = "Dockerfile"
   context = "dockerfiles/{{ docker_services_desc['collectory'].role }}"
@@ -230,7 +227,7 @@ target "collectory" {
 
 # CAS, UserDetails, APIKey and CAS Management services
 
-{% if 'userdetails' in services_enabled %}
+{% if 'cas' in services_to_build %}
 target "userdetails" {
   dockerfile = "Dockerfile"
   context = "dockerfiles/{{ docker_services_desc['userdetails'].role }}"
@@ -256,7 +253,7 @@ target "userdetails" {
 }
 {% endif %}
 
-{% if 'cas' in services_enabled %}
+{% if 'cas' in services_to_build %}
 target "cas" {
   dockerfile = "Dockerfile"
   context = "dockerfiles/{{ docker_services_desc['cas'].role }}"
@@ -282,7 +279,7 @@ target "cas" {
 }
 {% endif %}
 
-{% if 'apikey' in services_enabled %}
+{% if 'cas' in services_to_build %}
 target "apikey" {
   dockerfile = "Dockerfile"
   context = "dockerfiles/{{ docker_services_desc['apikey'].role }}"
@@ -308,7 +305,7 @@ target "apikey" {
 }
 {% endif %}
 
-{% if 'cas' in services_enabled %}
+{% if 'cas' in services_to_build or 'cas' in services_to_build %}
 target "cas-management" {
   dockerfile = "Dockerfile"
   context = "dockerfiles/{{ docker_services_desc['cas_management'].role }}"
@@ -334,24 +331,7 @@ target "cas-management" {
 }
 {% endif %}
 
-# Gatus is launched directly from docker-compose without custom Dockerfile
-# No need for a build target here
-# {% if 'gatus' in services_enabled %}
-# target "gatus" {
-#   dockerfile = "Dockerfile"
-#   context = "dockerfiles/gatus"
-#   args = {}
-# {% if docker_registry and docker_registry != '' %}
-#   tags = ["{{ docker_registry }}/gatus:${TAG}", "{{ docker_registry }}/gatus:latest"]
-# {% else %}
-#   tags = ["gatus:${TAG}", "gatus:latest"]
-# {% endif %}
-#   cache-to = ["type=inline"]
-#   platforms = ["linux/amd64"]
-# }
-# {% endif %}
-
-{% if 'species_lists' in services_enabled or groups['species-list'] is defined %}
+{% if 'species_lists' in services_to_build %}
 target "species-list" {
   dockerfile = "Dockerfile"
   context = "dockerfiles/{{ docker_services_desc['species_lists'].role }}"
@@ -375,7 +355,7 @@ target "species-list" {
 {% endif %}
 
 # BIE Hub and Index services
-{% if 'ala_bie' in services_enabled or bie_hub_enabled | default(false) %}
+{% if 'ala_bie' in services_to_build %}
 target "bie-hub" {
   dockerfile = "Dockerfile"
   context = "dockerfiles/bie-hub"
@@ -398,7 +378,7 @@ target "bie-hub" {
 }
 {% endif %}
 
-{% if 'bie_index' in services_enabled or bie_index_enabled | default(false) %}
+{% if 'bie_index' in services_to_build %}
 target "bie-index" {
   dockerfile = "Dockerfile"
   context = "dockerfiles/bie-index"
@@ -422,7 +402,7 @@ target "bie-index" {
 {% endif %}
 
 # Biocache Hub and Service
-{% if 'ala_hub' in services_enabled or biocache_hub_enabled | default(false) %}
+{% if 'ala_hub' in services_to_build %}
 target "biocache-hub" {
   dockerfile = "Dockerfile"
   context = "dockerfiles/biocache-hub"
@@ -445,7 +425,7 @@ target "biocache-hub" {
 }
 {% endif %}
 
-{% if 'biocache_service' in services_enabled or biocache_service_enabled | default(false) %}
+{% if 'biocache_service' in services_to_build %}
 target "biocache-service" {
   dockerfile = "Dockerfile"
   context = "dockerfiles/biocache-service"
@@ -469,7 +449,7 @@ target "biocache-service" {
 {% endif %}
 
 # Name Matching and Sensitive Data Services
-{% if 'namematching-service' in services_enabled or 'namematchingService' in services_enabled %}
+{% if 'namematching-service' in services_to_build or 'namematchingService' in services_to_build %}
 target "namematching-service" {
   dockerfile = "Dockerfile"
   context = "dockerfiles/namematching-service"
@@ -494,7 +474,7 @@ target "namematching-service" {
 }
 {% endif %}
 
-{% if 'sensitive-data-service' in services_enabled or 'sensitiveDataService' in services_enabled %}
+{% if 'sensitive-data-service' in services_to_build or 'sensitiveDataService' in services_to_build %}
 target "sensitive-data-service" {
   dockerfile = "Dockerfile"
   context = "dockerfiles/sensitive-data-service"
