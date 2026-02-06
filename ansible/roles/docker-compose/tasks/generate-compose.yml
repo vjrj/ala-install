@@ -647,6 +647,12 @@
     - docker-compose
 
 # Build JAVA_OPTS for each service from inventory variables
+- name: Initialize temp_java_opts variable
+  set_fact:
+    temp_java_opts: {}
+  tags:
+    - docker-compose
+
 - name: Build JAVA_OPTS strings for each service
   set_fact:
     temp_java_opts: "{{ temp_java_opts | default({}) | combine({
