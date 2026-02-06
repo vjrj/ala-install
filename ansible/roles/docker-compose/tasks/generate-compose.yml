@@ -420,6 +420,18 @@
     - docker-compose
 
 
+- name: Ensure gatus config directory exists on all hosts
+  file:
+    path: "{{ gatus_config_dir }}"
+    state: directory
+    mode: '0755'
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
+  when: "'gatus' in services_enabled or 'gatus' in group_names"
+  tags:
+    - gatus
+    - config
+
 - name: Run gatus configuration generation
   include_role:
     name: gatus
@@ -755,7 +767,7 @@
 # Create subdirectories for organized service files
 - name: Create infrastructure directory for docker-compose files
   file:
-    path: "{{ data_dir }}/infrastructure"
+    path: "{{ docker_compose_data_dir }}/infrastructure"
     state: directory
     mode: '0755'
     owner: "{{ docker_compose_userid }}"
@@ -766,7 +778,7 @@
 
 - name: Create services directory for docker-compose files
   file:
-    path: "{{ data_dir }}/services"
+    path: "{{ docker_compose_data_dir }}/services"
     state: directory
     mode: '0755'
     owner: "{{ docker_compose_userid }}"
