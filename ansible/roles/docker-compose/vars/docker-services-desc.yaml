@@ -512,7 +512,7 @@ docker_services_desc:
     name: 'cassandra'
     nameInt: 'cassandra'
     role: 'cassandra'
-    group: 'cassandra'
+    group: 'cassandra3'
     optional: true
     allowMultipleDeploys: true
     desc: 'biocache cassandra DB for annotations, persistent queries'
