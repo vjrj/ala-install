@@ -85,6 +85,14 @@
         - cas-dbs
 
     # Build images - when registry is configured, build+push on first node only
+    - name: "DEBUG: Show services_to_build before bake"
+      debug:
+        msg: "services_to_build = {{ services_to_build | default('UNDEFINED') }}"
+      tags:
+        - always
+        - docker-compose
+        - build
+
     - name: Build and push Docker images to registry (first node only)
       command: docker buildx bake -f {{ data_dir }}/docker-bake.hcl --push all
       args:
