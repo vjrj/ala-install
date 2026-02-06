@@ -23,7 +23,8 @@
 - name: "Validation: Build list of expected infrastructure files based on enabled services"
   set_fact:
     expected_infra_files: >-
-      {{ ['nginx.yml', 'db-backup.yml'] +
+      {{ ['nginx.yml'] +
+         (['db-backup.yml'] if (enable_mysql | default(false) | bool or enable_postgres | default(false) | bool or enable_mongo | default(false) | bool) else []) +
          (['mysql.yml'] if enable_mysql | default(false) | bool else []) +
          (['postgres.yml'] if enable_postgres | default(false) | bool else []) +
          (['mongodb.yml'] if enable_mongo | default(false) | bool else []) }}
