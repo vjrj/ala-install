@@ -204,6 +204,7 @@ target "collectory" {
     "gradle-builder:jdk{{ collectory_java_version | default('17') }}" = "target:gradle-builder-jdk{{ collectory_java_version | default('17') }}"
   }
   args = {
+    BUILDER_IMAGE = "gradle-builder:jdk{{ collectory_java_version | default('17') }}"
     GRADLE_BUILDER_IMAGE = "gradle-builder:jdk{{ collectory_java_version | default('17') }}"
     ARTIFACT = "collectory"
     GROUP_ID = "au.org.ala"
@@ -235,6 +236,7 @@ target "userdetails" {
     "gradle-builder:jdk{{ userdetails_java_version | default('11') }}" = "target:gradle-builder-jdk{{ userdetails_java_version | default('11') }}"
   }
   args = {
+    BUILDER_IMAGE = "gradle-builder:jdk{{ userdetails_java_version | default('11') }}"
     GRADLE_BUILDER_IMAGE = "gradle-builder:jdk{{ userdetails_java_version | default('11') }}"
     ARTIFACT = "userdetails"
     GROUP_ID = "au.org.ala"
@@ -261,6 +263,7 @@ target "cas" {
     "maven-builder:jdk{{ cas_java_version | default('11') }}" = "target:maven-builder-jdk{{ cas_java_version | default('11') }}"
   }
   args = {
+    BUILDER_IMAGE = "maven-builder:jdk{{ cas_java_version | default('11') }}"
     MAVEN_BUILDER_IMAGE = "maven-builder:jdk{{ cas_java_version | default('11') }}"
     RUNTIME_IMAGE = "eclipse-temurin:{{ cas_java_version | default('11') }}-jre-jammy"
     ARTIFACT = "cas"
@@ -287,6 +290,7 @@ target "apikey" {
     "gradle-builder:jdk{{ apikey_java_version | default('11') }}" = "target:gradle-builder-jdk{{ apikey_java_version | default('11') }}"
   }
   args = {
+    BUILDER_IMAGE = "gradle-builder:jdk{{ apikey_java_version | default('11') }}"
     GRADLE_BUILDER_IMAGE = "gradle-builder:jdk{{ apikey_java_version | default('11') }}"
     ARTIFACT = "apikey"
     GROUP_ID = "au.org.ala"
@@ -313,6 +317,7 @@ target "cas-management" {
     "gradle-builder:jdk{{ cas_management_java_version | default('11') }}" = "target:gradle-builder-jdk{{ cas_management_java_version | default('11') }}"
   }
   args = {
+    BUILDER_IMAGE = "gradle-builder:jdk{{ cas_management_java_version | default('11') }}"
     GRADLE_BUILDER_IMAGE = "gradle-builder:jdk{{ cas_management_java_version | default('11') }}"
     ARTIFACT = "cas-management"
     GROUP_ID = "au.org.ala"
@@ -339,6 +344,7 @@ target "species-list" {
     "gradle-builder:jdk{{ species_list_java_version | default('17') }}" = "target:gradle-builder-jdk{{ species_list_java_version | default('17') }}"
   }
   args = {
+    BUILDER_IMAGE = "gradle-builder:jdk{{ species_list_java_version | default('17') }}"
     GRADLE_BUILDER_IMAGE = "gradle-builder:jdk{{ species_list_java_version | default('17') }}"
     VERSION = "{{ species_list_version | default('develop') }}"
     REPO = "https://github.com/AtlasOfLivingAustralia/specieslist-webapp.git"
@@ -363,6 +369,7 @@ target "bie-hub" {
     "gradle-builder:jdk{{ bie_hub_java_version | default('17') }}" = "target:gradle-builder-jdk{{ bie_hub_java_version | default('17') }}"
   }
   args = {
+    BUILDER_IMAGE = "gradle-builder:jdk{{ bie_hub_java_version | default('17') }}"
     GRADLE_BUILDER_IMAGE = "gradle-builder:jdk{{ bie_hub_java_version | default('17') }}"
     VERSION = "{{ bie_hub_version | default('develop') }}"
     REPO = "https://github.com/AtlasOfLivingAustralia/ala-bie-hub.git"
@@ -386,6 +393,7 @@ target "bie-index" {
     "gradle-builder:jdk{{ bie_index_java_version | default('17') }}" = "target:gradle-builder-jdk{{ bie_index_java_version | default('17') }}"
   }
   args = {
+    BUILDER_IMAGE = "gradle-builder:jdk{{ bie_index_java_version | default('17') }}"
     GRADLE_BUILDER_IMAGE = "gradle-builder:jdk{{ bie_index_java_version | default('17') }}"
     VERSION = "{{ bie_index_version | default('develop') }}"
     REPO = "https://github.com/AtlasOfLivingAustralia/bie-index.git"
@@ -410,6 +418,7 @@ target "biocache-hub" {
     "gradle-builder:jdk{{ biocache_hub_java_version | default('17') }}" = "target:gradle-builder-jdk{{ biocache_hub_java_version | default('17') }}"
   }
   args = {
+    BUILDER_IMAGE = "gradle-builder:jdk{{ biocache_hub_java_version | default('17') }}"
     GRADLE_BUILDER_IMAGE = "gradle-builder:jdk{{ biocache_hub_java_version | default('17') }}"
     VERSION = "{{ biocache_hub_version | default('develop') }}"
     REPO = "https://github.com/AtlasOfLivingAustralia/ala-hub.git"
@@ -433,6 +442,7 @@ target "biocache-service" {
     "gradle-builder:jdk{{ biocache_service_java_version | default('17') }}" = "target:gradle-builder-jdk{{ biocache_service_java_version | default('17') }}"
   }
   args = {
+    BUILDER_IMAGE = "gradle-builder:jdk{{ biocache_service_java_version | default('17') }}"
     GRADLE_BUILDER_IMAGE = "gradle-builder:jdk{{ biocache_service_java_version | default('17') }}"
     VERSION = "{{ biocache_service_version | default('develop') }}"
     REPO = "https://github.com/AtlasOfLivingAustralia/biocache-service.git"
@@ -457,6 +467,7 @@ target "namematching-service" {
     "maven-builder:jdk{{ ala_namematching_service_java_version | default('17') }}" = "target:maven-builder-jdk{{ ala_namematching_service_java_version | default('17') }}"
   }
   args = {
+    BUILDER_IMAGE = "maven-builder:jdk{{ ala_namematching_service_java_version | default('17') }}"
     MAVEN_BUILDER_IMAGE = "maven-builder:jdk{{ ala_namematching_service_java_version | default('17') }}"
     RUNTIME_IMAGE = "eclipse-temurin:{{ ala_namematching_service_java_version | default('17') }}-jre-jammy"
     VERSION = "{{ ala_namematching_service_version | default('develop') }}"
@@ -482,6 +493,7 @@ target "sensitive-data-service" {
     "maven-builder:jdk{{ ala_sensitive_data_service_java_version | default('17') }}" = "target:maven-builder-jdk{{ ala_sensitive_data_service_java_version | default('17') }}"
   }
   args = {
+    BUILDER_IMAGE = "maven-builder:jdk{{ ala_sensitive_data_service_java_version | default('17') }}"
     MAVEN_BUILDER_IMAGE = "maven-builder:jdk{{ ala_sensitive_data_service_java_version | default('17') }}"
     RUNTIME_IMAGE = "eclipse-temurin:{{ ala_sensitive_data_service_java_version | default('17') }}-jre-jammy"
     VERSION = "{{ ala_sensitive_data_service_version | default('develop') }}"

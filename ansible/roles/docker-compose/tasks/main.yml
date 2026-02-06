@@ -84,7 +84,7 @@
         - db-init
         - cas-dbs
 
-    # Build images - when registry is configured, build+push on first node only
+    # Build images - first build builders, then services
     - name: "DEBUG: Show services_to_build before bake"
       debug:
         msg: "services_to_build = {{ services_to_build | default('UNDEFINED') }}"
@@ -93,8 +93,37 @@
         - docker-compose
         - build
 
+    # Build builder images first (gradle-builder, maven-builder)
+    - name: Build builder base images (gradle/maven)
+      command: docker buildx bake -f {{ docker_compose_data_dir }}/docker-bake.hcl --load builders
+      args:
+        chdir: "{{ docker_compose_data_dir }}"
+      environment:
+        BUILDX_BAKE_ENTITLEMENTS_FS: "0"
+      become: true
+      run_once: true
+      delegate_to: "{{ groups['docker_compose'] | first }}"
+      when:
+        - build_images | default(false) | bool
+        - services_to_build | length > 0
+      tags:
+        - docker-compose
+        - build
+      register: build_builders_result
+      failed_when: false
+
+    - name: Check if builder build succeeded
+      fail:
+        msg: "Failed to build builder images. Check docker buildx logs."
+      when:
+        - build_images | default(false) | bool
+        - build_builders_result is defined
+        - build_builders_result.rc is defined
+        - build_builders_result.rc != 0
+
+    # Build and push service images to registry (first node only)
     - name: Build and push Docker images to registry (first node only)
-      command: docker buildx bake -f {{ docker_compose_data_dir }}/docker-bake.hcl --push all
+      command: docker buildx bake -f {{ docker_compose_data_dir }}/docker-bake.hcl --push services
       args:
         chdir: "{{ docker_compose_data_dir }}"
       environment:
@@ -111,7 +140,7 @@
 
     # Build images locally when no registry configured
     - name: Build Docker images locally (no registry)
-      command: docker buildx bake -f {{ docker_compose_data_dir }}/docker-bake.hcl --load all
+      command: docker buildx bake -f {{ docker_compose_data_dir }}/docker-bake.hcl --load services
       args:
         chdir: "{{ docker_compose_data_dir }}"
       environment:
@@ -137,6 +166,7 @@
       tags:
         - docker-compose
         - build
+
 
 
     - name: Start Docker Compose services
