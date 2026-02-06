@@ -495,18 +495,6 @@
 
 - name: Configure branding nginx vhost (Docker mode)
   block:
-    - name: Set branding variables from branding group if not in branding group
-      set_fact:
-        branding_url: "{{ hostvars[groups['branding'][0]]['branding_url'] }}"
-        branding_path: "{{ hostvars[groups['branding'][0]]['branding_path'] }}"
-        branding_nginx_cors_origin_regexp: "{{ hostvars[groups['branding'][0]].get('branding_nginx_cors_origin_regexp', '^https?:\\/\\/(localhost|l-a\\.site|.*\\.l-a\\.site)') }}"
-        branding_build_source: "{{ hostvars[groups['branding'][0]]['branding_build_source'] }}"
-        branding_source: "{{ hostvars[groups['branding'][0]]['branding_source'] }}"
-        branding_git_ref: "{{ hostvars[groups['branding'][0]].get('branding_git_ref', 'master') }}"
-        branding_node_version: "{{ hostvars[groups['branding'][0]].get('branding_node_version', '18') }}"
-        branding_version: "{{ hostvars[groups['branding'][0]].get('branding_version', 'latest') }}"
-      when: "'branding' not in group_names"
-
     - name: Ensure branding srv directory exists for nginx_vhost
       file:
         path: "{{ data_dir }}/srv/{{ branding_url }}/www"
