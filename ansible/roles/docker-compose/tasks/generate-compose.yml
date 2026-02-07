@@ -851,14 +851,21 @@
 
 - name: Set branding source path for local builds
   set_fact:
-    branding_source_path: "{{ branding_source if not (branding_is_git_url | default(false)) else '/tmp/branding-git-checkout' }}"
+    branding_source_path: >-
+      {% if branding_is_git_url | default(false) %}
+        /tmp/branding-git-checkout
+      {% elif branding_source is absolute %}
+        {{ branding_source }}
+      {% else %}
+        {{ inventory_dir }}/{{ branding_source }}
+      {% endif %}
   when: "'branding' in services_to_build"
   tags:
     - branding
 
 - name: Ensure branding build directory exists
   file:
-    path: "{{ docker_compose_data_dir }}/branding-build"
+    path: "{{ docker_compose_data_dir }}/dockerfiles/branding"
     state: directory
     mode: '0755'
     owner: "{{ docker_compose_userid }}"
@@ -896,7 +903,7 @@
 
 - name: Copy branding Dockerfile to build directory
   copy:
-    src: "{{ playbook_dir | dirname }}/docker/branding/Dockerfile"
+    src: "docker/branding/Dockerfile"
     dest: "{{ docker_compose_data_dir }}/dockerfiles/branding/Dockerfile"
     mode: '0644'
   when: "'branding' in services_to_build"
@@ -905,7 +912,7 @@
 
 - name: Copy branding nginx.conf
   copy:
-    src: "{{ playbook_dir | dirname }}/docker/branding/nginx.conf"
+    src: "docker/branding/nginx.conf"
     dest: "{{ docker_compose_data_dir }}/dockerfiles/branding/nginx.conf"
     mode: '0644'
   when: "'branding' in services_to_build"
@@ -1596,7 +1603,7 @@
     set -o pipefail
     cd {{ docker_compose_data_dir }}
     # Search for ala-install in generated files, excluding comments and specific files
-    grep -r "ala-install" . 2>/dev/null | grep -v "# Generated" | grep -v "branding-build/deploy.sh" || true
+    grep -r "ala-install" . 2>/dev/null | grep -v "# Generated" | grep -v "dockerfiles/branding/deploy.sh" || true
   args:
     executable: /bin/bash
   register: ala_install_check

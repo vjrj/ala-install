@@ -7,7 +7,7 @@ services:
 {% if build_images is defined and (build_images | bool or build_images == 'true') %}
     # Build from source when build_images is enabled
     build:
-      context: ../branding-build
+      context: ../dockerfiles/branding
       dockerfile: Dockerfile
       target: builder-production
       args:
