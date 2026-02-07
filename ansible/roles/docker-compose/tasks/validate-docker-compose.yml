@@ -74,7 +74,7 @@
 
 - name: "Validation: Check logs directories created"
   stat:
-    path: "{{ docker_compose_data_dir }}/logs/{{ item }}"
+    path: "{{ data_dir }}/logs/{{ item }}"
   register: log_dir_check
   loop: "{{ expected_log_dirs }}"
   when: expected_log_dirs | length > 0
