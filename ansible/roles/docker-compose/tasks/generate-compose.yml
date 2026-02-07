@@ -854,7 +854,7 @@
     branding_source_path: >-
       {% if branding_is_git_url | default(false) %}
         /tmp/branding-git-checkout
-      {% elif branding_source is absolute %}
+      {% elif branding_source is match('^/') %}
         {{ branding_source }}
       {% else %}
         {{ inventory_dir }}/{{ branding_source }}
