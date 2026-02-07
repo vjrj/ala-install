@@ -55,7 +55,7 @@ services:
       - ../nginx/sites-available:/etc/nginx/sites-available:ro
 {% if 'branding' in group_names %}
       # Mount branding assets volume first (read-write for init container to populate)
-      - branding-assets:/srv/{{ branding_url | default('branding') }}/www:ro
+      - la_branding-assets:/srv/{{ branding_url | default('branding') }}/www:ro
 {% else %}
       # Mount srv directory only if no branding (branding uses volume instead)
       - ../srv:/srv:ro
