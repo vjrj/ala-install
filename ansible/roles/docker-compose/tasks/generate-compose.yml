@@ -852,7 +852,7 @@
 - name: Set branding source path for local builds
   set_fact:
     branding_source_path: "{{ branding_source if not (branding_is_git_url | default(false)) else '/tmp/branding-git-checkout' }}"
-  when: "'branding' in group_names"
+  when: "'branding' in services_to_build"
   tags:
     - branding
 
@@ -863,7 +863,7 @@
     mode: '0755'
     owner: "{{ docker_compose_userid }}"
     group: "{{ docker_compose_usergid }}"
-  when: "'branding' in group_names"
+  when: "'branding' in services_to_build"
   tags:
     - branding
 
@@ -875,7 +875,7 @@
     update: yes
     force: yes
   become: false
-  when: "'branding' in group_names and branding_is_git_url | bool"
+  when: "'branding' in services_to_build and branding_is_git_url | bool"
   tags:
     - branding
 
@@ -890,7 +890,7 @@
       - "--exclude=.git"
       - "--exclude=public"
       - "--exclude=dist"
-  when: "'branding' in group_names"
+  when: "'branding' in services_to_build"
   tags:
     - branding
 
@@ -899,7 +899,7 @@
     src: "{{ playbook_dir | dirname }}/docker/branding/Dockerfile"
     dest: "{{ docker_compose_data_dir }}/dockerfiles/branding/Dockerfile"
     mode: '0644'
-  when: "'branding' in group_names"
+  when: "'branding' in services_to_build"
   tags:
     - branding
 
@@ -908,7 +908,7 @@
     src: "{{ playbook_dir | dirname }}/docker/branding/nginx.conf"
     dest: "{{ docker_compose_data_dir }}/dockerfiles/branding/nginx.conf"
     mode: '0644'
-  when: "'branding' in group_names"
+  when: "'branding' in services_to_build"
   tags:
     - branding
 
