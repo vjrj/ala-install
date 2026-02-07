@@ -845,7 +845,7 @@
   set_fact:
     branding_is_git_url: "{{ branding_source is defined and branding_source is match('^(https?://|git@).*') }}"
     branding_build_source: "{{ 'git' if (branding_source is defined and branding_source is match('^(https?://|git@).*')) else 'local' }}"
-  when: use_branding | bool
+  when: "'branding' in services_to_build"
   tags:
     - branding
 
