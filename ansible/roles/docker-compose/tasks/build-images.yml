@@ -145,7 +145,9 @@
   async_status:
     jid: "{{ monitor_builders.ansible_job_id }}"
     mode: cleanup
-  when: services_enabled | length > 0
+  when: 
+    - services_enabled | length > 0
+    - monitor_builders.ansible_job_id is defined
   ignore_errors: true
 
 - name: Build service images
@@ -209,7 +211,9 @@
   until: services_result.finished
   retries: 360
   delay: 10
-  when: services_enabled | length > 0
+  when: 
+    - services_enabled | length > 0
+    - build_services.ansible_job_id is defined
 
 - name: Check if service build failed
   fail:
@@ -246,4 +250,14 @@
   tags:
     - build
     - docker-compose
+
+- name: Stop service monitoring
+  async_status:
+    jid: "{{ monitor_services.ansible_job_id }}"
+    mode: cleanup
+  when:
+    - services_enabled | length > 0
+    - monitor_services is defined
+    - monitor_services.ansible_job_id is defined
+  ignore_errors: true
 
