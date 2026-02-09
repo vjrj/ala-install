@@ -38,8 +38,8 @@ ARG GIT_REF
 
 RUN apk add --no-cache git && \
     if [ -z "$GIT_URL" ]; then \
-        echo "❌ GIT_URL not provided for git source!"; \
-        exit 1; \
+    echo "❌ GIT_URL not provided for git source!"; \
+    exit 1; \
     fi
 
 WORKDIR /source
@@ -50,7 +50,7 @@ RUN echo "🔄 Cloning from git..." && \
     git clone "$GIT_URL" . && \
     git checkout "$GIT_REF" && \
     echo "📦 Updating submodules..." && \
-    git submodule update --init --recursive || echo "⚠️  No submodules or update failed" && \
+    git submodule update --init --recursive && \
     echo "✅ Git clone completed" && \
     ls -la /source/
 
@@ -83,16 +83,16 @@ FROM builder-base AS dependencies
 RUN --mount=type=cache,target=/root/.npm \
     --mount=type=cache,target=/root/.cache/yarn \
     if [ -f "yarn.lock" ]; then \
-        echo "📦 Installing dependencies with yarn..."; \
-        yarn install --frozen-lockfile; \
+    echo "📦 Installing dependencies with yarn..."; \
+    yarn install --frozen-lockfile; \
     elif [ -f "package-lock.json" ]; then \
-        echo "📦 Installing dependencies with npm ci..."; \
-        npm ci; \
+    echo "📦 Installing dependencies with npm ci..."; \
+    npm ci; \
     else \
-        echo "📦 Installing dependencies with npm install..."; \
-        npm install; \
+    echo "📦 Installing dependencies with npm install..."; \
+    npm install; \
     fi && \
-    echo "✅ Dependencies installed"
+    echo "✅ Main dependencies installed"
 
 # ============================================
 # Stage 6: Production build
@@ -101,9 +101,9 @@ FROM dependencies AS builder-production
 
 RUN echo "🔨 Building for production..." && \
     if [ -f "yarn.lock" ]; then \
-        yarn build; \
+    yarn build; \
     else \
-        npm run build; \
+    npm run build; \
     fi && \
     echo "✅ Build completed" && \
     echo "📂 Build output:" && \
@@ -111,8 +111,8 @@ RUN echo "🔨 Building for production..." && \
 
 # Normalize output directory to /build/public
 RUN if [ -d "dist" ] && [ ! -d "public" ]; then \
-        echo "📝 Normalizing dist/ to public/"; \
-        mv dist public; \
+    echo "📝 Normalizing dist/ to public/"; \
+    mv dist public; \
     fi && \
     ls -la public/
 
@@ -125,20 +125,20 @@ EXPOSE 3000 5173
 
 # Check which build system is in use
 RUN if grep -q '"brunch"' package.json; then \
-        echo "🔧 Brunch detected - will use 'brunch watch --server'"; \
+    echo "🔧 Brunch detected - will use 'brunch watch --server'"; \
     elif grep -q '"vite"' package.json; then \
-        echo "🔧 Vite detected - will use 'npm run dev'"; \
+    echo "🔧 Vite detected - will use 'npm run dev'"; \
     else \
-        echo "⚠️  Unknown build system"; \
+    echo "⚠️  Unknown build system"; \
     fi
 
 # Default command for development
 CMD if grep -q '"brunch"' package.json; then \
-        echo "🚀 Starting Brunch dev server..."; \
-        npx brunch watch --server --host 0.0.0.0; \
+    echo "🚀 Starting Brunch dev server..."; \
+    npx brunch watch --server --host 0.0.0.0; \
     else \
-        echo "🚀 Starting Vite dev server..."; \
-        npm run dev -- --host 0.0.0.0; \
+    echo "🚀 Starting Vite dev server..."; \
+    npm run dev -- --host 0.0.0.0; \
     fi
 
 # ============================================

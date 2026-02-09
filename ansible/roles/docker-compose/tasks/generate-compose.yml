@@ -888,6 +888,7 @@
     version: "{{ branding_git_ref | default('master') }}"
     update: yes
     force: yes
+    recursive: yes
   become: false
   when: "'branding' in services_to_build and branding_is_git_url | bool"
   tags:
