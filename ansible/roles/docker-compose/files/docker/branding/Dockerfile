@@ -49,10 +49,16 @@ RUN echo "🔄 Cloning from git..." && \
     echo "   Ref: $GIT_REF" && \
     git clone "$GIT_URL" . && \
     git checkout "$GIT_REF" && \
-    echo "📦 Updating submodules..." && \
-    git submodule update --init --recursive && \
+    echo "📦 Updating submodules (pinned commits)..." && \
+    git submodule sync --recursive && \
+    git submodule update --init --recursive --force && \
     echo "✅ Git clone completed" && \
-    ls -la /source/
+    echo "📂 Submodule status:" && \
+    git submodule status && \
+    echo "📂 Directory structure (root):" && \
+    ls -la /source/ && \
+    echo "📂 Submodule content (check for build/js):" && \
+    ls -R /source/commonui-bs3-2019/build 2>/dev/null || echo "⚠️ commonui-bs3-2019/build is missing"
 
 # ============================================
 # Stage 3: Select source based on BUILD_SOURCE
