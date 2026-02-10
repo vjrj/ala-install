@@ -1,2 +1,5 @@
 # To avoid collisions in shared data dirs we use inventory_hostname
 docker_dir: "{{ docker_data_dir | default('/data/docker/' + inventory_hostname) }}"
+# If data_dir is defined (e.g. in inventory), it will use it as base. Otherwise defaults to standard path.
+container_data_root: "{{ data_dir | default('/var/lib') }}"
+containerd_dir: "{{ containerd_data_dir | default(container_data_root + '/containerd') }}"

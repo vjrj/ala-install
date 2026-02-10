@@ -37,10 +37,49 @@
     - docker
     - docker-install
 
+- name: Create containerd data directory
+  file:
+    path: "{{ containerd_dir }}"
+    state: directory
+    mode: '0711'
+  when: containerd_dir != '/var/lib/containerd'
+  tags:
+    - docker
+    - containerd
+
+- name: Create containerd config directory
+  file:
+    path: /etc/containerd
+    state: directory
+  when: containerd_dir != '/var/lib/containerd'
+  tags:
+    - docker
+    - containerd
+
+- name: Setup containerd config
+  template:
+    src: containerd-config.toml.j2
+    dest: /etc/containerd/config.toml
+  when: containerd_dir != '/var/lib/containerd'
+  register: containerd_config
+  tags:
+    - docker
+    - containerd
+
+- name: Restart containerd
+  service:
+    name: containerd
+    state: restarted
+  when: containerd_dir != '/var/lib/containerd' and containerd_config.changed
+  tags:
+    - docker
+    - containerd
+
 - name: Setup docker daemon
   template: src={{ item }} dest=/etc/docker/{{ item }}
   with_items:
     - daemon.json
+  register: docker_config
   tags:
     - packages
     - apt
@@ -51,6 +90,7 @@
   service:
     name: docker
     state: restarted
+  when: docker_config.changed
   tags:
     - docker
     - docker-restart
