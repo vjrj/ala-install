@@ -100,7 +100,10 @@
     done
   args:
     executable: /bin/bash
-  when: services_enabled | length > 0 and builders_exist.rc != 0
+  when: 
+    - services_enabled | length > 0 
+    - builders_exist.rc != 0
+    - build_builders.ansible_job_id is defined
   register: monitor_builders
   async: 1800
   poll: 0
@@ -112,7 +115,10 @@
   until: build_result.finished
   retries: 180
   delay: 10
-  when: services_enabled | length > 0 and builders_exist.rc != 0
+  when: 
+    - services_enabled | length > 0 
+    - builders_exist.rc != 0
+    - build_builders.ansible_job_id is defined
 
 - name: Check if builder build failed
   fail:
@@ -201,7 +207,9 @@
     executable: /bin/bash
   async: 3600
   poll: 0
-  when: services_enabled | length > 0
+  when: 
+    - services_enabled | length > 0
+    - build_services.ansible_job_id is defined
   register: monitor_services
 
 - name: Wait for service images to finish
