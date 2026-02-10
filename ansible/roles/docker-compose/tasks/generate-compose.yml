@@ -419,6 +419,24 @@
   tags:
     - docker-compose
 
+- name: Load nginx role defaults
+  include_vars:
+    file: "../../nginx/defaults/main.yml"
+  when: "'nginx' in services_enabled"
+  tags:
+    - docker-compose
+
+- name: Generate nginx.conf
+  template:
+    src: "../../nginx/templates/nginx.conf.j2"
+    dest: "{{ nginx_conf_dir }}/nginx.conf"
+    mode: '0644'
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
+  when: "'nginx' in services_enabled"
+  tags:
+    - docker-compose
+
 
 - name: Ensure gatus config directory exists on all hosts
   file:

@@ -5,7 +5,7 @@ nginx_data_dir: "{{ data_dir }}/nginx"
 
 nginx_conf_dir: "{{ data_dir }}/nginx"
 
-docker_web_image: "{{ docker_nginx_image | default('livingatlases/nginx-sites-enabled:latest') }}"
+docker_web_image: "{{ docker_nginx_image | default('nginx:1.25') }}"
 
 docker_http_port: "{{ docker_nginx_http_port | default(80) }}"
 

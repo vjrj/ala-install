@@ -6,7 +6,7 @@ ansible_python_interpreter: "auto"
 
 docker_db_data_dir: "/data/dbs"
 
-docker_web_image: "{{ docker_nginx_image | default('livingatlases/nginx-sites-enabled:latest') }}"
+docker_web_image: "{{ docker_nginx_image | default('nginx:1.25') }}"
 
 gatus_config_dir: "{{ data_dir }}/gatus/config"
 

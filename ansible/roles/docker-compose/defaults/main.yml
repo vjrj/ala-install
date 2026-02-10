@@ -154,7 +154,16 @@ services_enabled: []
 # Nginx Configuration
 # ============================================
 
-docker_nginx_version: "latest"
+docker_nginx_version: "1.25"
+
+# Nginx container paths (override host-specific paths from nginx role)
+nginx_user: nginx
+nginx_pidfile: /var/run/nginx.pid
+nginx_conf_path: /etc/nginx/conf.d
+nginx_vhost_path: /etc/nginx/sites-enabled
+nginx_mime_file_path: /etc/nginx/mime.types
+nginx_error_log: "/var/log/nginx/error.log notice"
+nginx_access_log: "/var/log/nginx/access.log main"
 
 # ============================================
 # Branding Configuration
