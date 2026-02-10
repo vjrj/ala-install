@@ -7,7 +7,7 @@ services:
     pull_policy: {{ 'never' if is_builder_host else 'always' }}
 {% if build_images | default(false) and is_builder_host %}
     build:
-      context: ../../dockerfiles/species-list
+      context: {{ docker_compose_data_dir }}/dockerfiles/species-list
       dockerfile: Dockerfile
 {% endif %}
     volumes:

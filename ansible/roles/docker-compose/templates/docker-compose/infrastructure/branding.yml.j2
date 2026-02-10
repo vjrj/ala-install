@@ -9,7 +9,7 @@ services:
     image: {{ docker_registry | default('') }}{% if docker_registry %}/{% endif %}branding-builder:{{ branding_version | default('latest') }}
     pull_policy: {{ 'never' if is_builder_host else 'always' }}
     build:
-      context: ../dockerfiles/branding
+      context: {{ docker_compose_data_dir }}/dockerfiles/branding
       dockerfile: Dockerfile
       target: builder-production
       args:

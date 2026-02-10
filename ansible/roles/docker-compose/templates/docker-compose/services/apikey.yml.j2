@@ -7,7 +7,7 @@ services:
     pull_policy: {{ 'never' if is_builder_host else 'always' }}
 {% if build_images | default(false) and is_builder_host %}
     build:
-      context: ../../dockerfiles/apikey
+      context: {{ docker_compose_data_dir }}/dockerfiles/apikey
       dockerfile: Dockerfile
       args:
         APIKEY_VERSION: {{ apikey_version | default('1.7.0') }}

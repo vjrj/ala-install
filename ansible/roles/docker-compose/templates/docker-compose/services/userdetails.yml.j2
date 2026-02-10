@@ -7,7 +7,7 @@ services:
     pull_policy: {{ 'never' if is_builder_host else 'always' }}
 {% if build_images | default(false) and is_builder_host %}
     build:
-      context: ../../dockerfiles/userdetails
+      context: {{ docker_compose_data_dir }}/dockerfiles/userdetails
       dockerfile: Dockerfile
       args:
         USERDETAILS_VERSION: {{ user_details_version | default('3.2.1') }}

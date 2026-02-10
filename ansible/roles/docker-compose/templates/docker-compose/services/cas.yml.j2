@@ -7,7 +7,7 @@ services:
     pull_policy: {{ 'never' if is_builder_host else 'always' }}
 {% if build_images | default(false) and is_builder_host %}
     build:
-      context: ../../dockerfiles/cas5
+      context: {{ docker_compose_data_dir }}/dockerfiles/cas5
       dockerfile: Dockerfile
       args:
         CAS_VERSION: {{ cas_version | default('6.5.6-3') }}
