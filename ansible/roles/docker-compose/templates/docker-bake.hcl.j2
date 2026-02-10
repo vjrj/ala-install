@@ -104,7 +104,7 @@ target "branding" {
 # ============================================
 
 {% for service_id in services_to_build %}
-{% if service_id in docker_services_desc and docker_services_desc[service_id].buildTool in ['gradle', 'maven'] %}
+{% if service_id in docker_services_desc and docker_services_desc[service_id].get('buildTool') in ['gradle', 'maven'] %}
 {% set service = docker_services_desc[service_id] %}
 {% set svc_role = service.role | default(service_id) %}
 {% set svc_artifact = service.artifacts | default(svc_role) %}
@@ -164,7 +164,7 @@ group "all" {
     "branding",
 {% endif %}
 {% for service_id in services_to_build %}
-{% if service_id in docker_services_desc and docker_services_desc[service_id].buildTool in ['gradle', 'maven'] %}
+{% if service_id in docker_services_desc and docker_services_desc[service_id].get('buildTool') in ['gradle', 'maven'] %}
     "{{ docker_services_desc[service_id].role }}",
 {% endif %}
 {% endfor %}
@@ -178,7 +178,7 @@ group "services" {
     "branding",
 {% endif %}
 {% for service_id in services_to_build %}
-{% if service_id in docker_services_desc and docker_services_desc[service_id].buildTool in ['gradle', 'maven'] %}
+{% if service_id in docker_services_desc and docker_services_desc[service_id].get('buildTool') in ['gradle', 'maven'] %}
     "{{ docker_services_desc[service_id].role }}",
 {% endif %}
 {% endfor %}
