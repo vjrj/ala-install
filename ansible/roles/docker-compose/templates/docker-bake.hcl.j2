@@ -18,143 +18,46 @@ variable "DOCKER_REPO" {
 # Builder Base Images (INBO pattern)
 # ============================================
 
-# Gradle builder for JDK 8 services
-target "gradle-builder-jdk8" {
-  dockerfile = "Dockerfile"
-  context = "dockerfiles/gradle"
-  args = {
-    JDK_VERSION = "8"
-    GRADLE_VERSION = "7"
-  }
-  tags = ["gradle-builder:jdk8"]
-  output = ["type=docker"]
-{% if docker_registry and docker_registry != '' %}
-  cache-from = ["type=registry,ref={{ docker_registry }}/gradle-builder:jdk8-${CACHE_TAG}"]
-{% endif %}
-  cache-to = ["type=inline"]
+# Builders group for easy pre-building
+group "builders" {
+  targets = [
+{% for tool in ['gradle', 'maven'] %}
+{% for jdk in ['8', '11', '17', '21'] %}
+    "{{ tool }}-builder-jdk{{ jdk }}",
+{% endfor %}
+{% endfor %}
+  ]
 }
 
-# Gradle builder for JDK 11 services (for Gradle 5.x compatibility - collectory, species-list)
-target "gradle-builder-jdk11" {
+{% for tool in ['gradle', 'maven'] %}
+{% for jdk in ['8', '11', '17', '21'] %}
+# {{ tool | capitalize }} builder for JDK {{ jdk }} services
+target "{{ tool }}-builder-jdk{{ jdk }}" {
   dockerfile = "Dockerfile"
-  context = "dockerfiles/gradle"
+  context = "dockerfiles/{{ tool }}"
   args = {
-    JDK_VERSION = "11"
-    GRADLE_VERSION = "7"
+    JDK_VERSION = "{{ jdk }}"
+    {% if tool == 'gradle' %}
+    GRADLE_VERSION = "{{ '8' if jdk == '21' else '7' }}"
+    {% else %}
+    MAVEN_VERSION = "3.9"
+    {% endif %}
   }
-  tags = ["gradle-builder:jdk11"]
+  tags = ["{{ tool }}-builder:jdk{{ jdk }}"]
   output = ["type=docker"]
 {% if docker_registry and docker_registry != '' %}
-  cache-from = ["type=registry,ref={{ docker_registry }}/gradle-builder:jdk11-${CACHE_TAG}"]
+  cache-from = ["type=registry,ref={{ docker_registry }}/{{ tool }}-builder:jdk{{ jdk }}-${CACHE_TAG}"]
 {% endif %}
   cache-to = ["type=inline"]
 }
-
-# Gradle builder for JDK 17 services (default for all current ALA services)
-target "gradle-builder-jdk17" {
-  dockerfile = "Dockerfile"
-  context = "dockerfiles/gradle"
-  args = {
-    JDK_VERSION = "17"
-    GRADLE_VERSION = "7"
-  }
-  tags = ["gradle-builder:jdk17"]
-  output = ["type=docker"]
-{% if docker_registry and docker_registry != '' %}
-  cache-from = ["type=registry,ref={{ docker_registry }}/gradle-builder:jdk17-${CACHE_TAG}"]
-{% endif %}
-  cache-to = ["type=inline"]
-}
-
-# Gradle builder for JDK 21 services (future-proofing)
-target "gradle-builder-jdk21" {
-  dockerfile = "Dockerfile"
-  context = "dockerfiles/gradle"
-  args = {
-    JDK_VERSION = "21"
-    GRADLE_VERSION = "8"
-  }
-  tags = ["gradle-builder:jdk21"]
-  output = ["type=docker"]
-{% if docker_registry and docker_registry != '' %}
-  cache-from = ["type=registry,ref={{ docker_registry }}/gradle-builder:jdk21-${CACHE_TAG}"]
-{% endif %}
-  cache-to = ["type=inline"]
-}
+{% endfor %}
+{% endfor %}
 
 # ============================================
-# Maven Builder Base Images
+# Special Targets (i18n, branding)
 # ============================================
 
-# Maven builder for JDK 8 services
-target "maven-builder-jdk8" {
-  dockerfile = "Dockerfile"
-  context = "dockerfiles/maven"
-  args = {
-    JDK_VERSION = "8"
-    MAVEN_VERSION = "3.9"
-  }
-  tags = ["maven-builder:jdk8"]
-  output = ["type=docker"]
-{% if docker_registry and docker_registry != '' %}
-  cache-from = ["type=registry,ref={{ docker_registry }}/maven-builder:jdk8-${CACHE_TAG}"]
-{% endif %}
-  cache-to = ["type=inline"]
-}
-
-# Maven builder for JDK 11 services
-target "maven-builder-jdk11" {
-  dockerfile = "Dockerfile"
-  context = "dockerfiles/maven"
-  args = {
-    JDK_VERSION = "11"
-    MAVEN_VERSION = "3.9"
-  }
-  tags = ["maven-builder:jdk11"]
-  output = ["type=docker"]
-{% if docker_registry and docker_registry != '' %}
-  cache-from = ["type=registry,ref={{ docker_registry }}/maven-builder:jdk11-${CACHE_TAG}"]
-{% endif %}
-  cache-to = ["type=inline"]
-}
-
-# Maven builder for JDK 17 services (default for all current ALA services)
-target "maven-builder-jdk17" {
-  dockerfile = "Dockerfile"
-  context = "dockerfiles/maven"
-  args = {
-    JDK_VERSION = "17"
-    MAVEN_VERSION = "3.9"
-  }
-  tags = ["maven-builder:jdk17"]
-  output = ["type=docker"]
-{% if docker_registry and docker_registry != '' %}
-  cache-from = ["type=registry,ref={{ docker_registry }}/maven-builder:jdk17-${CACHE_TAG}"]
-{% endif %}
-  cache-to = ["type=inline"]
-}
-
-# Maven builder for JDK 21 services (future-proofing)
-target "maven-builder-jdk21" {
-  dockerfile = "Dockerfile"
-  context = "dockerfiles/maven"
-  args = {
-    JDK_VERSION = "21"
-    MAVEN_VERSION = "3.9"
-  }
-  tags = ["maven-builder:jdk21"]
-  output = ["type=docker"]
-{% if docker_registry and docker_registry != '' %}
-  cache-from = ["type=registry,ref={{ docker_registry }}/maven-builder:jdk21-${CACHE_TAG}"]
-{% endif %}
-  cache-to = ["type=inline"]
-}
-
-# ============================================
-# Service Targets
-# ============================================
-
-{% if i18n.enabled %}
+{% if 'ala-i18n' in services_to_build %}
 target "ala-i18n" {
   dockerfile = "Dockerfile"
   context = "dockerfiles/i18n"
@@ -196,338 +99,60 @@ target "branding" {
 }
 {% endif %}
 
-{% if 'collectory' in services_to_build %}
-target "collectory" {
+# ============================================
+# Standard Services (Automated)
+# ============================================
+
+{% for service_id in services_to_build %}
+{% if service_id in docker_services_desc and docker_services_desc[service_id].buildTool in ['gradle', 'maven'] %}
+{% set service = docker_services_desc[service_id] %}
+{% set svc_role = service.role | default(service_id) %}
+{% set svc_artifact = service.artifacts | default(svc_role) %}
+{% set svc_java = service_java_dict[service_id] | default('11') %}
+{% set svc_version = service_versions_dict[service_id] | default('develop') %}
+
+target "{{ svc_role }}" {
   dockerfile = "Dockerfile"
-  context = "dockerfiles/{{ docker_services_desc['collectory'].role }}"
+  context = "dockerfiles/{{ svc_role }}"
   contexts = {
-    "gradle-builder:jdk{{ collectory_java_version | default('17') }}" = "target:gradle-builder-jdk{{ collectory_java_version | default('17') }}"
+    "{{ service.buildTool }}-builder:jdk{{ svc_java }}" = "target:{{ service.buildTool }}-builder-jdk{{ svc_java }}"
   }
   args = {
-    BUILDER_IMAGE = "gradle-builder:jdk{{ collectory_java_version | default('17') }}"
-    GRADLE_BUILDER_IMAGE = "gradle-builder:jdk{{ collectory_java_version | default('17') }}"
-    ARTIFACT = "collectory"
-    GROUP_ID = "au.org.ala"
-    VERSION = "{{ collectory_version | default('develop') }}"
-    REPO = "https://github.com/AtlasOfLivingAustralia/collectory.git"
-    BRANCH = "{{ collectory_branch | default('develop') }}"
+    BUILDER_IMAGE = "{{ service.buildTool }}-builder:jdk{{ svc_java }}"
+    {{ service.buildTool | upper }}_BUILDER_IMAGE = "{{ service.buildTool }}-builder:jdk{{ svc_java }}"
+    ARTIFACT = "{{ svc_artifact }}"
+    GROUP_ID = "{{ service.groupId | default('au.org.ala') }}"
+    VERSION = "{{ svc_version }}"
+    REPO = "{{ service.repository | default('') }}"
+    BRANCH = "{{ vars[service_id + '_branch'] | default('master') }}"
+    {% if service.classifier is defined %}
+    CLASSIFIER = "{{ service.classifier }}"
+    {% endif %}
+    {% if service.buildDir is defined %}
+    BUILD_DIR = "{{ service.buildDir }}"
+    {% endif %}
+    {% if service.buildTool == 'maven' %}
+    RUNTIME_IMAGE = "eclipse-temurin:{{ svc_java }}-jre-jammy"
+    {% endif %}
   }
 {% if docker_registry and docker_registry != '' %}
-  tags = ["{{ docker_registry }}/collectory:{{ collectory_version | default('latest') }}", "{{ docker_registry }}/collectory:latest"]
+  tags = ["{{ docker_registry }}/{{ svc_artifact }}:{{ svc_version }}", "{{ docker_registry }}/{{ svc_artifact }}:latest"]
   cache-from = [
-    "type=registry,ref={{ docker_registry }}/collectory:${CACHE_TAG}",
-    "type=registry,ref={{ docker_registry }}/collectory:latest"
+    "type=registry,ref={{ docker_registry }}/{{ svc_artifact }}:${CACHE_TAG}",
+    "type=registry,ref={{ docker_registry }}/{{ svc_artifact }}:latest"
   ]
 {% else %}
-  tags = ["collectory:{{ collectory_version | default('latest') }}", "collectory:latest"]
+  tags = ["{{ svc_artifact }}:{{ svc_version }}", "{{ svc_artifact }}:latest"]
 {% endif %}
   cache-to = ["type=inline"]
   platforms = ["linux/amd64"]
 }
 {% endif %}
-
-# CAS, UserDetails, APIKey and CAS Management services
-
-{% if 'cas' in services_to_build %}
-target "userdetails" {
-  dockerfile = "Dockerfile"
-  context = "dockerfiles/{{ docker_services_desc['userdetails'].role }}"
-  contexts = {
-    "gradle-builder:jdk{{ userdetails_java_version | default('11') }}" = "target:gradle-builder-jdk{{ userdetails_java_version | default('11') }}"
-  }
-  args = {
-    BUILDER_IMAGE = "gradle-builder:jdk{{ userdetails_java_version | default('11') }}"
-    GRADLE_BUILDER_IMAGE = "gradle-builder:jdk{{ userdetails_java_version | default('11') }}"
-    ARTIFACT = "userdetails"
-    GROUP_ID = "au.org.ala"
-    VERSION = "{{ user_details_version | default('develop') }}"
-    REPO = "https://github.com/AtlasOfLivingAustralia/userdetails.git"
-    BRANCH = "{{ user_details_branch | default('master') }}"
-    CLASSIFIER = "exec"
-  }
-{% if docker_registry and docker_registry != '' %}
-  tags = ["{{ docker_registry }}/userdetails:{{ user_details_version | default('latest') }}", "{{ docker_registry }}/userdetails:latest"]
-{% else %}
-  tags = ["userdetails:{{ user_details_version | default('latest') }}", "userdetails:latest"]
-{% endif %}
-  cache-to = ["type=inline"]
-  platforms = ["linux/amd64"]
-}
-{% endif %}
-
-{% if 'cas' in services_to_build %}
-target "cas" {
-  dockerfile = "Dockerfile"
-  context = "dockerfiles/{{ docker_services_desc['cas'].role }}"
-  contexts = {
-    "maven-builder:jdk{{ cas_java_version | default('11') }}" = "target:maven-builder-jdk{{ cas_java_version | default('11') }}"
-  }
-  args = {
-    BUILDER_IMAGE = "maven-builder:jdk{{ cas_java_version | default('11') }}"
-    MAVEN_BUILDER_IMAGE = "maven-builder:jdk{{ cas_java_version | default('11') }}"
-    RUNTIME_IMAGE = "eclipse-temurin:{{ cas_java_version | default('11') }}-jre-jammy"
-    ARTIFACT = "cas"
-    GROUP_ID = "au.org.ala"
-    VERSION = "{{ cas_version | default('develop') }}"
-    REPO = "https://github.com/AtlasOfLivingAustralia/ala-cas-5.git"
-    BRANCH = "{{ cas_branch | default('master') }}"
-  }
-{% if docker_registry and docker_registry != '' %}
-  tags = ["{{ docker_registry }}/cas:{{ cas_version | default('latest') }}", "{{ docker_registry }}/cas:latest"]
-{% else %}
-  tags = ["cas:{{ cas_version | default('latest') }}", "cas:latest"]
-{% endif %}
-  cache-to = ["type=inline"]
-  platforms = ["linux/amd64"]
-}
-{% endif %}
-
-{% if 'cas' in services_to_build %}
-target "apikey" {
-  dockerfile = "Dockerfile"
-  context = "dockerfiles/{{ docker_services_desc['apikey'].role }}"
-  contexts = {
-    "gradle-builder:jdk{{ apikey_java_version | default('11') }}" = "target:gradle-builder-jdk{{ apikey_java_version | default('11') }}"
-  }
-  args = {
-    BUILDER_IMAGE = "gradle-builder:jdk{{ apikey_java_version | default('11') }}"
-    GRADLE_BUILDER_IMAGE = "gradle-builder:jdk{{ apikey_java_version | default('11') }}"
-    ARTIFACT = "apikey"
-    GROUP_ID = "au.org.ala"
-    VERSION = "{{ apikey_version | default('develop') }}"
-    REPO = "https://github.com/AtlasOfLivingAustralia/apikey.git"
-    BRANCH = "{{ apikey_branch | default('master') }}"
-    CLASSIFIER = "exec"
-  }
-{% if docker_registry and docker_registry != '' %}
-  tags = ["{{ docker_registry }}/apikey:{{ apikey_version | default('latest') }}", "{{ docker_registry }}/apikey:latest"]
-{% else %}
-  tags = ["apikey:{{ apikey_version | default('latest') }}", "apikey:latest"]
-{% endif %}
-  cache-to = ["type=inline"]
-  platforms = ["linux/amd64"]
-}
-{% endif %}
-
-{% if 'cas' in services_to_build or 'cas' in services_to_build %}
-target "cas-management" {
-  dockerfile = "Dockerfile"
-  context = "dockerfiles/{{ docker_services_desc['cas_management'].role }}"
-  contexts = {
-    "gradle-builder:jdk{{ cas_management_java_version | default('11') }}" = "target:gradle-builder-jdk{{ cas_management_java_version | default('11') }}"
-  }
-  args = {
-    BUILDER_IMAGE = "gradle-builder:jdk{{ cas_management_java_version | default('11') }}"
-    GRADLE_BUILDER_IMAGE = "gradle-builder:jdk{{ cas_management_java_version | default('11') }}"
-    ARTIFACT = "cas-management"
-    GROUP_ID = "au.org.ala"
-    VERSION = "{{ cas_management_version | default('develop') }}"
-    REPO = "https://github.com/AtlasOfLivingAustralia/ala-cas-5-services.git"
-    BRANCH = "{{ cas_management_branch | default('master') }}"
-    CLASSIFIER = "exec"
-  }
-{% if docker_registry and docker_registry != '' %}
-  tags = ["{{ docker_registry }}/cas-management:{{ cas_management_version | default('latest') }}", "{{ docker_registry }}/cas-management:latest"]
-{% else %}
-  tags = ["cas-management:{{ cas_management_version | default('latest') }}", "cas-management:latest"]
-{% endif %}
-  cache-to = ["type=inline"]
-  platforms = ["linux/amd64"]
-}
-{% endif %}
-
-{% if 'species_lists' in services_to_build %}
-target "species-list" {
-  dockerfile = "Dockerfile"
-  context = "dockerfiles/{{ docker_services_desc['species_lists'].role }}"
-  contexts = {
-    "gradle-builder:jdk{{ species_list_java_version | default('17') }}" = "target:gradle-builder-jdk{{ species_list_java_version | default('17') }}"
-  }
-  args = {
-    BUILDER_IMAGE = "gradle-builder:jdk{{ species_list_java_version | default('17') }}"
-    GRADLE_BUILDER_IMAGE = "gradle-builder:jdk{{ species_list_java_version | default('17') }}"
-    VERSION = "{{ species_list_version | default('develop') }}"
-    REPO = "https://github.com/AtlasOfLivingAustralia/specieslist-webapp.git"
-    BRANCH = "{{ species_list_branch | default('master') }}"
-  }
-{% if docker_registry and docker_registry != '' %}
-  tags = ["{{ docker_registry }}/species-list:{{ species_list_version | default('latest') }}", "{{ docker_registry }}/species-list:latest"]
-{% else %}
-  tags = ["species-list:{{ species_list_version | default('latest') }}", "species-list:latest"]
-{% endif %}
-  cache-to = ["type=inline"]
-  platforms = ["linux/amd64"]
-}
-{% endif %}
-
-# BIE Hub and Index services
-{% if 'ala_bie' in services_to_build %}
-target "bie-hub" {
-  dockerfile = "Dockerfile"
-  context = "dockerfiles/bie-hub"
-  contexts = {
-    "gradle-builder:jdk{{ bie_hub_java_version | default('17') }}" = "target:gradle-builder-jdk{{ bie_hub_java_version | default('17') }}"
-  }
-  args = {
-    BUILDER_IMAGE = "gradle-builder:jdk{{ bie_hub_java_version | default('17') }}"
-    GRADLE_BUILDER_IMAGE = "gradle-builder:jdk{{ bie_hub_java_version | default('17') }}"
-    VERSION = "{{ bie_hub_version | default('develop') }}"
-    REPO = "https://github.com/AtlasOfLivingAustralia/ala-bie-hub.git"
-    BRANCH = "{{ bie_hub_branch | default('master') }}"
-  }
-{% if docker_registry and docker_registry != '' %}
-  tags = ["{{ docker_registry }}/bie-hub:{{ bie_hub_version | default('latest') }}", "{{ docker_registry }}/bie-hub:latest"]
-{% else %}
-  tags = ["bie-hub:{{ bie_hub_version | default('latest') }}", "bie-hub:latest"]
-{% endif %}
-  cache-to = ["type=inline"]
-  platforms = ["linux/amd64"]
-}
-{% endif %}
-
-{% if 'bie_index' in services_to_build %}
-target "bie-index" {
-  dockerfile = "Dockerfile"
-  context = "dockerfiles/bie-index"
-  contexts = {
-    "gradle-builder:jdk{{ bie_index_java_version | default('17') }}" = "target:gradle-builder-jdk{{ bie_index_java_version | default('17') }}"
-  }
-  args = {
-    BUILDER_IMAGE = "gradle-builder:jdk{{ bie_index_java_version | default('17') }}"
-    GRADLE_BUILDER_IMAGE = "gradle-builder:jdk{{ bie_index_java_version | default('17') }}"
-    VERSION = "{{ bie_index_version | default('develop') }}"
-    REPO = "https://github.com/AtlasOfLivingAustralia/bie-index.git"
-    BRANCH = "{{ bie_index_branch | default('master') }}"
-  }
-{% if docker_registry and docker_registry != '' %}
-  tags = ["{{ docker_registry }}/bie-index:{{ bie_index_version | default('latest') }}", "{{ docker_registry }}/bie-index:latest"]
-{% else %}
-  tags = ["bie-index:{{ bie_index_version | default('latest') }}", "bie-index:latest"]
-{% endif %}
-  cache-to = ["type=inline"]
-  platforms = ["linux/amd64"]
-}
-{% endif %}
-
-# Biocache Hub and Service
-{% if 'ala_hub' in services_to_build %}
-target "biocache-hub" {
-  dockerfile = "Dockerfile"
-  context = "dockerfiles/biocache-hub"
-  contexts = {
-    "gradle-builder:jdk{{ biocache_hub_java_version | default('17') }}" = "target:gradle-builder-jdk{{ biocache_hub_java_version | default('17') }}"
-  }
-  args = {
-    BUILDER_IMAGE = "gradle-builder:jdk{{ biocache_hub_java_version | default('17') }}"
-    GRADLE_BUILDER_IMAGE = "gradle-builder:jdk{{ biocache_hub_java_version | default('17') }}"
-    VERSION = "{{ biocache_hub_version | default('develop') }}"
-    REPO = "https://github.com/AtlasOfLivingAustralia/ala-hub.git"
-    BRANCH = "{{ biocache_hub_branch | default('master') }}"
-  }
-{% if docker_registry and docker_registry != '' %}
-  tags = ["{{ docker_registry }}/ala-hub:{{ biocache_hub_version | default('latest') }}", "{{ docker_registry }}/ala-hub:latest"]
-{% else %}
-  tags = ["ala-hub:{{ biocache_hub_version | default('latest') }}", "ala-hub:latest"]
-{% endif %}
-  cache-to = ["type=inline"]
-  platforms = ["linux/amd64"]
-}
-{% endif %}
-
-{% if 'biocache_service' in services_to_build %}
-target "biocache-service" {
-  dockerfile = "Dockerfile"
-  context = "dockerfiles/biocache-service"
-  contexts = {
-    "gradle-builder:jdk{{ biocache_service_java_version | default('17') }}" = "target:gradle-builder-jdk{{ biocache_service_java_version | default('17') }}"
-  }
-  args = {
-    BUILDER_IMAGE = "gradle-builder:jdk{{ biocache_service_java_version | default('17') }}"
-    GRADLE_BUILDER_IMAGE = "gradle-builder:jdk{{ biocache_service_java_version | default('17') }}"
-    VERSION = "{{ biocache_service_version | default('develop') }}"
-    REPO = "https://github.com/AtlasOfLivingAustralia/biocache-service.git"
-    BRANCH = "{{ biocache_service_branch | default('master') }}"
-  }
-{% if docker_registry and docker_registry != '' %}
-  tags = ["{{ docker_registry }}/biocache-service:{{ biocache_service_version | default('latest') }}", "{{ docker_registry }}/biocache-service:latest"]
-{% else %}
-  tags = ["biocache-service:{{ biocache_service_version | default('latest') }}", "biocache-service:latest"]
-{% endif %}
-  cache-to = ["type=inline"]
-  platforms = ["linux/amd64"]
-}
-{% endif %}
-
-# Name Matching and Sensitive Data Services
-{% if 'namematching-service' in services_to_build or 'namematchingService' in services_to_build %}
-target "namematching-service" {
-  dockerfile = "Dockerfile"
-  context = "dockerfiles/namematching-service"
-  contexts = {
-    "maven-builder:jdk{{ ala_namematching_service_java_version | default('17') }}" = "target:maven-builder-jdk{{ ala_namematching_service_java_version | default('17') }}"
-  }
-  args = {
-    BUILDER_IMAGE = "maven-builder:jdk{{ ala_namematching_service_java_version | default('17') }}"
-    MAVEN_BUILDER_IMAGE = "maven-builder:jdk{{ ala_namematching_service_java_version | default('17') }}"
-    RUNTIME_IMAGE = "eclipse-temurin:{{ ala_namematching_service_java_version | default('17') }}-jre-jammy"
-    VERSION = "{{ ala_namematching_service_version | default('develop') }}"
-    REPO = "https://github.com/AtlasOfLivingAustralia/ala-namematching-service.git"
-    BRANCH = "master"
-    BUILD_DIR = "{{ docker_services_desc['namematchingService'].buildDir }}"
-  }
-{% if docker_registry and docker_registry != '' %}
-  tags = ["{{ docker_registry }}/ala-namematching-server:{{ ala_namematching_service_version | default('latest') }}", "{{ docker_registry }}/ala-namematching-server:latest"]
-{% else %}
-  tags = ["ala-namematching-server:{{ ala_namematching_service_version | default('latest') }}", "ala-namematching-server:latest"]
-{% endif %}
-  cache-to = ["type=inline"]
-  platforms = ["linux/amd64"]
-}
-{% endif %}
-
-{% if 'sensitive-data-service' in services_to_build or 'sensitiveDataService' in services_to_build %}
-target "sensitive-data-service" {
-  dockerfile = "Dockerfile"
-  context = "dockerfiles/sensitive-data-service"
-  contexts = {
-    "maven-builder:jdk{{ ala_sensitive_data_service_java_version | default('17') }}" = "target:maven-builder-jdk{{ ala_sensitive_data_service_java_version | default('17') }}"
-  }
-  args = {
-    BUILDER_IMAGE = "maven-builder:jdk{{ ala_sensitive_data_service_java_version | default('17') }}"
-    MAVEN_BUILDER_IMAGE = "maven-builder:jdk{{ ala_sensitive_data_service_java_version | default('17') }}"
-    RUNTIME_IMAGE = "eclipse-temurin:{{ ala_sensitive_data_service_java_version | default('17') }}-jre-jammy"
-    VERSION = "{{ ala_sensitive_data_service_version | default('develop') }}"
-    REPO = "https://github.com/AtlasOfLivingAustralia/ala-sensitive-data-service.git"
-    BRANCH = "master"
-    BUILD_DIR = "{{ docker_services_desc['sensitiveDataService'].buildDir }}"
-  }
-{% if docker_registry and docker_registry != '' %}
-  tags = ["{{ docker_registry }}/ala-sensitive-data-server:{{ ala_sensitive_data_service_version | default('latest') }}", "{{ docker_registry }}/ala-sensitive-data-server:latest"]
-{% else %}
-  tags = ["ala-sensitive-data-server:{{ ala_sensitive_data_service_version | default('latest') }}", "ala-sensitive-data-server:latest"]
-{% endif %}
-  cache-to = ["type=inline"]
-  platforms = ["linux/amd64"]
-}
-{% endif %}
+{% endfor %}
 
 # ============================================
 # Build Groups
 # ============================================
-
-# Build builders first
-group "builders" {
-  targets = [
-    "gradle-builder-jdk8",
-    "gradle-builder-jdk11",
-    "gradle-builder-jdk17",
-    "gradle-builder-jdk21",
-    "maven-builder-jdk8",
-    "maven-builder-jdk11",
-    "maven-builder-jdk17",
-    "maven-builder-jdk21",
-  ]
-}
 
 # Build all services (depends on builders)
 group "all" {
@@ -538,42 +163,11 @@ group "all" {
 {% if 'branding' in services_to_build %}
     "branding",
 {% endif %}
-{% if 'collectory' in services_to_build %}
-    "collectory",
+{% for service_id in services_to_build %}
+{% if service_id in docker_services_desc and docker_services_desc[service_id].buildTool in ['gradle', 'maven'] %}
+    "{{ docker_services_desc[service_id].role }}",
 {% endif %}
-{% if 'species-lists' in services_to_build %}
-    "species-list",
-{% endif %}
-{% if 'cas' in services_to_build %}
-    "cas",
-{% endif %}
-{% if 'userdetails' in services_to_build %}
-    "userdetails",
-{% endif %}
-{% if 'apikey' in services_to_build %}
-    "apikey",
-{% endif %}
-{% if 'cas-management' in services_to_build or 'cas_management' in services_to_build %}
-    "cas-management",
-{% endif %}
-{% if 'ala-bie' in services_to_build or 'ala_bie' in services_to_build %}
-    "bie-hub",
-{% endif %}
-{% if 'species' in services_to_build or 'bie_index' in services_to_build %}
-    "bie-index",
-{% endif %}
-{% if 'biocache-hub' in services_to_build or 'ala_hub' in services_to_build %}
-    "biocache-hub",
-{% endif %}
-{% if 'biocache-service' in services_to_build or 'biocache_service' in services_to_build %}
-    "biocache-service",
-{% endif %}
-{% if 'namematching' in services_to_build or 'namematching-service' in services_to_build %}
-    "namematching-service",
-{% endif %}
-{% if 'sensitive-data' in services_to_build or 'sensitive-data-service' in services_to_build %}
-    "sensitive-data-service",
-{% endif %}
+{% endfor %}
   ]
 }
 
@@ -583,41 +177,10 @@ group "services" {
 {% if 'branding' in services_to_build %}
     "branding",
 {% endif %}
-{% if 'collectory' in services_to_build %}
-    "collectory",
+{% for service_id in services_to_build %}
+{% if service_id in docker_services_desc and docker_services_desc[service_id].buildTool in ['gradle', 'maven'] %}
+    "{{ docker_services_desc[service_id].role }}",
 {% endif %}
-{% if 'species-lists' in services_to_build %}
-    "species-list",
-{% endif %}
-{% if 'cas' in services_to_build %}
-    "cas",
-{% endif %}
-{% if 'userdetails' in services_to_build %}
-    "userdetails",
-{% endif %}
-{% if 'apikey' in services_to_build %}
-    "apikey",
-{% endif %}
-{% if 'cas-management' in services_to_build or 'cas_management' in services_to_build %}
-    "cas-management",
-{% endif %}
-{% if 'ala-bie' in services_to_build or 'ala_bie' in services_to_build %}
-    "bie-hub",
-{% endif %}
-{% if 'species' in services_to_build or 'bie_index' in services_to_build %}
-    "bie-index",
-{% endif %}
-{% if 'biocache-hub' in services_to_build or 'ala_hub' in services_to_build %}
-    "biocache-hub",
-{% endif %}
-{% if 'biocache-service' in services_to_build or 'biocache_service' in services_to_build %}
-    "biocache-service",
-{% endif %}
-{% if 'namematching' in services_to_build or 'namematching-service' in services_to_build %}
-    "namematching-service",
-{% endif %}
-{% if 'sensitive-data' in services_to_build or 'sensitive-data-service' in services_to_build %}
-    "sensitive-data-service",
-{% endif %}
+{% endfor %}
   ]
 }
