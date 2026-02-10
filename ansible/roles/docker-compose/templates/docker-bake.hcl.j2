@@ -21,10 +21,16 @@ variable "DOCKER_REPO" {
 # Builders group for easy pre-building
 group "builders" {
   targets = [
-{% for tool in ['gradle', 'maven'] %}
-{% for jdk in ['8', '11', '17', '21'] %}
+{% set active_builders = [] %}
+{% for service_id in services_to_build %}
+{% if service_id in docker_services_desc and docker_services_desc[service_id].get('buildTool') in ['gradle', 'maven'] %}
+{% set tool = docker_services_desc[service_id].buildTool %}
+{% set jdk = service_java_dict[service_id] | default('11') %}
+{% if tool + "-builder-jdk" + jdk not in active_builders %}
     "{{ tool }}-builder-jdk{{ jdk }}",
-{% endfor %}
+{% set _ = active_builders.append(tool + "-builder-jdk" + jdk) %}
+{% endif %}
+{% endif %}
 {% endfor %}
   ]
 }
@@ -49,6 +55,7 @@ target "{{ tool }}-builder-jdk{{ jdk }}" {
   cache-from = ["type=registry,ref={{ docker_registry }}/{{ tool }}-builder:jdk{{ jdk }}-${CACHE_TAG}"]
 {% endif %}
   cache-to = ["type=inline"]
+  platforms = ["linux/amd64"]
 }
 {% endfor %}
 {% endfor %}
@@ -115,7 +122,8 @@ target "{{ svc_role }}" {
   dockerfile = "Dockerfile"
   context = "dockerfiles/{{ svc_role }}"
   contexts = {
-    "{{ service.buildTool }}-builder:jdk{{ svc_java }}" = "target:{{ service.buildTool }}-builder-jdk{{ svc_java }}"
+    # Use image from store, decoupled from the target build to avoid parallel rebuild issues on remote hosts
+    "{{ service.buildTool }}-builder:jdk{{ svc_java }}" = "docker-image:{{ service.buildTool }}-builder:jdk{{ svc_java }}"
   }
   args = {
     BUILDER_IMAGE = "{{ service.buildTool }}-builder:jdk{{ svc_java }}"

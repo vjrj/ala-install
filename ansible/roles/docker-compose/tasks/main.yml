@@ -114,7 +114,15 @@
 
     - name: Check if builder build succeeded
       fail:
-        msg: "Failed to build builder images. Check docker buildx logs."
+        msg: |
+          Failed to build builder images.
+          Return Code: {{ build_builders_result.rc | default('N/A') }}
+          
+          STDOUT:
+          {{ build_builders_result.stdout | default('No stdout captured') }}
+          
+          STDERR:
+          {{ build_builders_result.stderr | default('No stderr captured') }}
       when:
         - build_images | default(false) | bool
         - build_builders_result is defined
