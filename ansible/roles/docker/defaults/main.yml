@@ -3,3 +3,9 @@ docker_dir: "{{ docker_data_dir | default('/data/docker/' + inventory_hostname) 
 # If data_dir is defined (e.g. in inventory), it will use it as base. Otherwise defaults to standard path.
 container_data_root: "{{ data_dir | default('/var/lib') }}"
 containerd_dir: "{{ containerd_data_dir | default(container_data_root + '/containerd') }}"
+
+# DNS servers for Docker daemon (helps with DNS resolution during builds)
+docker_dns_servers:
+  - 9.9.9.9
+  - 1.1.1.1
+  - 8.8.8.8
