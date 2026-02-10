@@ -101,8 +101,8 @@
       environment:
         BUILDX_BAKE_ENTITLEMENTS_FS: "0"
       become: true
-      run_once: true
-      delegate_to: "{{ groups['docker_compose'] | first }}"
+      run_once: "{{ docker_registry is defined and docker_registry != '' }}"
+      delegate_to: "{{ (groups['docker_compose'] | first) if (docker_registry is defined and docker_registry != '') else inventory_hostname }}"
       when:
         - build_images | default(false) | bool
         - services_to_build | length > 0
