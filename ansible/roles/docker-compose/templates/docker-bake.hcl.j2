@@ -123,7 +123,7 @@ target "{{ svc_role }}" {
   context = "dockerfiles/{{ svc_role }}"
   contexts = {
     # Use image from store, decoupled from the target build to avoid parallel rebuild issues on remote hosts
-    "{{ service.buildTool }}-builder:jdk{{ svc_java }}" = "docker-image:{{ service.buildTool }}-builder:jdk{{ svc_java }}"
+    "{{ service.buildTool }}-builder:jdk{{ svc_java }}" = "target:{{ service.buildTool }}-builder-jdk{{ svc_java }}"
   }
   args = {
     BUILDER_IMAGE = "{{ service.buildTool }}-builder:jdk{{ svc_java }}"
