@@ -3,10 +3,9 @@ services:
   cas:
     container_name: la_cas
     extra_hosts: {{ docker_extra_hosts_dict | default({}) | to_json }}
-{% if build_images | default(false) %}
-    # Using locally built image
-    image: cas:{{ cas_version | default('6.5.6-3') }}
-    pull_policy: never
+    image: {{ docker_registry | default('') }}{% if docker_registry %}/{% endif %}cas:{{ cas_version | default('6.5.6-3') }}
+    pull_policy: {{ 'never' if is_builder_host else 'always' }}
+{% if build_images | default(false) and is_builder_host %}
     build:
       context: ../../dockerfiles/cas5
       dockerfile: Dockerfile
@@ -14,10 +13,6 @@ services:
         CAS_VERSION: {{ cas_version | default('6.5.6-3') }}
         CAS_REPO: {{ cas_repo | default('https://github.com/AtlasOfLivingAustralia/ala-cas-5.git') }}
         CAS_BRANCH: {{ cas_branch | default('master') }}
-{% else %}
-    # Using locally built image (from docker buildx bake)
-    image: cas:{{ cas_version | default('6.5.6-3') }}
-    pull_policy: never
 {% endif %}
     volumes:
       - ../cas:/data/cas

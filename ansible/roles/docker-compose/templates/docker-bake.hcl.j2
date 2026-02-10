@@ -49,7 +49,11 @@ target "{{ tool }}-builder-jdk{{ jdk }}" {
     MAVEN_VERSION = "3.9"
     {% endif %}
   }
+{% if docker_registry and docker_registry != '' %}
+  tags = ["{{ docker_registry }}/{{ tool }}-builder:jdk{{ jdk }}"]
+{% else %}
   tags = ["{{ tool }}-builder:jdk{{ jdk }}"]
+{% endif %}
   output = ["type=docker"]
 {% if docker_registry and docker_registry != '' %}
   cache-from = ["type=registry,ref={{ docker_registry }}/{{ tool }}-builder:jdk{{ jdk }}-${CACHE_TAG}"]

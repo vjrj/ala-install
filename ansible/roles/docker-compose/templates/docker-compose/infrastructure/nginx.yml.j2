@@ -5,6 +5,7 @@ services:
 {% if use_la_site_certs %}
   certs-init:
     image: livingatlases/l-a-site-certs:latest
+    pull_policy: never
     container_name: la_certs-init
     extra_hosts: {{ docker_extra_hosts_dict | default({}) | to_json }}
     entrypoint: /bin/sh
@@ -45,7 +46,7 @@ services:
   nginx:
     container_name: la_nginx
     extra_hosts: {{ docker_extra_hosts_dict | default({}) | to_json }}
-    image: {% if docker_registry and docker_registry != '' %}{{ docker_registry }}/{% endif %}nginx:{{ docker_nginx_version | default('1.25') }}
+    image: nginx:{{ docker_nginx_version | default('1.25') }}
     ports:
       - "80:80"
       - "443:443"

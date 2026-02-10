@@ -1,7 +1,8 @@
   # BIE Index - Species web service
 services:
   bie-index:
-    image: bie-index:{{ bie_index_version | default('latest') }}
+    image: {{ docker_registry | default('') }}{% if docker_registry %}/{% endif %}bie-index:{{ bie_index_version | default('latest') }}
+    pull_policy: {{ 'never' if is_builder_host else 'always' }}
     container_name: la_bie-index
     extra_hosts: {{ docker_extra_hosts_dict | default({}) | to_json }}
     restart: unless-stopped

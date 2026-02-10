@@ -3,10 +3,9 @@ services:
   userdetails:
     container_name: la_userdetails
     extra_hosts: {{ docker_extra_hosts_dict | default({}) | to_json }}
-{% if build_images | default(false) %}
-    # Using locally built image
-    image: userdetails:{{ user_details_version | default('3.2.1') }}
-    pull_policy: never
+    image: {{ docker_registry | default('') }}{% if docker_registry %}/{% endif %}userdetails:{{ user_details_version | default('3.2.1') }}
+    pull_policy: {{ 'never' if is_builder_host else 'always' }}
+{% if build_images | default(false) and is_builder_host %}
     build:
       context: ../../dockerfiles/userdetails
       dockerfile: Dockerfile
@@ -14,10 +13,6 @@ services:
         USERDETAILS_VERSION: {{ user_details_version | default('3.2.1') }}
         USERDETAILS_REPO: {{ userdetails_repo | default('https://github.com/AtlasOfLivingAustralia/userdetails.git') }}
         USERDETAILS_BRANCH: {{ userdetails_branch | default('master') }}
-{% else %}
-    # Using locally built image (from docker buildx bake)
-    image: userdetails:{{ user_details_version | default('3.2.1') }}
-    pull_policy: never
 {% endif %}
     volumes:
       - ../userdetails:/data/userdetails

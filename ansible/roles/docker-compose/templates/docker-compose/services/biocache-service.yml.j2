@@ -1,7 +1,8 @@
 # Biocache Service - Records web service
 services:
   biocache-service:
-    image: biocache-service:{{ biocache_service_version | default('latest') }}
+    image: {{ docker_registry | default('') }}{% if docker_registry %}/{% endif %}biocache-service:{{ biocache_service_version | default('latest') }}
+    pull_policy: {{ 'never' if is_builder_host else 'always' }}
     build:
       context: ../../dockerfiles/biocache-service
     container_name: la_biocache-service

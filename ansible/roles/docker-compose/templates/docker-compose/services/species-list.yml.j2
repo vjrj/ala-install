@@ -3,16 +3,12 @@ services:
   species-list:
     container_name: la_species-list
     extra_hosts: {{ docker_extra_hosts_dict | default({}) | to_json }}
-{% if build_images | default(false) %}
-    image: {{ docker_registry | default('') }}species-list:{{ species_list_version | default('latest') }}
-    pull_policy: never
+    image: {{ docker_registry | default('') }}{% if docker_registry %}/{% endif %}specieslist-webapp:{{ species_list_version | default('latest') }}
+    pull_policy: {{ 'never' if is_builder_host else 'always' }}
+{% if build_images | default(false) and is_builder_host %}
     build:
       context: ../../dockerfiles/species-list
       dockerfile: Dockerfile
-{% else %}
-    # Use locally built image (from docker buildx bake)
-    image: species-list:{{ species_list_version | default('latest') }}
-    pull_policy: never
 {% endif %}
     volumes:
       - ../specieslist-webapp:/data/specieslist-webapp

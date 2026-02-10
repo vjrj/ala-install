@@ -3,10 +3,9 @@ services:
   cas-management:
     container_name: la_cas-management
     extra_hosts: {{ docker_extra_hosts_dict | default({}) | to_json }}
-{% if build_images | default(false) %}
-    # Using locally built image
-    image: cas-management:{{ cas_management_version | default('6.5.5-2') }}
-    pull_policy: never
+    image: {{ docker_registry | default('') }}{% if docker_registry %}/{% endif %}cas-management:{{ cas_management_version | default('6.5.5-2') }}
+    pull_policy: {{ 'never' if is_builder_host else 'always' }}
+{% if build_images | default(false) and is_builder_host %}
     build:
       context: ../../dockerfiles/cas-management
       dockerfile: Dockerfile
@@ -14,10 +13,6 @@ services:
         CAS_MANAGEMENT_VERSION: {{ cas_management_version | default('6.5.5-2') }}
         CAS_MANAGEMENT_REPO: {{ cas_management_repo | default('https://github.com/AtlasOfLivingAustralia/ala-cas-5-services.git') }}
         CAS_MANAGEMENT_BRANCH: {{ cas_management_branch | default('master') }}
-{% else %}
-    # Using locally built image (from docker buildx bake)
-    image: cas-management:{{ cas_management_version | default('6.5.5-2') }}
-    pull_policy: never
 {% endif %}
     volumes:
       - ../cas-management:/data/cas-management

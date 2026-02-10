@@ -254,7 +254,7 @@
   when:
     - build_images | default(false)
     - docker_registry | default('') != ''
-    - inventory_hostname != (groups['docker_compose'] | first)
+    - not is_builder_host
   tags:
     - build
     - docker-compose

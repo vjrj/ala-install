@@ -6,6 +6,8 @@ services:
     extra_hosts: {{ docker_extra_hosts_dict | default({}) | to_json }}
 {% if build_images is defined and (build_images | bool or build_images == 'true') %}
     # Build from source when build_images is enabled
+    image: {{ docker_registry | default('') }}{% if docker_registry %}/{% endif %}branding-builder:{{ branding_version | default('latest') }}
+    pull_policy: {{ 'never' if is_builder_host else 'always' }}
     build:
       context: ../dockerfiles/branding
       dockerfile: Dockerfile
@@ -17,12 +19,10 @@ services:
         GIT_REF: {{ branding_git_ref | default('master') }}
 {% endif %}
         NODE_VERSION: {{ branding_node_version | default('18') }}
-    image: {{ docker_registry | default('') }}branding-builder:{{ branding_version | default('latest') }}
-    pull_policy: never
 {% else %}
     # Use pre-built image from docker buildx bake
-    image: {{ docker_registry | default('') }}branding-builder:{{ branding_version | default('latest') }}
-    pull_policy: never
+    image: {{ docker_registry | default('') }}{% if docker_registry %}/{% endif %}branding-builder:{{ branding_version | default('latest') }}
+    pull_policy: {{ 'never' if is_builder_host else 'always' }}
 {% endif %}
     volumes:
       - la_branding-assets:/output

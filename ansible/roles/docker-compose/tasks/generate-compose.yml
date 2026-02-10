@@ -1467,6 +1467,11 @@
     - docker-compose
     - build
 
+- name: Set builder host status
+  set_fact:
+    is_builder_host: "{{ inventory_hostname == (groups['docker_compose'] | first) }}"
+  tags: [always, only, docker-compose, build]
+
 - name: Include build-images tasks
   include_tasks: build-images.yml
   when: build_images | default(false)

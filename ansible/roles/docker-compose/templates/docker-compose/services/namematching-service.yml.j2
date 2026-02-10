@@ -2,7 +2,8 @@ version: '3.7'
 
 services:
   namematching-service:
-    image: {{ docker_registry }}/ala-namematching-server:{{ ala_namematching_service_version }}
+    image: {{ docker_registry | default('') }}{% if docker_registry %}/{% endif %}ala-namematching-server:{{ ala_namematching_service_version }}
+    pull_policy: {{ 'never' if is_builder_host else 'always' }}
     ports:
       - "{{ namematching_service_port }}:9179"
       - "{{ namematching_admin_port }}:9180"
