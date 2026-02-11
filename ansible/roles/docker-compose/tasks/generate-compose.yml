@@ -1459,7 +1459,8 @@
     - build
 
 - name: Pipelines host-side setup
-  include_tasks: "../../pipelines/tasks/main.yml"
+  include_role:
+    name: pipelines
   vars:
     deployment_type: container
     spark_user: "1000"
