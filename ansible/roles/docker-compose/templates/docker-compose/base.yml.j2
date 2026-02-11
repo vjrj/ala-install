@@ -68,6 +68,9 @@ include:
 {% if 'biocache_service' in services_enabled %}
   - ./services/biocache-service.yml
 {% endif %}
+{% if 'pipelines' in services_enabled %}
+  - ./services/pipelines.yml
+{% endif %}
 {% if 'gatus' in all_groups %}
   - ./infrastructure/gatus.yml
 {% endif %}

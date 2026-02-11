@@ -1317,6 +1317,18 @@
     - biocache-service
     - docker-compose
 
+- name: Generate pipelines.yml
+  template:
+    src: docker-compose/services/pipelines.yml.j2
+    dest: "{{ docker_compose_data_dir }}/services/pipelines.yml"
+    mode: '0644'
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
+  when: "'pipelines' in services_enabled"
+  tags:
+    - pipelines
+    - docker-compose
+
 # Paths are now correctly set to dockerfiles/ in templates, no fix needed
 
 # Create directories for all services that HAVE a build tool in the description
@@ -1423,11 +1435,39 @@
   when:
     - item in docker_services_desc
     - docker_services_desc[item].get('buildTool') == 'maven'
+    - item != 'pipelines'
     - docker_services_desc[item].get('artifacts') is defined
     - docker_services_desc[item].get('role') is defined
   tags:
     - docker-compose
     - build
+
+- name: Generate Pipelines Dockerfile
+  template:
+    src: "Dockerfile.pipelines.j2"
+    dest: "{{ docker_compose_data_dir }}/dockerfiles/{{ docker_services_desc['pipelines'].role }}/Dockerfile"
+    mode: '0644'
+    owner: "{{ docker_compose_userid }}"
+    group: "{{ docker_compose_usergid }}"
+  become: true
+  vars:
+    source_date_epoch: "{{ ansible_date_time.epoch }}"
+  when:
+    - "'pipelines' in services_to_build"
+  tags:
+    - docker-compose
+    - build
+
+- name: Pipelines host-side setup
+  include_tasks: "../../pipelines/tasks/main.yml"
+  vars:
+    deployment_type: container
+    spark_user: "1000"
+    vocab_dest_dir: "{{ data_dir }}/la-pipelines/vocabularies"
+  when: "'pipelines' in services_enabled"
+  tags:
+    - pipelines
+    - docker-compose
 
 # Entrypoint scripts are no longer generated - services use CMD directly
 # See Dockerfile.gradle.j2 and Dockerfile.maven.j2 for direct CMD execution

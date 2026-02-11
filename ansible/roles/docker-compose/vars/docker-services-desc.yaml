@@ -387,6 +387,9 @@ docker_services_desc:
     desc: 'Pipelines for data processing and indexing of biodiversity data'
     optional: false
     buildTool: 'maven'
+    buildMethod: 'repo-branch'
+    repository: 'https://github.com/gbif/pipelines.git'
+    branch: 'dev'
     artifacts: 'pipelines'
     allowMultipleDeploys: true
   events:
