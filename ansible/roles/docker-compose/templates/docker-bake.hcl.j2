@@ -112,7 +112,7 @@ target "branding" {
 {% set svc_role = service.role | default(service_id) %}
 {% set svc_artifact = service.artifacts | default(svc_role) %}
 {% set svc_java = service_java_dict[service_id] | default('11') %}
-{% set svc_version = service_versions_dict[service_id] | default('develop') %}
+{% set svc_version = service_versions_dict[service_id] | default(service.branch | default('develop')) %}
 
 target "{{ svc_role }}" {
   dockerfile = "Dockerfile"
@@ -129,7 +129,7 @@ target "{{ svc_role }}" {
     GROUP_ID = "{{ service.groupId | default('au.org.ala') }}"
     VERSION = "{{ svc_version }}"
     REPO = "{{ service.repository | default('') }}"
-    BRANCH = "{{ vars[service_id + '_branch'] | default('master') }}"
+    BRANCH = "{{ vars[service_id + '_branch'] | default(service.branch | default('master')) }}"
     {% if service.classifier is defined %}
     CLASSIFIER = "{{ service.classifier }}"
     {% endif %}
