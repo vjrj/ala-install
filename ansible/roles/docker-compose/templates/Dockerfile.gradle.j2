@@ -59,7 +59,7 @@ ARG CLASSIFIER=""
 COPY download-artifact.sh /usr/local/bin/download-artifact.sh
 RUN chmod +x /usr/local/bin/download-artifact.sh
 RUN --mount=type=cache,target=/cache/nexus,sharing=locked \
-    EXTENSION=${EXTENSION} BUILD_METHOD=nexus /usr/local/bin/download-artifact.sh
+    EXTENSION=${EXTENSION} CLASSIFIER=${CLASSIFIER} BUILD_METHOD=nexus /usr/local/bin/download-artifact.sh
 
 # ============================================
 # Stage 3: Build from URL
@@ -99,18 +99,28 @@ RUN echo "🔨 Building with ${BUILD_TOOL} in ${BUILD_DIR}..."
 
 RUN --mount=type=cache,target=/root/.gradle \
     if [ "${BUILD_DIR}" != "." ]; then \
-    # Convert directory path to Gradle project path (e.g. server -> :server)
+    # Convert directory path to Gradle project path (e.g. server -> :server) \
     PROJECT_PATH=$(echo "${BUILD_DIR}" | sed 's/\//:/g') && \
     echo "🔨 Building project :${PROJECT_PATH} from root..." && \
-    ./gradlew ":${PROJECT_PATH}:clean" ":${PROJECT_PATH}:war" -x test --no-daemon --max-workers=1 && \
-    mv "${BUILD_DIR}/build/libs/"*.war /build/artifact.war; \
+    if [ "${EXTENSION}" = "war" ]; then \
+    ./gradlew ":${PROJECT_PATH}:clean" ":${PROJECT_PATH}:war" -x test --no-daemon --max-workers=1; \
+    else \
+    ./gradlew ":${PROJECT_PATH}:clean" ":${PROJECT_PATH}:assemble" -x test --no-daemon --max-workers=1; \
+    fi && \
+    find "${BUILD_DIR}/build/libs/" -maxdepth 1 -name "*.${EXTENSION}" -exec mv {} /build/artifact.${EXTENSION} \; || \
+    find "${BUILD_DIR}/build/libs/" -maxdepth 1 -name "*.jar" -exec mv {} /build/artifact.${EXTENSION} \; ; \
     else \
     echo "🔨 Building from root..." && \
-    ./gradlew clean war -x test --no-daemon --max-workers=1 && \
-    mv build/libs/*.war /build/artifact.war; \
+    if [ "${EXTENSION}" = "war" ]; then \
+    ./gradlew clean war -x test --no-daemon --max-workers=1; \
+    else \
+    ./gradlew clean assemble -x test --no-daemon --max-workers=1; \
+    fi && \
+    find "build/libs/" -maxdepth 1 -name "*.${EXTENSION}" -exec mv {} /build/artifact.${EXTENSION} \; || \
+    find "build/libs/" -maxdepth 1 -name "*.jar" -exec mv {} /build/artifact.${EXTENSION} \; ; \
     fi
 
-RUN ls -lh /build/artifact.war && \
+RUN ls -lh /build/artifact.${EXTENSION} && \
     echo "✅ Build completed successfully"
 
 # ============================================
@@ -140,18 +150,28 @@ RUN echo "🔨 Building with ${BUILD_TOOL} in ${BUILD_DIR}..."
 
 RUN --mount=type=cache,target=/root/.gradle \
     if [ "${BUILD_DIR}" != "." ]; then \
-    # Convert directory path to Gradle project path (e.g. server -> :server)
+    # Convert directory path to Gradle project path (e.g. server -> :server) \
     PROJECT_PATH=$(echo "${BUILD_DIR}" | sed 's/\//:/g') && \
     echo "🔨 Building project :${PROJECT_PATH} from root..." && \
-    ./gradlew ":${PROJECT_PATH}:clean" ":${PROJECT_PATH}:war" -x test --no-daemon --max-workers=1 && \
-    mv "${BUILD_DIR}/build/libs/"*.war /build/artifact.war; \
+    if [ "${EXTENSION}" = "war" ]; then \
+    ./gradlew ":${PROJECT_PATH}:clean" ":${PROJECT_PATH}:war" -x test --no-daemon --max-workers=1; \
+    else \
+    ./gradlew ":${PROJECT_PATH}:clean" ":${PROJECT_PATH}:assemble" -x test --no-daemon --max-workers=1; \
+    fi && \
+    find "${BUILD_DIR}/build/libs/" -maxdepth 1 -name "*.${EXTENSION}" -exec mv {} /build/artifact.${EXTENSION} \; || \
+    find "${BUILD_DIR}/build/libs/" -maxdepth 1 -name "*.jar" -exec mv {} /build/artifact.${EXTENSION} \; ; \
     else \
     echo "🔨 Building from root..." && \
-    ./gradlew clean war -x test --no-daemon --max-workers=1 && \
-    mv build/libs/*.war /build/artifact.war; \
+    if [ "${EXTENSION}" = "war" ]; then \
+    ./gradlew clean war -x test --no-daemon --max-workers=1; \
+    else \
+    ./gradlew clean assemble -x test --no-daemon --max-workers=1; \
+    fi && \
+    find "build/libs/" -maxdepth 1 -name "*.${EXTENSION}" -exec mv {} /build/artifact.${EXTENSION} \; || \
+    find "build/libs/" -maxdepth 1 -name "*.jar" -exec mv {} /build/artifact.${EXTENSION} \; ; \
     fi
 
-RUN ls -lh /build/artifact.war && \
+RUN ls -lh /build/artifact.${EXTENSION} && \
     echo "✅ Build completed successfully"
 
 # ============================================

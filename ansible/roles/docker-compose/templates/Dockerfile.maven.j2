@@ -59,7 +59,7 @@ ARG CLASSIFIER=""
 COPY download-artifact.sh /usr/local/bin/download-artifact.sh
 RUN chmod +x /usr/local/bin/download-artifact.sh
 RUN --mount=type=cache,target=/cache/nexus,sharing=locked \
-    EXTENSION=${EXTENSION} BUILD_METHOD=nexus /usr/local/bin/download-artifact.sh
+    EXTENSION=${EXTENSION} CLASSIFIER=${CLASSIFIER} BUILD_METHOD=nexus /usr/local/bin/download-artifact.sh
 
 # ============================================
 # Stage 3: Build from URL
@@ -98,21 +98,23 @@ RUN git checkout "${BRANCH}" && \
 RUN echo "🔨 Building with ${BUILD_TOOL} in ${BUILD_DIR}..."
 
 RUN --mount=type=cache,target=/root/.m2 \
-    echo "📦 Installing parent POM..." && \
-    mvn install -N -DskipTests || true && \
+    echo "📦 Installing root parent POM..." && \
+    mvn install -N -DskipTests -U || true && \
     if [ "${BUILD_DIR}" != "." ]; then \
+    echo "📦 Installing module parent POM: ${BUILD_DIR}..." && \
+    mvn install -N -DskipTests -U -f "${BUILD_DIR}/pom.xml" || true && \
     echo "🔨 Building module ${BUILD_DIR} from root..." && \
-    mvn clean package -DskipTests -P war -pl "${BUILD_DIR}" -am && \
+    mvn clean package -DskipTests -P war -pl "${BUILD_DIR}" -am -U && \
     find "${BUILD_DIR}/target/" -maxdepth 1 -name "*.${EXTENSION}" -exec mv {} /build/artifact.${EXTENSION} \; || \
     find "${BUILD_DIR}/target/" -maxdepth 1 -name "*.jar" -exec mv {} /build/artifact.${EXTENSION} \; ; \
     else \
     echo "🔨 Building from root..." && \
-    mvn clean package -DskipTests -P war && \
+    mvn clean package -DskipTests -P war -U && \
     find "target/" -maxdepth 1 -name "*.${EXTENSION}" -exec mv {} /build/artifact.${EXTENSION} \; || \
     find "target/" -maxdepth 1 -name "*.jar" -exec mv {} /build/artifact.${EXTENSION} \; ; \
     fi
 
-RUN ls -lh /build/artifact.war && \
+RUN ls -lh /build/artifact.${EXTENSION} && \
     echo "✅ Build completed successfully"
 
 # ============================================
@@ -143,15 +145,17 @@ RUN echo "🔨 Building with ${BUILD_TOOL} in ${BUILD_DIR}..."
 RUN --mount=type=cache,target=/root/.m2 \
     if [ "${BUILD_DIR}" != "." ]; then \
     echo "🔨 Building module ${BUILD_DIR} from root..." && \
-    mvn clean package -DskipTests -P war -pl "${BUILD_DIR}" -am && \
-    mv "${BUILD_DIR}/target/"*.war /build/artifact.war; \
+    mvn clean package -DskipTests -P war -pl "${BUILD_DIR}" -am -U && \
+    find "${BUILD_DIR}/target/" -maxdepth 1 -name "*.${EXTENSION}" -exec mv {} /build/artifact.${EXTENSION} \; || \
+    find "${BUILD_DIR}/target/" -maxdepth 1 -name "*.jar" -exec mv {} /build/artifact.${EXTENSION} \; ; \
     else \
     echo "🔨 Building from root..." && \
-    mvn clean package -DskipTests -P war && \
-    mv target/*.war /build/artifact.war; \
+    mvn clean package -DskipTests -P war -U && \
+    find "target/" -maxdepth 1 -name "*.${EXTENSION}" -exec mv {} /build/artifact.${EXTENSION} \; || \
+    find "target/" -maxdepth 1 -name "*.jar" -exec mv {} /build/artifact.${EXTENSION} \; ; \
     fi
 
-RUN ls -lh /build/artifact.war && \
+RUN ls -lh /build/artifact.${EXTENSION} && \
     echo "✅ Build completed successfully"
 
 # ============================================

@@ -144,6 +144,8 @@ docker_services_desc:
     sample: 'https://logger.ala.org.au'
     artifacts: 'logger-service'
     buildTool: 'gradle'
+    extension: 'jar'
+    classifier: 'exec'
     repository: 'https://github.com/AtlasOfLivingAustralia/logger-service'
     version_variable: 'logger_version'
     log_config_filename: 'logback.xml'
