@@ -103,3 +103,16 @@
   tags:
     - db-init
     - docker-volumes
+
+- name: "Database volumes: Create Branding external volume"
+  docker_volume:
+    name: la_branding-assets
+    driver: local
+    docker_host: "{{ docker_socket }}"
+    state: present
+  become: true
+  tags:
+    - db-init
+    - docker-volumes
+    - branding
+  when: "'branding' in physical_server_groups"
