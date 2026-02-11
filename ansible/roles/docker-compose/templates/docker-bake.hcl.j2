@@ -96,15 +96,7 @@ target "branding" {
 {% endif %}
     NODE_VERSION = "{{ branding_node_version | default('18') }}"
   }
-{% if docker_registry and docker_registry != '' %}
-  tags = ["{{ docker_registry }}/branding-builder:{{ branding_version | default('latest') }}", "{{ docker_registry }}/branding-builder:latest"]
-  cache-from = [
-    "type=registry,ref={{ docker_registry }}/branding-builder:buildcache",
-    "type=registry,ref={{ docker_registry }}/branding-builder:latest"
-  ]
-{% else %}
   tags = ["branding-builder:{{ branding_version | default('latest') }}", "branding-builder:latest"]
-{% endif %}
   cache-to = ["type=inline"]
   platforms = ["linux/amd64"]
 }
@@ -172,9 +164,6 @@ group "all" {
 {% if 'ala-i18n' in services_to_build %}
     "ala-i18n",
 {% endif %}
-{% if 'branding' in services_to_build %}
-    "branding",
-{% endif %}
 {% for service_id in services_to_build %}
 {% if service_id in docker_services_desc and docker_services_desc[service_id].get('buildTool') in ['gradle', 'maven'] %}
     "{{ docker_services_desc[service_id].role }}",
@@ -186,9 +175,6 @@ group "all" {
 # Build only services (assumes builders exist)
 group "services" {
   targets = [
-{% if 'branding' in services_to_build %}
-    "branding",
-{% endif %}
 {% for service_id in services_to_build %}
 {% if service_id in docker_services_desc and docker_services_desc[service_id].get('buildTool') in ['gradle', 'maven'] %}
     "{{ docker_services_desc[service_id].role }}",

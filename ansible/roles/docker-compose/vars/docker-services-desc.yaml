@@ -329,6 +329,7 @@ docker_services_desc:
     sample: 'Styling-the-web-app'
     optional: false
     allowMultipleDeploys: true
+    buildTool: 'node'
     repository: 'https://github.com/living-atlases/base-branding'
   namematchingService:
     name: 'namematching'

@@ -156,6 +156,43 @@
     - monitor_builders.ansible_job_id is defined
   ignore_errors: true
 
+- name: Build site-specific branding locally
+  shell: >
+    set -eo pipefail;
+    docker context use desktop-linux 2>/dev/null || docker context use default;
+    docker buildx bake
+    -f docker-bake.hcl
+    --set *.cache-from=type=local,src={{ docker_build_cache_dir }}
+    --set *.cache-to=type=local,dest={{ docker_build_cache_dir }},mode=max
+    --allow=fs={{ ansible_env.HOME }}
+    --allow=fs.read=dockerfiles
+    --progress=plain
+    --load
+    branding
+    2>&1 | tee /tmp/docker-build-branding.log
+  args:
+    chdir: "{{ docker_compose_data_dir }}"
+    executable: /bin/bash
+  register: build_branding
+  changed_when: true
+  when:
+    - "'branding' in services_enabled"
+    - build_images | default(false)
+  async: 1800
+  poll: 0
+
+- name: Monitor branding build progress
+  shell: |
+    if [ -f /tmp/docker-build-branding.log ]; then
+      tail -10 /tmp/docker-build-branding.log | grep -E '#[0-9]+|DONE|CACHED|downloading|extracting|exporting' || tail -5 /tmp/docker-build-branding.log
+    fi
+  args:
+    executable: /bin/bash
+  when: 
+    - "'branding' in services_enabled"
+    - build_branding.ansible_job_id is defined
+  ignore_errors: true
+
 - name: Build service images
   shell: >
     set -eo pipefail;
