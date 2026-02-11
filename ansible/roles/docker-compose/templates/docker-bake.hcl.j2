@@ -124,6 +124,7 @@ target "{{ svc_role }}" {
   args = {
     BUILDER_IMAGE = "{{ service.buildTool }}-builder:jdk{{ svc_java }}"
     {{ service.buildTool | upper }}_BUILDER_IMAGE = "{{ service.buildTool }}-builder:jdk{{ svc_java }}"
+    BUILD_METHOD = "{{ service.buildMethod | default('nexus') }}"
     ARTIFACT = "{{ svc_artifact }}"
     GROUP_ID = "{{ service.groupId | default('au.org.ala') }}"
     VERSION = "{{ svc_version }}"

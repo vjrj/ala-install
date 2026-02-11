@@ -1,9 +1,13 @@
-version: '3.7'
-
 services:
   sensitive-data-service:
+    container_name: la_sensitive_data_service
     image: {{ docker_registry | default('') }}{% if docker_registry %}/{% endif %}ala-sensitive-data-server:{{ ala_sensitive_data_service_version }}
     pull_policy: {{ 'never' if is_builder_host else 'always' }}
+{% if build_images | default(false) and is_builder_host %}
+    build:
+      context: {{ docker_compose_data_dir }}/dockerfiles/sensitive-data-service
+      dockerfile: Dockerfile
+{% endif %}
     ports:
       - "{{ sensitive_data_service_port }}:9189"
       - "{{ sensitive_data_admin_port }}:9190"
@@ -16,13 +20,6 @@ services:
       - "{{ data_dir }}/biocache/layers:/data/biocache/layers:ro"
       - "{{ data_dir }}/ala-sensitive-data-service/config:/data/ala-sensitive-data-server/config:ro"
     networks:
-      - ala-network
-    deploy:
-      mode: replicated
-      replicas: 1
-      labels:
-        # Dashboard
-        - "traefik.enable=true"
-        - "traefik.http.routers.sensitive-data-service.rule=Host(`{{ sensitive_data_service_hostname }}`) && PathPrefix(`/`)"
-        - "traefik.http.routers.sensitive-data-service.entrypoints=web"
-        - "traefik.http.services.sensitive-data-service.loadbalancer.server.port=9189"
+      default: {}
+      {{ docker_network | default('internal') }}:
+    restart: unless-stopped

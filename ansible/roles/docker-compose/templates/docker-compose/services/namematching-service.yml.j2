@@ -1,9 +1,13 @@
-version: '3.7'
-
 services:
   namematching-service:
+    container_name: la_namematching_service
     image: {{ docker_registry | default('') }}{% if docker_registry %}/{% endif %}ala-namematching-server:{{ ala_namematching_service_version }}
     pull_policy: {{ 'never' if is_builder_host else 'always' }}
+{% if build_images | default(false) and is_builder_host %}
+    build:
+      context: {{ docker_compose_data_dir }}/dockerfiles/namematching-service
+      dockerfile: Dockerfile
+{% endif %}
     ports:
       - "{{ namematching_service_port }}:9179"
       - "{{ namematching_admin_port }}:9180"
@@ -14,13 +18,6 @@ services:
       - "{{ data_dir }}/lucene/namematching-nm:/data/lucene/namematching-nm:ro"
       - "{{ data_dir }}/ala-namematching-service/config:/data/ala-namematching-server/config:ro"
     networks:
-      - ala-network
-    deploy:
-      mode: replicated
-      replicas: 1
-      labels:
-        # Dashboard
-        - "traefik.enable=true"
-        - "traefik.http.routers.namematching-service.rule=Host(`{{ namematching_service_hostname }}`) && PathPrefix(`/`)"
-        - "traefik.http.routers.namematching-service.entrypoints=web"
-        - "traefik.http.services.namematching-service.loadbalancer.server.port=9179"
+      default: {}
+      {{ docker_network | default('internal') }}:
+    restart: unless-stopped
