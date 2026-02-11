@@ -1,6 +1,6 @@
 services:
   la_pipelines:
-    image: ${DOCKER_REGISTRY:-}pipelines:${TAG:-latest}
+    image: ${DOCKER_REGISTRY:-}la-pipelines:${TAG:-latest}
     container_name: la_pipelines
     user: "1000:1000"
     environment:
