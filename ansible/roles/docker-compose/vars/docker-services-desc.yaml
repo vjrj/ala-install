@@ -103,6 +103,7 @@ docker_services_desc:
     buildTool: 'gradle'
     repository: 'https://github.com/AtlasOfLivingAustralia/image-service'
     classifier: 'exec'
+    extension: 'jar'
     version_variable: 'image_service_version'
     log_dir: '/var/log/atlas/image-service'
     log_config_filename: 'logback.groovy'

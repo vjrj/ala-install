@@ -37,7 +37,6 @@ RUN --mount=type=cache,target=/var/cache/apt,sharing=locked \
   curl \
   unzip \
   which \
-  shadow-utils \
   && rm -rf /var/lib/apt/lists/*
 
 RUN mkdir /data && chown 1000:1000 /data

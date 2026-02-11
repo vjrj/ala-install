@@ -139,6 +139,9 @@ target "{{ svc_role }}" {
     {% if service.buildTool == 'maven' %}
     RUNTIME_IMAGE = "eclipse-temurin:{{ svc_java }}-jre-jammy"
     {% endif %}
+    {% if service.extension is defined %}
+    EXTENSION = "{{ service.extension }}"
+    {% endif %}
   }
 {% if docker_registry and docker_registry != '' %}
   tags = ["{{ docker_registry }}/{{ svc_artifact }}:{{ svc_version }}", "{{ docker_registry }}/{{ svc_artifact }}:latest"]

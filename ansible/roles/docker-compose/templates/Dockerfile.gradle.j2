@@ -49,6 +49,7 @@ FROM base-builder AS builder-nexus
 
 ARG VERSION={{ service_version }}
 ARG ARTIFACT={{ artifact_id }}
+ARG EXTENSION={{ extension | default('war') }}
 {% if service_classifier %}
 ARG CLASSIFIER={{ service_classifier }}
 {% else %}
@@ -58,7 +59,7 @@ ARG CLASSIFIER=""
 COPY download-artifact.sh /usr/local/bin/download-artifact.sh
 RUN chmod +x /usr/local/bin/download-artifact.sh
 RUN --mount=type=cache,target=/cache/nexus,sharing=locked \
-    BUILD_METHOD=nexus /usr/local/bin/download-artifact.sh
+    EXTENSION=${EXTENSION} BUILD_METHOD=nexus /usr/local/bin/download-artifact.sh
 
 # ============================================
 # Stage 3: Build from URL
@@ -69,7 +70,7 @@ ARG ARTIFACT_URL=""
 
 COPY download-artifact.sh /usr/local/bin/download-artifact.sh
 RUN chmod +x /usr/local/bin/download-artifact.sh
-RUN BUILD_METHOD=url /usr/local/bin/download-artifact.sh
+RUN EXTENSION=${EXTENSION} BUILD_METHOD=url /usr/local/bin/download-artifact.sh
 
 # ============================================
 # Stage 4: Build from Repository Branch
@@ -179,10 +180,11 @@ LABEL org.opencontainers.image.source="{{ repo }}"
 # Convert APP_ARTIFACT to ENV so it persists after USER change
 ENV APP_ARTIFACT={{ artifact_id }}
 ENV SERVICE_USER={{ service_name }}
+ENV EXTENSION={{ extension | default('war') }}
 
 WORKDIR /opt/atlas/${APP_ARTIFACT}
 
-COPY --from=final-builder /build/artifact.war /opt/atlas/${APP_ARTIFACT}/app.war
+COPY --from=final-builder /build/artifact.${EXTENSION} /opt/atlas/${APP_ARTIFACT}/app.${EXTENSION}
 
 {% if log_config_filename %}
 # Logging configuration
@@ -209,7 +211,7 @@ RUN groupadd -r ${SERVICE_USER} -g 1000 && \
     mkdir -p /data/${APP_ARTIFACT}/config && \
     mkdir -p /data/${APP_ARTIFACT}/data && \
     chown -R ${SERVICE_USER}:${SERVICE_USER} /data/${APP_ARTIFACT} && \
-    chown ${SERVICE_USER}:${SERVICE_USER} /opt/atlas/${APP_ARTIFACT}/app.war && \
+    chown ${SERVICE_USER}:${SERVICE_USER} /opt/atlas/${APP_ARTIFACT}/app.${EXTENSION} && \
     chown -R ${SERVICE_USER}:${SERVICE_USER} /opt/atlas/${APP_ARTIFACT}
 {% if log_dir and log_dir != '' %}
 RUN mkdir -p {{ log_dir }} && \
@@ -233,7 +235,7 @@ USER ${SERVICE_USER}
 
 # Execute service
 # Use shell form to allow variable expansion
-CMD java ${JAVA_OPTS} -jar /opt/atlas/${APP_ARTIFACT}/app.war
+CMD java ${JAVA_OPTS} -jar /opt/atlas/${APP_ARTIFACT}/app.${EXTENSION}
 
 ARG BUILD_DATE
 ARG VCS_REF
