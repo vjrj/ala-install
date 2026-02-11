@@ -1,0 +1,200 @@
+# Ansible generated
+run:
+  platform: local
+  local:
+    sparkTmp: {{ spark_tmp }}
+    sparkMaster: ""
+    dwcaTmp: {{ dwca_tmp }}
+    dwcaImportDir: {{ dwca_import_dir }}
+  spark-embedded:
+    sparkTmp: {{ spark_tmp }}
+    sparkMaster: ""
+    dwcaTmp: {{ dwca_tmp }}
+    dwcaImportDir: {{ dwca_import_dir }}
+  spark-cluster:
+    jar: /usr/share/la-pipelines/la-pipelines.jar
+    sparkTmp: {{ spark_tmp }}
+    sparkMaster: ""
+    dwcaTmp: {{ dwca_tmp }}
+    dwcaImportDir: {{ dwca_import_dir }}
+
+alaNameMatch:
+  wsUrl: {{ namematching_service_url | default('http://ala-name-service:9179') }}
+sds:
+  wsUrl: {{ sensitive_data_service_url | default('http://ala-sensitive-data-service:9189') }}
+
+collectory:
+  wsUrl: {{ collectory_service_slash_url | default(collectory_url) }}
+  httpHeaders:
+    Authorization: {{ pipelines_api_key | default(ala_api_key) }}
+
+imageService:
+  wsUrl: {{ image_service_url }}
+  httpHeaders:
+    apiKey:  {{ pipelines_api_key | default(ala_api_key) }}
+
+speciesListService:
+  wsUrl: {{ specieslist_base_url | default('https://lists.ala.org.au')}}
+  timeoutSec: 70
+
+geocodeConfig:
+  country:
+    path: {{ data_dir }}/pipelines-shp/{{ geocode_country_layer | default('political') }}
+    field: {{ geocode_country_field | default('ISO_A2') }}
+    intersectMapping:
+      CX: {{geocode_region | default('AU')}}
+      CC: {{geocode_region | default('AU')}}
+      HM: {{geocode_region | default('AU')}}
+      NF: {{geocode_region | default('AU')}}
+  stateProvince:
+    path: /data/pipelines-shp/{{ geocode_state_province_layer | default('cw_state_poly') }}
+    field: {{ geocode_state_province_field | default('FEATURE') }}
+
+{% if state_province_centre_points_file is defined %}
+locationInfoConfig:
+    stateProvinceCentrePointsFile : {{ data_dir }}/la-pipelines/config/stateProvinceCentrePoints.txt
+
+{% endif %}
+gbifConfig:
+  vocabularyConfig:
+    vocabulariesPath: {{ vocabulary_dir }}
+    lifeStageVocabName: LifeStage
+
+general:
+  attempt: 1
+  inputPath: {{ pipelines_data_dir }}
+  targetPath: {{ pipelines_data_dir }}
+dataset-validated-dump:
+  inputPath: {{ pipelines_data_dir }}
+dataset-count-dump:
+  inputPath: {{ pipelines_data_dir }}/
+  dwcaImportPath: {{ dwca_import_dir }}/
+dataset-archive-list:
+  inputPath: {{ dwca_import_dir }}/
+dwca-avro:
+  inputPath: {{ dwca_import_dir }}/{datasetId}/{datasetId}.zip
+  tempLocation: {{ spark_tmp }}/dwca-avro/{datasetId}
+  hdfsTempLocation: {{ spark_tmp }}
+interpret:
+  inputPath: {{ pipelines_data_dir }}/{datasetId}/1/verbatim.avro
+  targetPath: {{ pipelines_data_dir }}
+images:
+  tempLocation: {{ spark_tmp }}
+  inputPath: {{ pipelines_data_dir }}
+  targetPath: {{ pipelines_data_dir }}
+  recognisedPaths: "{{ image_service_url }}"
+sampling:
+  baseUrl: {{ layers_service_url | default('https://sampling.ala.org.au/sampling-service') }}/
+  inputPath: {{ pipelines_data_dir }}
+  allDatasetsInputPath: /pipelines-all-datasets
+speciesLists:
+  inputPath: {{ pipelines_data_dir }}
+  targetPath: {{ pipelines_data_dir }}
+  speciesAggregatesPath: /pipelines-species
+uuid:
+  inputPath: {{ pipelines_data_dir }}
+  targetPath: {{ pipelines_data_dir }}
+sensitive:
+  inputPath: {{ pipelines_data_dir }}
+  targetPath: {{ pipelines_data_dir }}
+index:
+  inputPath: {{ pipelines_data_dir }}
+  targetPath: {{ pipelines_data_dir }}
+  allDatasetsInputPath: /pipelines-all-datasets
+jackKnife:
+  jackKnifePath: /pipelines-jackknife
+  inputPath: {{ pipelines_data_dir }}
+  targetPath: {{ pipelines_data_dir }}
+  allDatasetsInputPath: /pipelines-all-datasets
+clustering:
+  clusteringPath: /pipelines-clustering
+  inputPath: {{ pipelines_data_dir }}
+  targetPath: {{ pipelines_data_dir }}
+  allDatasetsInputPath: /pipelines-all-datasets
+outlier:
+  inputPath: {{ pipelines_data_dir }}
+  targetPath: {{ pipelines_data_dir }}
+  allDatasetsInputPath: /pipelines-all-datasets
+solr:
+  inputPath: {{ pipelines_data_dir }}
+  allDatasetsInputPath: /pipelines-all-datasets
+  jackKnifePath: /pipelines-jackknife
+  clusteringPath: /pipelines-clustering
+  outlierPath: /pipelines-outlier
+  zkHost: {{ zk_host | default('solr:2181') }}
+  includeSampling: {{ include_sampling }}
+  includeJackKnife: {{ include_jackknife }}
+  includeClustering: {{ include_clustering }}
+  numOfPartitions: {{ solr_num_of_partitions | default('1') }}
+validation-report:
+  checkSolr: {{ check_solr }}
+  checkSampling: {{ include_sampling }}
+  inputPath: {{ pipelines_data_dir }}
+  zkHost: {{ zk_host | default('solr:2181') }}
+export:
+  imageServicePath: "{{ image_service_url }}/image/proxyImageThumbnailLarge?imageId={0}"
+  inputPath: {{ pipelines_data_dir }}
+  targetPath: {{ pipelines_data_dir }}
+  allDatasetsInputPath: /pipelines-all-datasets
+
+### la-pipelines cli additional arguments, like JVM or spark command line arguments
+
+interpret-sh-args:
+  local:
+    jvm: {{ pipelines_jvm_def_options | default('-Xmx8g -XX:+UseG1GC') }} -Dspark.master=local[*]
+  spark-embedded:
+    jvm: {{ pipelines_jvm_def_options | default('-Xmx8g -XX:+UseG1GC') }} -Dspark.master=local[*]
+
+image-sync-sh-args:
+  local:
+    jvm: {{ pipelines_jvm_def_options | default('-Xmx8g -XX:+UseG1GC') }} -Dspark.master=local[*]
+  spark-embedded:
+    jvm: {{ pipelines_jvm_def_options | default('-Xmx8g -XX:+UseG1GC') }} -Dspark.master=local[*]
+
+image-load-sh-args:
+  local:
+    jvm: {{ pipelines_jvm_def_options | default('-Xmx8g -XX:+UseG1GC') }} -Dspark.master=local[*]
+  spark-embedded:
+    jvm: {{ pipelines_jvm_def_options | default('-Xmx8g -XX:+UseG1GC') }} -Dspark.master=local[*]
+
+uuid-sh-args:
+  local:
+    jvm: {{ pipelines_jvm_def_options | default('-Xmx8g -XX:+UseG1GC') }}
+
+sampling-sh-args:
+  local:
+    jvm: {{ pipelines_jvm_def_options | default('-Xmx8g -XX:+UseG1GC') }} -Dspark.master=local[*]
+  spark-embedded:
+    jvm: {{ pipelines_jvm_def_options | default('-Xmx8g -XX:+UseG1GC') }} -Dspark.master=local[*]
+
+sensitive-sh-args:
+  spark-embedded:
+    jvm: {{ pipelines_jvm_def_options | default('-Xmx8g -XX:+UseG1GC') }}
+
+sample-sh-args:
+  local:
+    jvm: {{ pipelines_jvm_def_options | default('-Xmx8g -XX:+UseG1GC') }}
+
+index-sh-args:
+  local:
+    jvm: {{ pipelines_jvm_def_options | default('-Xmx8g -XX:+UseG1GC') }}
+  spark-embedded:
+    jvm: {{ pipelines_jvm_def_options | default('-Xmx8g -XX:+UseG1GC') }}
+
+jackknife-sh-args:
+  local:
+    jvm: {{ pipelines_jvm_def_options | default('-Xmx8g -XX:+UseG1GC') }}
+  spark-embedded:
+    jvm: {{ pipelines_jvm_def_options | default('-Xmx8g -XX:+UseG1GC') }}
+
+clustering-sh-args:
+  local:
+    jvm: {{ pipelines_jvm_def_options | default('-Xmx8g -XX:+UseG1GC') }}
+  spark-embedded:
+    jvm: {{ pipelines_jvm_def_options | default('-Xmx8g -XX:+UseG1GC') }}
+
+solr-sh-args:
+  local:
+    jvm: {{ pipelines_jvm_def_options | default('-Xmx8g -XX:+UseG1GC') }}
+  spark-embedded:
+    jvm: {{ pipelines_jvm_def_options | default('-Xmx8g -XX:+UseG1GC') }}
