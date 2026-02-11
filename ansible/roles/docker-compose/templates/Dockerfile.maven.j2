@@ -98,14 +98,18 @@ RUN git checkout "${BRANCH}" && \
 RUN echo "🔨 Building with ${BUILD_TOOL} in ${BUILD_DIR}..."
 
 RUN --mount=type=cache,target=/root/.m2 \
+    echo "📦 Installing parent POM..." && \
+    mvn install -N -DskipTests || true && \
     if [ "${BUILD_DIR}" != "." ]; then \
     echo "🔨 Building module ${BUILD_DIR} from root..." && \
     mvn clean package -DskipTests -P war -pl "${BUILD_DIR}" -am && \
-    mv "${BUILD_DIR}/target/"*.war /build/artifact.war; \
+    find "${BUILD_DIR}/target/" -maxdepth 1 -name "*.${EXTENSION}" -exec mv {} /build/artifact.${EXTENSION} \; || \
+    find "${BUILD_DIR}/target/" -maxdepth 1 -name "*.jar" -exec mv {} /build/artifact.${EXTENSION} \; ; \
     else \
     echo "🔨 Building from root..." && \
     mvn clean package -DskipTests -P war && \
-    mv target/*.war /build/artifact.war; \
+    find "target/" -maxdepth 1 -name "*.${EXTENSION}" -exec mv {} /build/artifact.${EXTENSION} \; || \
+    find "target/" -maxdepth 1 -name "*.jar" -exec mv {} /build/artifact.${EXTENSION} \; ; \
     fi
 
 RUN ls -lh /build/artifact.war && \
