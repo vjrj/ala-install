@@ -393,7 +393,7 @@ docker_services_desc:
     buildMethod: 'repo-branch'
     repository: 'https://github.com/gbif/pipelines.git'
     branch: 'dev'
-    artifacts: 'pipelines'
+    artifacts: 'la-pipelines'
     allowMultipleDeploys: true
   events:
     name: 'events'
