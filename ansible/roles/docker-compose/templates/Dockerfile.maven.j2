@@ -97,9 +97,15 @@ RUN git checkout "${BRANCH}" && \
 RUN echo "🔨 Building with ${BUILD_TOOL} in ${BUILD_DIR}..."
 
 RUN --mount=type=cache,target=/root/.m2 \
-    cd "${BUILD_DIR}" && \
+    if [ "${BUILD_DIR}" != "." ]; then \
+    echo "🔨 Building module ${BUILD_DIR} from root..." && \
+    mvn clean package -DskipTests -P war -pl "${BUILD_DIR}" -am && \
+    mv "${BUILD_DIR}/target/"*.war /build/artifact.war; \
+    else \
+    echo "🔨 Building from root..." && \
     mvn clean package -DskipTests -P war && \
-    mv target/*.war /build/artifact.war
+    mv target/*.war /build/artifact.war; \
+    fi
 
 RUN ls -lh /build/artifact.war && \
     echo "✅ Build completed successfully"
@@ -130,9 +136,15 @@ RUN git checkout "${COMMIT}" && \
 RUN echo "🔨 Building with ${BUILD_TOOL} in ${BUILD_DIR}..."
 
 RUN --mount=type=cache,target=/root/.m2 \
-    cd "${BUILD_DIR}" && \
+    if [ "${BUILD_DIR}" != "." ]; then \
+    echo "🔨 Building module ${BUILD_DIR} from root..." && \
+    mvn clean package -DskipTests -P war -pl "${BUILD_DIR}" -am && \
+    mv "${BUILD_DIR}/target/"*.war /build/artifact.war; \
+    else \
+    echo "🔨 Building from root..." && \
     mvn clean package -DskipTests -P war && \
-    mv target/*.war /build/artifact.war
+    mv target/*.war /build/artifact.war; \
+    fi
 
 RUN ls -lh /build/artifact.war && \
     echo "✅ Build completed successfully"

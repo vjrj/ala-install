@@ -97,9 +97,17 @@ RUN git checkout "${BRANCH}" && \
 RUN echo "🔨 Building with ${BUILD_TOOL} in ${BUILD_DIR}..."
 
 RUN --mount=type=cache,target=/root/.gradle \
-    cd "${BUILD_DIR}" && \
+    if [ "${BUILD_DIR}" != "." ]; then \
+    # Convert directory path to Gradle project path (e.g. server -> :server)
+    PROJECT_PATH=$(echo "${BUILD_DIR}" | sed 's/\//:/g') && \
+    echo "🔨 Building project :${PROJECT_PATH} from root..." && \
+    ./gradlew ":${PROJECT_PATH}:clean" ":${PROJECT_PATH}:war" -x test --no-daemon --max-workers=1 && \
+    mv "${BUILD_DIR}/build/libs/"*.war /build/artifact.war; \
+    else \
+    echo "🔨 Building from root..." && \
     ./gradlew clean war -x test --no-daemon --max-workers=1 && \
-    mv build/libs/*.war /build/artifact.war
+    mv build/libs/*.war /build/artifact.war; \
+    fi
 
 RUN ls -lh /build/artifact.war && \
     echo "✅ Build completed successfully"
@@ -130,9 +138,17 @@ RUN git checkout "${COMMIT}" && \
 RUN echo "🔨 Building with ${BUILD_TOOL} in ${BUILD_DIR}..."
 
 RUN --mount=type=cache,target=/root/.gradle \
-    cd "${BUILD_DIR}" && \
+    if [ "${BUILD_DIR}" != "." ]; then \
+    # Convert directory path to Gradle project path (e.g. server -> :server)
+    PROJECT_PATH=$(echo "${BUILD_DIR}" | sed 's/\//:/g') && \
+    echo "🔨 Building project :${PROJECT_PATH} from root..." && \
+    ./gradlew ":${PROJECT_PATH}:clean" ":${PROJECT_PATH}:war" -x test --no-daemon --max-workers=1 && \
+    mv "${BUILD_DIR}/build/libs/"*.war /build/artifact.war; \
+    else \
+    echo "🔨 Building from root..." && \
     ./gradlew clean war -x test --no-daemon --max-workers=1 && \
-    mv build/libs/*.war /build/artifact.war
+    mv build/libs/*.war /build/artifact.war; \
+    fi
 
 RUN ls -lh /build/artifact.war && \
     echo "✅ Build completed successfully"
