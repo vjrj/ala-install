@@ -1458,17 +1458,6 @@
     - docker-compose
     - build
 
-- name: Pipelines host-side setup
-  include_role:
-    name: pipelines
-  vars:
-    deployment_type: container
-    spark_user: "1000"
-    vocab_dest_dir: "{{ data_dir }}/la-pipelines/vocabularies"
-  when: "'pipelines' in services_enabled"
-  tags:
-    - pipelines
-    - docker-compose
 
 # Entrypoint scripts are no longer generated - services use CMD directly
 # See Dockerfile.gradle.j2 and Dockerfile.maven.j2 for direct CMD execution
