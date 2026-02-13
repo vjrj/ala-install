@@ -2,6 +2,41 @@
 # Docker Compose Deployment Playbook  
 # Generate docker-compose configuration for Living Atlas
 
+- import_playbook: collectory-by-type.yml
+- import_playbook: biocache-hub-by-type.yml
+- import_playbook: biocache-service-by-type.yml
+- import_playbook: bie-hub-by-type.yml
+- import_playbook: bie-index-by-type.yml
+- import_playbook: image-service-by-type.yml
+- import_playbook: species-list-by-type.yml
+- import_playbook: regions-by-type.yml
+- import_playbook: logger-service-by-type.yml
+- import_playbook: solr-standalone.yml
+- import_playbook: solrcloud-by-type.yml
+- import_playbook: auth-by-type.yml
+- import_playbook: biocache-db.yml
+- import_playbook: biocache-cli.yml
+- import_playbook: spatial-by-type.yml
+- import_playbook: webapi_standalone.yml
+- import_playbook: dashboard.yml
+- import_playbook: alerts-standalone.yml
+- import_playbook: doi-service-standalone.yml
+- import_playbook: nameindexer-standalone.yml
+- import_playbook: sds.yml
+- import_playbook: pipelines.yml
+- import_playbook: data_quality_filter_service.yml
+- import_playbook: namematching-service-by-type.yml
+- import_playbook: sensitive-data-service-by-type.yml
+- import_playbook: branding.yml
+- import_playbook: biocollect-standalone.yml
+- import_playbook: pdf-service.yml
+# TODO: This playbook targets 'hosts: all', which is unsafe for import here. Needs to be restricted to a specific group.
+# - import_playbook: ecodata.yml
+- import_playbook: events.yml
+- import_playbook: gatus.yml
+- import_playbook: portainer.yml
+- import_playbook: cassandra-docker.yml
+
 - hosts: docker_compose
 
   roles:
