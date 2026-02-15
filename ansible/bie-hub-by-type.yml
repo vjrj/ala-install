@@ -6,6 +6,6 @@
   import_playbook: bie-hub.yml
   when: (deployment_type | default('vm')) == 'vm'
 
-- name: Deploy bie-hub in Docker Swarm
+- name: Deploy bie-hub in Docker
   import_playbook: bie-hub-docker.yml
-  when: (deployment_type | default('vm')) == 'swarm'
+  when: (deployment_type | default('vm')) != 'vm'
