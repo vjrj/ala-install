@@ -5,15 +5,6 @@ services:
     extra_hosts: {{ docker_extra_hosts_dict | default({}) | to_json }}
     image: {{ docker_registry | default('') }}{% if docker_registry %}/{% endif %}userdetails:{{ user_details_version | default('3.2.1') }}
     pull_policy: {{ 'never' if is_builder_host else 'always' }}
-{% if build_images | default(false) and is_builder_host %}
-    build:
-      context: {{ docker_compose_data_dir }}/dockerfiles/userdetails
-      dockerfile: Dockerfile
-      args:
-        USERDETAILS_VERSION: {{ user_details_version | default('3.2.1') }}
-        USERDETAILS_REPO: {{ userdetails_repo | default('https://github.com/AtlasOfLivingAustralia/userdetails.git') }}
-        USERDETAILS_BRANCH: {{ userdetails_branch | default('master') }}
-{% endif %}
     volumes:
       - ../userdetails:/data/userdetails
       # - ../var-log-atlas/userdetails:/var/log/atlas/userdetails

@@ -1,15 +1,11 @@
   # Species List Web App
+# Species List Web App
 services:
   species-list:
     container_name: la_species-list
     extra_hosts: {{ docker_extra_hosts_dict | default({}) | to_json }}
     image: {{ docker_registry | default('') }}{% if docker_registry %}/{% endif %}specieslist-webapp:{{ species_list_version | default('latest') }}
     pull_policy: {{ 'never' if is_builder_host else 'always' }}
-{% if build_images | default(false) and is_builder_host %}
-    build:
-      context: {{ docker_compose_data_dir }}/dockerfiles/species-list
-      dockerfile: Dockerfile
-{% endif %}
     volumes:
       - ../specieslist-webapp:/data/specieslist-webapp
 {% include '_i18n_volumes.yml.j2' %}

@@ -5,11 +5,6 @@ services:
     extra_hosts: {{ docker_extra_hosts_dict | default({}) | to_json }}
     image: {{ docker_registry | default('') }}{% if docker_registry %}/{% endif %}collectory:{{ collectory_version | default('latest') }}
     pull_policy: {{ 'never' if is_builder_host else 'always' }}
-{% if build_images | default(false) and is_builder_host %}
-    build:
-      context: {{ docker_compose_data_dir }}/dockerfiles/collectory
-      dockerfile: Dockerfile
-{% endif %}
     volumes:
       - ../collectory:/data/collectory
 {% include '_i18n_volumes.yml.j2' %}

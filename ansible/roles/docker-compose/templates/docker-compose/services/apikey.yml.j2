@@ -1,19 +1,10 @@
-  # API Key Service
+# API Key Service
 services:
   apikey:
     container_name: la_apikey
     extra_hosts: {{ docker_extra_hosts_dict | default({}) | to_json }}
-    image: {{ docker_registry | default('') }}{% if docker_registry %}/{% endif %}apikey:{{ apikey_version | default('1.7.0') }}
+    image: {{ docker_registry | default('') }}{% if docker_registry %}/{% endif %}apikey:{{ apikey_version | default('latest') }}
     pull_policy: {{ 'never' if is_builder_host else 'always' }}
-{% if build_images | default(false) and is_builder_host %}
-    build:
-      context: {{ docker_compose_data_dir }}/dockerfiles/apikey
-      dockerfile: Dockerfile
-      args:
-        APIKEY_VERSION: {{ apikey_version | default('1.7.0') }}
-        APIKEY_REPO: {{ apikey_repo | default('https://github.com/AtlasOfLivingAustralia/apikey.git') }}
-        APIKEY_BRANCH: {{ apikey_branch | default('master') }}
-{% endif %}
     volumes:
       - ../apikey:/data/apikey
       # - ../var-log-atlas/apikey:/var/log/atlas/apikey

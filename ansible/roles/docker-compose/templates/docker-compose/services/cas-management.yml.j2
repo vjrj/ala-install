@@ -1,19 +1,10 @@
-  # CAS Management Service
+# CAS Management Service
 services:
   cas-management:
     container_name: la_cas-management
     extra_hosts: {{ docker_extra_hosts_dict | default({}) | to_json }}
-    image: {{ docker_registry | default('') }}{% if docker_registry %}/{% endif %}cas-management:{{ cas_management_version | default('6.5.5-2') }}
+    image: {{ docker_registry | default('') }}{% if docker_registry %}/{% endif %}cas-management:{{ cas_management_version | default('latest') }}
     pull_policy: {{ 'never' if is_builder_host else 'always' }}
-{% if build_images | default(false) and is_builder_host %}
-    build:
-      context: {{ docker_compose_data_dir }}/dockerfiles/cas-management
-      dockerfile: Dockerfile
-      args:
-        CAS_MANAGEMENT_VERSION: {{ cas_management_version | default('6.5.5-2') }}
-        CAS_MANAGEMENT_REPO: {{ cas_management_repo | default('https://github.com/AtlasOfLivingAustralia/ala-cas-5-services.git') }}
-        CAS_MANAGEMENT_BRANCH: {{ cas_management_branch | default('master') }}
-{% endif %}
     volumes:
       - ../cas-management:/data/cas-management
       # - ../var-log-atlas/cas-management:/var/log/atlas/cas-management
