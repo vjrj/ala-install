@@ -6,6 +6,6 @@
   import_playbook: biocache-service-clusterdb.yml
   when: (deployment_type | default('vm')) == 'vm'
 
-- name: Deploy biocache-service-clusterdb in Docker Swarm
+- name: Deploy biocache-service-clusterdb in Docker
   import_playbook: biocache-service-clusterdb-docker.yml
-  when: (deployment_type | default('vm')) == 'swarm'
+  when: (deployment_type | default('vm')) != 'vm'
