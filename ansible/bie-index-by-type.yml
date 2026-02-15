@@ -6,6 +6,6 @@
   import_playbook: bie-index.yml
   when: (deployment_type | default('vm')) == 'vm'
 
-- name: Deploy bie-index in Docker Swarm
+- name: Deploy bie-index in Docker
   import_playbook: bie-index-docker.yml
-  when: (deployment_type | default('vm')) == 'swarm'
+  when: (deployment_type | default('vm')) != 'vm'
