@@ -42,7 +42,6 @@
 
 - name: Set docker facts for all services
   set_fact:
-    docker_default_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(docker_compose_userid) }}"
     # Core user variables for all services
     tomcat_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(docker_compose_userid) }}"
     nginx_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(docker_compose_userid) }}"
