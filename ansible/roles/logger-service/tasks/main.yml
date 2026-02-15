@@ -9,6 +9,7 @@
   tags:
     - logger-service
     - db
+  when: deployment_type == 'vm'
 
 - name: create logger DB user
   mysql_user: name='{{logger_db_username}}' password='{{logger_db_password}}' priv=*.*:ALL state=present login_user=root login_password='{{mysql_root_password}}'
@@ -16,12 +17,13 @@
   tags:
     - logger-service
     - db
+  when: deployment_type == 'vm'
 
 - name: copy transient files to tmp (schemas etc)
   copy: src={{item}} dest=/tmp
   with_items:
     - db/
-  when: dbschema.changed
+  when: dbschema.changed and deployment_type == 'vm'
   tags:
     - logger-service
     - db
@@ -40,7 +42,7 @@
     - /tmp/update_breakdown_summary_information.sql
 # The following is broken on MySQL-8.0, reenable if it becomes an issue in future
 #    - /tmp/definer_user.sql
-  when: dbschema.changed
+  when: dbschema.changed and deployment_type == 'vm'
   tags:
     - logger-service
     - db
@@ -71,7 +73,7 @@
     - logger-service
     - deploy
     - apache_vhost
-  when: not webserver_nginx
+  when: not webserver_nginx and deployment_type == 'vm'
 
 - name: copy all SQL auth ip scripts
   template: src={{ item }} dest={{data_dir}}/logger/setup/
@@ -91,6 +93,7 @@
   tags:
     - logger-service
     - db
+  when: logger_authorize_ip_list is defined and deployment_type == 'vm'
 
 - name: set nginx proxy target if configured
   set_fact:
@@ -163,7 +166,7 @@
     - logger-service
     - deploy
     - tomcat_vhost
-  when: not exec_jar
+  when: not exec_jar and deployment_type == 'vm'
 
 - name: add logger-service jar and setup service
   include_role:
@@ -177,7 +180,7 @@
     - deploy
     - service
     - logger-service
-  when: exec_jar
+  when: exec_jar and deployment_type == 'vm'
 
 - name: ensure target directories exist [data subdirectories etc.]
   file: path={{item}} state=directory owner=logger group=logger
@@ -189,7 +192,7 @@
   tags:
     - logger-service
     - properties
-  when: exec_jar
+  when: exec_jar and deployment_type == 'vm'
 
 - name: set data ownership for /opt/atlas/logger
   file: path=/opt/atlas/logger owner=logger group=logger recurse=true
@@ -198,7 +201,7 @@
   tags:
     - logger-service
     - properties
-  when: exec_jar
+  when: exec_jar and deployment_type == 'vm'
 
 - name: set data ownership for /var/log/atlas/logger
   file: path=/var/log/atlas/logger owner=logger group=logger recurse=true
@@ -207,7 +210,7 @@
   tags:
     - logger-service
     - properties
-  when: exec_jar
+  when: exec_jar and deployment_type == 'vm'
 
 - name: copy all config.properties
   template: src=logger-config.properties dest={{data_dir}}/logger/config/logger-config.properties output_encoding=iso-8859-1
