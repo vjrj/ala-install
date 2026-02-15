@@ -20,7 +20,7 @@ services:
 {% endif %}
         NODE_VERSION: {{ branding_node_version | default('18') }}
 {% else %}
-    # Use pre-built image from docker buildx bake (local)
+    # Use site-specific branding image
     image: branding-builder:{{ branding_version | default('latest') }}
     pull_policy: never
 {% endif %}
