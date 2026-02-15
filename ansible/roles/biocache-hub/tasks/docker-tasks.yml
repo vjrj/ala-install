@@ -7,9 +7,11 @@
   tags:
     - docker
     - docker-service
+  when: deployment_type == 'swarm'
 
 - name: Deploy biocache_hub stack
   import_tasks: ../../docker-common/tasks/stack-create.yml
   vars:
     stack: la_biocache_hub
     docker_compose_data_dir: "{{ biocache_hub_docker_dir }}"
+  when: deployment_type == 'swarm'
