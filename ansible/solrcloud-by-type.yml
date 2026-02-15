@@ -6,6 +6,6 @@
   import_playbook: solrcloud-monit.yml
   when: (deployment_type | default('vm')) == 'vm'
 
-- name: Deploy solrcloud in Docker Swarm
+- name: Deploy solrcloud in Docker
   import_playbook: solrcloud-docker.yml
-  when: (deployment_type | default('vm')) == 'swarm'
+  when: (deployment_type | default('vm')) != 'vm'

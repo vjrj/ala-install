@@ -6,6 +6,6 @@
   import_playbook: species-list-standalone.yml
   when: (deployment_type | default('vm')) == 'vm'
 
-- name: Deploy species-list in Docker Swarm
+- name: Deploy species-list in Docker
   import_playbook: species-list-docker.yml
-  when: (deployment_type | default('vm')) == 'swarm'
+  when: (deployment_type | default('vm')) != 'vm'
