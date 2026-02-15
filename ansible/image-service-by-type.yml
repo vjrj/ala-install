@@ -7,5 +7,5 @@
   when: (deployment_type | default('vm')) == 'vm'
 
 - name: Deploy image-service in Docker
-  import_playbook: image-service.yml
+  import_playbook: image-service-docker.yml
   when: (deployment_type | default('vm')) != 'vm'
