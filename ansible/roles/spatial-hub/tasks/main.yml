@@ -43,7 +43,7 @@
     - deploy
     - apache_vhost
     - spatial-hub
-  when: not webserver_nginx
+  when: not webserver_nginx and deployment_type == 'vm'
 
 - name: add nginx vhost if configured
   include_role:
@@ -85,6 +85,7 @@
     - tomcat_vhost
     - spatial-hub
     - spatial-hub-deploy
+  when: deployment_type == 'vm'
 
 - name: set data ownership
   file: path={{data_dir}}/ala/data/ owner={{tomcat_user}} group={{tomcat_user}} recurse=true
