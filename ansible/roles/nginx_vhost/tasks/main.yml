@@ -214,7 +214,20 @@
     group: root
   when: vhost_required | bool == True
   notify:
-   - reload nginx
+    - reload nginx
+  tags:
+    - nginx_vhost
+
+- name: ensure sites-enabled dir is present
+  file:
+    path: "{{nginx_conf_dir}}/sites-enabled"
+    state: directory
+    mode: "{{nginx_config_directory_mode}}"
+    owner: root
+    group: root
+  when: vhost_required | bool == True
+  notify:
+    - reload nginx
   tags:
     - nginx_vhost
 
