@@ -1,7 +1,6 @@
 ---
 - hosts: cas-servers
   vars:
-    - deployment_type: swarm
     - nginx_conf_dir: "{{ data_dir }}/nginx"
     - cas_db_hostname: la_auth_mysql
     - user_store_db_hostname: la_auth_mysql
