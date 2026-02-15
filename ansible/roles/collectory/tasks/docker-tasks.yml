@@ -9,9 +9,11 @@
   tags:
     - docker
     - docker-service
+  when: deployment_type == 'swarm'
 
 - name: Deploy collectory stack
   import_tasks: ../../docker-common/tasks/stack-create.yml
   vars:
     stack: la_collectory
     docker_compose_data_dir: "{{ collectory_data_dir }}/docker/"
+  when: deployment_type == 'swarm'
