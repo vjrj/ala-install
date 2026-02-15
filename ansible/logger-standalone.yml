@@ -1,8 +1,8 @@
 - hosts: logger-service
   roles:
     - common
-    - java
-    - {role: tomcat, when: not exec_jar}
-    - webserver
-    - mysql
+    - { role: java, when: deployment_type == 'vm' }
+    - { role: tomcat, when: deployment_type == 'vm' and not exec_jar }
+    - { role: webserver, when: deployment_type == 'vm' }
+    - { role: mysql, when: deployment_type == 'vm' }
     - logger-service
