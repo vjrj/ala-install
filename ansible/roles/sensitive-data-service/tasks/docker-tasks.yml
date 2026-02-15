@@ -1,8 +1,17 @@
 ---
-- name: ensure target db directories exist
+- name: ensure swarm target db directories exist
   file: path={{item}} state=directory
   with_items:
     - "{{ ala_sensitive_data_service_docker_dir }}"
+  run_once: true
+  tags:
+    - docker
+    - docker-service
+  when: deployment_type == 'swarm'
+
+- name: ensure data directories exist
+  file: path={{item}} state=directory
+  with_items:
     - "{{ data_dir }}/biocache/layers"
   run_once: true
   tags:
@@ -86,3 +95,4 @@
     stack: la_sensitive_data_service
     docker_compose_data_dir: "{{ ala_sensitive_data_service_docker_dir }}"
     deployment_type: "{{ deployment_type }}"
+  when: deployment_type == 'swarm'
