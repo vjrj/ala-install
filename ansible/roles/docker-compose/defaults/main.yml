@@ -14,7 +14,7 @@ deployment_env: production  # Options: dev, staging, production
 auto_deploy: true
 
 # User for docker operations (uses current user or 'ubuntu' for VM)
-docker_default_user: "{{ docker_user | default(ansible_user_id) }}"
+# docker_default_user is now defined globally in the inventory [all:vars]
 
 # Skip handlers as we're generating docker-compose files, not deploying to VMs
 skip_handlers: true
