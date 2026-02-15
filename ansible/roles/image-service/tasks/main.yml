@@ -12,6 +12,7 @@
   tags:
     - image-service
     - properties
+  when: deployment_type == 'vm'
 
 - include_tasks: ../../apache_vhost/tasks/main.yml
   vars:
@@ -49,6 +50,7 @@
      - restart image-service
   tags:
     - image-service
+  when: deployment_type == 'vm'
 
 - name: ensure target directories exist [data subdirectories etc.]
   file: path={{item}} state=directory owner="{{ image_user | default('image-service') }}" group="{{ image_user | default('image-service') }}"
@@ -94,6 +96,7 @@
     - deploy
     - service
     - image-service
+  when: deployment_type == 'vm'
 
 - name: ensure target directories exist [data subdirectories etc.]
   file: path={{item}} state=directory owner="{{ image_user | default('image-service') }}" group="{{ image_user | default('image-service') }}"
@@ -155,12 +158,13 @@
   tags:
     - packages
     - image-service
+  when: deployment_type == 'vm'
 
 - name: Install image optimisation packages
   tags:
     - packages
     - image-service
-  when: image_service_install_optimisation_packages | bool
+  when: image_service_install_optimisation_packages | bool and deployment_type == 'vm'
   block:
     - name: Include OS-specific variables
       include_vars: "{{ lookup('first_found', params) }}"
@@ -247,5 +251,6 @@
     weekday: "1"
     user: "postgres"
     job: psql -c "delete from failed_upload where (current_timestamp - date_created) > '7 days';" images
+  when: deployment_type == 'vm'
 
 - debug: msg="For new installs, to finish installation use the admin screen to load the licence information in files/licence_mappings.csv and files/licences.csv."
