@@ -23,3 +23,4 @@
   vars:
     stack: la_species_list
     docker_compose_data_dir: "{{ species_list_docker_conf_dir }}"
+  when: deployment_type == 'swarm'
