@@ -2,6 +2,14 @@
 # Docker Compose Deployment Playbook  
 # Generate docker-compose configuration for Living Atlas
 
+- hosts: all
+  gather_facts: false
+  tasks:
+    - name: Set deployment_type to container for docker-compose
+      set_fact:
+        deployment_type: container
+      tags: always
+
 - import_playbook: collectory-by-type.yml
 - import_playbook: biocache-hub-by-type.yml
 - import_playbook: biocache-service-by-type.yml
