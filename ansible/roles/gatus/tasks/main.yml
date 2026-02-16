@@ -23,7 +23,7 @@
     state: directory
   with_items:
     - "{{ gatus_path }}"
-  when: deployment_type != 'container' or deployment_type != 'swarm'
+  when: deployment_type == 'vm'
   tags:
     - gatus
 
