@@ -1,7 +1,6 @@
 ---
 - hosts: cassandra3
   vars:
-    deployment_type: swarm
     skip_handlers: true
   roles:
     - common
