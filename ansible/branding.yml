@@ -2,5 +2,6 @@
   hosts: branding
   roles:
     - common
-    - webserver
+    - role: webserver
+      when: deployment_type == 'vm'
     - branding
