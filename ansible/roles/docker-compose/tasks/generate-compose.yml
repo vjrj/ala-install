@@ -330,13 +330,6 @@
   tags:
     - docker-compose
 
-- name: "DEBUG: Check use_gatus variable"
-  debug:
-    msg: |
-      use_gatus variable: {{ use_gatus | default('NOT SET - will use default true') }}
-      use_gatus | default(true) | bool: {{ use_gatus | default(true) | bool }}
-  tags:
-    - docker-compose
 
 # Always add nginx and ensure unique services
 - name: Add nginx and ensure unique services list
@@ -443,30 +436,7 @@
     - docker-compose
 
 
-- name: Ensure gatus config directory exists on all hosts
-  file:
-    path: "{{ gatus_config_dir }}"
-    state: directory
-    mode: '0755'
-    owner: "{{ docker_compose_userid }}"
-    group: "{{ docker_compose_usergid }}"
-  when: "'gatus' in services_enabled or 'gatus' in group_names"
-  tags:
-    - gatus
-    - config
 
-- name: Run gatus configuration generation
-  include_role:
-    name: gatus
-  vars:
-    deployment_type: container
-    nginx_vhost_fast_mode: true
-  when: 
-  - "'gatus' in services_enabled or 'gatus' in group_names"
-  - "'gatus' in group_names"
-  tags:
-    - gatus
-    - config
 
 - name: Run cas configuration generation
   include_role:
