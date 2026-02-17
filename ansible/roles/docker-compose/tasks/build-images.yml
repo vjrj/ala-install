@@ -15,7 +15,7 @@
 
 - name: Build site-specific branding locally
   shell: >
-    docker compose build branding
+    docker compose build branding-init
   args:
     chdir: "{{ docker_compose_data_dir }}"
   register: build_branding
