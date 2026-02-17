@@ -1,6 +1,6 @@
 services:
   la_pipelines:
-    image: ${DOCKER_REGISTRY:-}la-pipelines:${TAG:-latest}
+    image: {{ docker_registry | default('') }}{% if docker_registry %}/{% endif %}la-pipelines:${TAG:-latest}
     container_name: la_pipelines
     user: "1000:1000"
     environment:
