@@ -13,6 +13,10 @@ services:
       JAVA_OPTS: ${CAS_JAVA_OPTS}
     expose:
       - {{ cas_port | default('9000') }}
+{% if expose_db_ports_for_init | default(false) %}
+    ports:
+      - 127.0.0.1:{{ cas_port | default('9000') }}:{{ cas_port | default('9000') }}
+{% endif %}
     networks:
       default: {}
       {{ docker_network | default('internal') }}:

@@ -43,7 +43,7 @@
       file:
         path: "{{ docker_compose_data_dir }}/dockerfiles"
         state: directory
-        mode: '0755'
+        mode: "0755"
         owner: "{{ docker_compose_userid }}"
         group: "{{ docker_compose_usergid }}"
       become: true
@@ -67,22 +67,29 @@
         - docker-compose
         - build
 
+    - name: "Deployment preparation: Ensure log directories"
+      file:
+        path: "{{ data_dir }}/logs"
+        state: directory
+        mode: "0755"
+        owner: "{{ docker_compose_userid }}"
+        group: "{{ docker_compose_usergid }}"
+      tags:
+        - always
+        - docker-compose
+
+    - name: "Deployment preparation: Ensure database volumes exist (external)"
+      include_tasks: ensure-db-volumes.yml
+      tags:
+        - always
+        - docker-volumes
+
     - name: Include generate-compose tasks
       include_tasks: generate-compose.yml
       tags:
         - always
         - only
         - docker-compose
-
-    - name: Include database initialization tasks
-      include_tasks: generate-db-init-scripts.yml
-      when:
-        - deployment_type == 'container'
-        - db_init_enabled | default(true) | bool
-        - "'cas-servers' in group_names"
-      tags:
-        - db-init
-        - cas-dbs
 
     - name: Start Docker Compose services
       command: docker compose up -d

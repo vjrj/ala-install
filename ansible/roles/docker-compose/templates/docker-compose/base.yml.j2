@@ -74,9 +74,6 @@ include:
 {% if 'gatus' in all_groups %}
   - ./infrastructure/gatus.yml
 {% endif %}
-{% if 'cas' in services_enabled %}
-  - ./infrastructure/db-cas-init.yml
-{% endif %}
 
 # Global networks and volumes
 networks:

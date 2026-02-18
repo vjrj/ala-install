@@ -34,7 +34,23 @@
 #- import_playbook: cassandra-docker.yml
 
 - hosts: docker_compose
-
   roles:
     - { role: docker, become: true }
     - role: docker-compose
+  vars:
+    auto_deploy: false # Only generate configuration
+
+# Database Initialization Phase
+- import_playbook: cas-db-init-docker.yml
+
+# Final Deployment Phase
+- hosts: docker_compose
+  tasks:
+    - name: Start all Docker Compose services
+      command: docker compose up -d
+      args:
+        chdir: "{{ docker_compose_data_dir }}"
+      become: true
+      tags:
+        - deploy
+        - docker-compose

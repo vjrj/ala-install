@@ -1,0 +1,121 @@
+---
+- name: "CAS Database Initialization (Docker Compose)"
+  hosts: docker_compose
+  vars:
+    # Force exposed ports for initialization
+    expose_db_ports_for_init: true
+    # Avoid auto-starting all services
+    auto_deploy: false
+    # DB source host for CAS/Apikey users
+    cas_mysql_src_host: "%"
+    apikey_mysql_src_host: "%"
+    # Connect to localhost on the Ansible host (mapped to container ports)
+    cas_db_hostname: "127.0.0.1"
+    user_store_db_hostname: "127.0.0.1"
+    apikey_db_hostname: "127.0.0.1"
+    ticket_registry_db_hostname: "127.0.0.1"
+    cas_audit_host: "127.0.0.1"
+    cas_spring_session_host: "127.0.0.1"
+    cas_tickets_host: "127.0.0.1"
+    cas_services_host: "127.0.0.1"
+
+  tasks:
+    - name: Check if CAS is needed on this host
+      set_fact:
+        is_cas_host: "{{ 'cas-servers' in physical_server_groups or 'cas' in services_enabled }}"
+
+    - name: Execute CAS DB Initialization
+      when: is_cas_host | bool
+      block:
+        - name: "CAS Init: Load CAS role variables"
+          include_vars:
+            file: "roles/cas5/vars/main.yml"
+
+        - name: "CAS Init: Generate configuration with exposed ports"
+          include_role:
+            name: docker-compose
+          vars:
+            # Re-generate with ports exposed
+            expose_db_ports_for_init: true
+            # ensure-db-volumes already run in main role, but safe here too
+            db_init_enabled: true
+
+        - name: "CAS Init: Start database containers"
+          command: docker compose up -d mysql mongodb
+          args:
+            chdir: "{{ docker_compose_data_dir }}"
+          become: true
+
+        - name: "CAS Init: Wait for MySQL to be ready"
+          wait_for:
+            host: 127.0.0.1
+            port: 3306
+            timeout: 60
+
+        - name: "CAS Init: Wait for MongoDB to be ready"
+          wait_for:
+            host: 127.0.0.1
+            port: 27017
+            timeout: 60
+
+        - name: "CAS Init: Initialize databases and users"
+          include_role:
+            name: cas5-dbs
+          vars:
+            cas_db_hostname: "127.0.0.1"
+            cas_mysql_src_host: "%"
+
+        - name: "CAS Init: Start CAS temporarily for Flyway migrations"
+          command: docker compose up -d cas
+          args:
+            chdir: "{{ docker_compose_data_dir }}"
+          become: true
+
+        - name: "CAS Init: Wait for CAS to be healthy (Flyway done)"
+          shell: |
+            docker inspect --format='{{ "{{.State.Health.Status}}" }}' la_cas
+          register: cas_health
+          until: cas_health.stdout == "healthy"
+          retries: 30
+          delay: 10
+          become: true
+
+        - name: "CAS Init: Initialize CAS admin account"
+          include_tasks: roles/cas5/tasks/admin-account.yml
+          vars:
+            cas_db_hostname: "127.0.0.1"
+            cas_mysql_src_host: "%"
+
+        - name: "CAS Init: Register OIDC services"
+          include_tasks: roles/cas-management/tasks/oidc-tasks.yml
+          vars:
+            cas_services_host: "127.0.0.1"
+
+        - name: "CAS Init: Run database validations"
+          include_tasks: roles/docker-compose/tasks/validate-db-init.yml
+          vars:
+            mysql_host: "127.0.0.1"
+            mongodb_host: "127.0.0.1"
+
+        - name: "CAS Init: Stop all containers for secure transition"
+          command: docker compose down
+          args:
+            chdir: "{{ docker_compose_data_dir }}"
+          become: true
+
+        - name: "CAS Init: Secure configuration (hide ports)"
+          include_role:
+            name: docker-compose
+          vars:
+            expose_db_ports_for_init: false
+            auto_deploy: false
+
+        - name: "CAS Init: Restart databases securely (final state will be handled by main playbook)"
+          debug:
+            msg: "Configuration secured. Final startup will be handled by the main playbook."
+
+      rescue:
+        - name: "CAS Init: Handle failure"
+          debug:
+            msg: "❌ CAS Database initialization failed! Check logs and database connectivity."
+          failed_when: true
