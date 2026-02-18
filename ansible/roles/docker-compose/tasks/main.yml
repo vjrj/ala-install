@@ -78,6 +78,12 @@
         - always
         - docker-compose
 
+    - name: "Deployment preparation: Setup deployment facts"
+      include_tasks: setup-facts.yml
+      tags:
+        - always
+        - docker-compose
+
     - name: "Deployment preparation: Ensure database volumes exist (external)"
       include_tasks: ensure-db-volumes.yml
       tags:
