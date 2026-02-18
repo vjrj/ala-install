@@ -22,7 +22,6 @@
   changed_when: true
   when:
     - "'branding' in services_enabled"
-    - is_builder_host
 
 - name: Pull Docker images
   command: docker compose pull
@@ -31,7 +30,7 @@
   become: true
   when:
     - docker_registry | default('') != ''
-    - not is_builder_host
+
   tags:
     - build
     - docker-compose

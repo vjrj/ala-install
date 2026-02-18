@@ -129,11 +129,7 @@
     - only
     - docker-compose
 
-# Find all hosts that share the same physical server (ansible_host) as this docker_compose host
-- name: Set builder host status
-  set_fact:
-    is_builder_host: "{{ inventory_hostname == (groups['docker_compose'] | first) }}"
-  tags: [always, only, docker-compose, build]
+
 
 # Load common role variables early for common.yml tasks
 - name: Load common role variables

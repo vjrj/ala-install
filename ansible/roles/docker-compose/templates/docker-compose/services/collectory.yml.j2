@@ -4,7 +4,6 @@ services:
     container_name: la_collectory
     extra_hosts: {{ docker_extra_hosts_dict | default({}) | to_json }}
     image: {{ docker_registry | default('') }}{% if docker_registry %}/{% endif %}collectory:{{ collectory_version | default('latest') }}
-    pull_policy: {{ 'never' if is_builder_host else 'always' }}
     volumes:
       - {{ data_dir }}/collectory:/data/collectory
 {% include '_i18n_volumes.yml.j2' %}

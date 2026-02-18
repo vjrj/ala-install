@@ -2,7 +2,6 @@ services:
   sensitive-data-service:
     container_name: la_sensitive_data_service
     image: {{ docker_registry | default('') }}{% if docker_registry %}/{% endif %}ala-sensitive-data-server:{{ ala_sensitive_data_service_version }}
-    pull_policy: {{ 'never' if is_builder_host else 'always' }}
     ports:
       - "{{ sensitive_data_service_port }}:9189"
       - "{{ sensitive_data_admin_port }}:9190"

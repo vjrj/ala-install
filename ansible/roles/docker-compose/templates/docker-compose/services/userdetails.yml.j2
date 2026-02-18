@@ -4,7 +4,6 @@ services:
     container_name: la_userdetails
     extra_hosts: {{ docker_extra_hosts_dict | default({}) | to_json }}
     image: {{ docker_registry | default('') }}{% if docker_registry %}/{% endif %}userdetails:{{ user_details_version | default('3.2.1') }}
-    pull_policy: {{ 'never' if is_builder_host else 'always' }}
     volumes:
       - {{ data_dir }}/userdetails:/data/userdetails
       # - {{ docker_compose_data_dir }}/var-log-atlas/userdetails:/var/log/atlas/userdetails
