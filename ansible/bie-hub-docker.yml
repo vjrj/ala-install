@@ -4,7 +4,7 @@
     tomcat_user: "{{ docker_default_user }}"
     nginx_conf_dir: "{{ data_dir }}/nginx"
     nginx_user: "{{ docker_default_user }}"
-    bie_hub_upstream_host: la_bie_hub_war
+    bie_hub_upstream_host: la_bie-hub
     skip_handlers: true
     bie_hub: ala-bie-hub
     nginx_paths_gatus_exclude:

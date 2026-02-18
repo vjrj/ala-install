@@ -6,7 +6,7 @@
     nginx_user: "{{ docker_default_user }}"
     sensitive_data_user: "{{ docker_default_user }}"
     namematching_user: "{{ docker_default_user }}"
-    sensitive_data_service_upstream_host: la_sensitive_data_service_war
+    sensitive_data_service_upstream_host: la_sensitive_data_service
     skip_handlers: true
   roles:
     - common
