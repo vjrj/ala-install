@@ -741,31 +741,6 @@
     - always
     - docker-compose
 
-# Create logs directories for all services
-- name: Create main logs directory
-  file:
-    path: "{{ data_dir }}/logs"
-    state: directory
-    mode: '0755'
-    owner: "{{ docker_compose_userid }}"
-    group: "{{ docker_compose_usergid }}"
-  tags:
-    - docker-compose
-
-- name: Create service-specific logs directories
-  file:
-    path: "{{ data_dir }}/logs/{{ item }}"
-    state: directory
-    mode: '0755'
-    owner: "{{ docker_compose_userid }}"
-    group: "{{ docker_compose_usergid }}"
-  loop:
-    - cas
-    - userdetails
-    - apikey
-    - cas-management
-    - collectory
-    - species-list
 
 # Generate infrastructure service files
 - name: Generate i18n.yml if enabled
