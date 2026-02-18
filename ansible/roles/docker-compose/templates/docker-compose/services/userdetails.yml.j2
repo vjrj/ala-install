@@ -6,8 +6,8 @@ services:
     image: {{ docker_registry | default('') }}{% if docker_registry %}/{% endif %}userdetails:{{ user_details_version | default('3.2.1') }}
     pull_policy: {{ 'never' if is_builder_host else 'always' }}
     volumes:
-      - ../userdetails:/data/userdetails
-      # - ../var-log-atlas/userdetails:/var/log/atlas/userdetails
+      - {{ data_dir }}/userdetails:/data/userdetails
+      # - {{ docker_compose_data_dir }}/var-log-atlas/userdetails:/var/log/atlas/userdetails
 {% include '_i18n_volumes.yml.j2' %}
     environment:
       TZ: {{ server_tz | default('UTC') }}

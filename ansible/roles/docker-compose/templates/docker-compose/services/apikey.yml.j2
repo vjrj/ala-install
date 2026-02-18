@@ -6,8 +6,8 @@ services:
     image: {{ docker_registry | default('') }}{% if docker_registry %}/{% endif %}apikey:{{ apikey_version | default('latest') }}
     pull_policy: {{ 'never' if is_builder_host else 'always' }}
     volumes:
-      - ../apikey:/data/apikey
-      # - ../var-log-atlas/apikey:/var/log/atlas/apikey
+      - {{ data_dir }}/apikey:/data/apikey
+      # - {{ docker_compose_data_dir }}/var-log-atlas/apikey:/var/log/atlas/apikey
 {% include '_i18n_volumes.yml.j2' %}
     environment:
       TZ: {{ server_tz | default('UTC') }}
