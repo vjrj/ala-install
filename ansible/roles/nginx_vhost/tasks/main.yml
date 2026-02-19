@@ -231,6 +231,19 @@
   tags:
     - nginx_vhost
 
+- name: ensure conf.d dir is present
+  file:
+    path: "{{nginx_conf_dir}}/conf.d"
+    state: directory
+    mode: "{{nginx_config_directory_mode}}"
+    owner: root
+    group: root
+  when: vhost_required | bool == True
+  notify:
+    - reload nginx
+  tags:
+    - nginx_vhost
+
 - name: Check if vhost fragments directory variable is specified or warning is overriden
   fail: msg="The variable 'nginx_vhost_fragments_to_clear' must be defined and not empty or nginx_vhost_fragments_to_clear_no_warning=True"
   when:
