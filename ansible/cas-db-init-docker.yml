@@ -82,11 +82,12 @@
           become: true
 
         - name: "CAS Init: Initialize databases and users"
-          include_role:
-            name: cas5-dbs
-          vars:
-            cas_db_hostname: "127.0.0.1"
-            cas_mysql_src_host: "%"
+          block:
+            - include_role:
+                name: cas5-dbs
+              vars:
+                cas_db_hostname: "127.0.0.1"
+                cas_mysql_src_host: "%"
           become: true
 
         - name: "CAS Init: Start CAS temporarily for Flyway migrations"
