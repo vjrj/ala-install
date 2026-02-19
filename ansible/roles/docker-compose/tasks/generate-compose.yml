@@ -1004,31 +1004,6 @@
     - docker-compose-docker
     - docker-compose
 
-- name: Generate db-cas-init.yml
-  template:
-    src: docker-compose/infrastructure/db-cas-init.yml.j2
-    dest: "{{ docker_compose_data_dir }}/infrastructure/db-cas-init.yml"
-    mode: '0644'
-    owner: "{{ docker_compose_userid }}"
-    group: "{{ docker_compose_usergid }}"
-  tags:
-    - db-init
-    - config-docker
-    - docker-compose
-
-- name: Generate CAS database initialization script
-  template:
-    src: mysql/init/cas-init.sh.j2
-    dest: "{{ docker_compose_data_dir }}/mysql/init/cas-init.sh"
-    mode: '0755'
-    owner: "{{ docker_compose_userid }}"
-    group: "{{ docker_compose_usergid }}"
-  when: "'cas' in services_enabled"
-  tags:
-    - db-init
-    - cas
-    - config-docker
-    - docker-compose
 
 - name: Generate mailhog.yml
   template:
