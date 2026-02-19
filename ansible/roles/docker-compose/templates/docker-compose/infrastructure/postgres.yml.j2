@@ -21,7 +21,11 @@ services:
       default: {}
       {{ docker_network | default('internal') }}:
         aliases:
-          - {{ postgres_db_host_address | default('postgres') }}
+{% set postgres_name = postgres_db_host_address | default('postgres') %}
+{% if postgres_name not in ['localhost', '127.0.0.1'] %}
+          - {{ postgres_name }}
+{% endif %}
+          - la_postgres
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U {{ postgres_user | default('postgres') }}"]
       interval: 10s

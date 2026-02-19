@@ -23,7 +23,11 @@ services:
       default: {}
       {{ docker_network | default('internal') }}:
         aliases:
-          - {{ mongodb_hostname | default('mongodb') }}
+{% set mongodb_name = mongodb_hostname | default('mongodb') %}
+{% if mongodb_name not in ['localhost', '127.0.0.1'] %}
+          - {{ mongodb_name }}
+{% endif %}
+          - la_mongodb
     healthcheck:
       test: ["CMD-SHELL", "mongosh --quiet --eval \"db.adminCommand('ping').ok\" || exit 1"]
       interval: 10s

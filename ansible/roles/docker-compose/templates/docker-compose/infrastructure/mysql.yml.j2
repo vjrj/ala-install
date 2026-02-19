@@ -28,7 +28,10 @@ services:
       default: {}
       {{ docker_network | default('internal') }}:
         aliases:
+{% if collectory_db_host_address not in ['localhost', '127.0.0.1'] %}
           - {{ collectory_db_host_address }}
+{% endif %}
+          - la_mysql
     healthcheck:
       test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p{{ mysql_root_password }}"]
       interval: 10s
