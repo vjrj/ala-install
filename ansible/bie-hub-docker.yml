@@ -2,7 +2,6 @@
 - hosts: bie-hub
   vars:
     tomcat_user: "{{ docker_default_user }}"
-    nginx_conf_dir: "{{ data_dir }}/nginx"
     nginx_user: "{{ docker_default_user }}"
     bie_hub_upstream_host: la_bie-hub
     skip_handlers: true

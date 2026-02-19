@@ -1,7 +1,6 @@
 ---
 - hosts: species-list
   vars:
-    nginx_conf_dir: "{{ data_dir }}/nginx"
     specieslist_db_hostname: la_mysql
     skip_handlers: true
     tomcat_user: "{{ docker_default_user }}"

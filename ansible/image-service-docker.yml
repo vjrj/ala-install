@@ -3,7 +3,6 @@
   vars:
     # deployment_type: swarm
     tomcat_user: "{{ docker_default_user }}"
-    nginx_conf_dir: "{{ data_dir }}/nginx"
     nginx_user: "{{ docker_default_user }}"
     image_user: "{{ docker_default_user }}"
     skip_handlers: true

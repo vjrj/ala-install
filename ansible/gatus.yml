@@ -1,7 +1,6 @@
 ---
 - hosts: gatus
   vars:
-    nginx_conf_dir: "{{ data_dir }}/nginx"
     skip_handlers: true
     nginx_user: "{{ docker_default_user }}"
   roles:

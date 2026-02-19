@@ -1,7 +1,6 @@
 ---
 - hosts: cas-servers
   vars:
-    - nginx_conf_dir: "{{ data_dir }}/nginx"
     - cas_db_hostname: la_mysql
     - user_store_db_hostname: la_mysql
     - user_store_db_hostname: la_mysql

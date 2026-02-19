@@ -45,7 +45,6 @@
     # Core user variables for all services
     tomcat_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(docker_compose_userid) }}"
     nginx_user: "{{ docker_compose_userid | default(ansible_env.SUDO_USER) | default(docker_compose_userid) }}"
-    nginx_conf_dir: "{{ docker_compose_data_dir }}/nginx"
   tags:
     - always
     - docker-compose
