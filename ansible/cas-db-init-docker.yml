@@ -73,12 +73,21 @@
             port: 27017
             timeout: 60
 
+        - name: "CAS Init: Install required Python MySQL bindings"
+          apt:
+            name:
+              - python3-pymysql
+              - python3-mysqldb
+            state: present
+          become: true
+
         - name: "CAS Init: Initialize databases and users"
           include_role:
             name: cas5-dbs
           vars:
             cas_db_hostname: "127.0.0.1"
             cas_mysql_src_host: "%"
+          become: true
 
         - name: "CAS Init: Start CAS temporarily for Flyway migrations"
           command: docker compose up -d cas
