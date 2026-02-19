@@ -20,6 +20,21 @@
     cas_services_host: "127.0.0.1"
 
   tasks:
+    - name: "Find the cas server host corresponding for this docker_compose host"
+      set_fact:
+        cas_server_host: "{{ item }}"
+      when: hostvars[item].ansible_host == ansible_host
+      with_items: "{{ groups['cas-servers'] }}"
+      check_mode: false
+
+    - name: "Set DB credentials from inventory"
+      set_fact:
+        mysql_root_username: "{{ hostvars[cas_server_host]['mysql_root_username'] | default('root') }}"
+        mysql_root_password: "{{ hostvars[cas_server_host]['mysql_root_password'] | default('password') }}"
+        mongodb_root_username: "{{ hostvars[cas_server_host]['mongodb_root_username'] | default('admin') }}"
+        mongodb_root_password: "{{ hostvars[cas_server_host]['mongodb_root_password'] | default('password') }}"
+      when: cas_server_host is defined
+
     - name: Check if CAS is needed on this host
       set_fact:
         is_cas_host: "{{ 'cas-servers' in physical_server_groups or 'cas' in services_enabled }}"
