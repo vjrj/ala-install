@@ -22,6 +22,11 @@ pipeline {
       defaultValue: true,
       description: 'Wipe /data (except lost+found) and purge Docker before running'
     )
+    booleanParam(
+      name: 'ONLY_CLEAN',
+      defaultValue: false,
+      description: 'Only clean machines and stop'
+    )
   }
 
   environment {
@@ -43,7 +48,7 @@ pipeline {
   stages {
 
     stage('Clean machines (remote)') {
-      when { expression { params.CLEAN_MACHINE } }
+      when { expression { params.CLEAN_MACHINE || params.ONLY_CLEAN } }
       steps {
         script {
           if (!env.TARGET_HOSTS?.trim()) {
@@ -78,12 +83,19 @@ pipeline {
                 echo "==> Cleaning on \$(hostname)"
 
                 if sudo -n true 2>/dev/null; then
-                  if [ -d /data ]; then
-                    sudo find /data -mindepth 1 -maxdepth 1 -not -name lost+found -exec rm -rf -- {} +
+                  if [ -d /data/docker-compose ] && command -v docker >/dev/null 2>&1; then
+                    echo "==> Stopping docker-compose services and removing volumes"
+                    sudo find /data/docker-compose -maxdepth 2 -name "docker-compose.yml" -print -execdir docker compose down -v \; || true
                   fi
 
                   if command -v systemctl >/dev/null 2>&1; then
+                    echo "==> Stopping docker and containerd"
                     sudo systemctl stop docker containerd 2>/dev/null || true
+                  fi
+
+                  if [ -d /data ]; then
+                    echo "==> Cleaning /data (preserving lost+found and docker cache)"
+                    sudo find /data -mindepth 1 -maxdepth 1 -not -name lost+found -not -name docker -print -exec rm -rf -- {} +
                   fi
                   
                   sudo pkill -9 -f unattended-upgrade || true
@@ -137,6 +149,7 @@ pipeline {
     }
 
     stage('Prepare dirs') {
+      when { expression { !params.ONLY_CLEAN } }
       steps {
         sh '''
           set -eu
@@ -146,6 +159,7 @@ pipeline {
     }
 
     stage('Update ala-install') {
+      when { expression { !params.ONLY_CLEAN } }
       steps {
         sh '''
           set -eu
@@ -164,6 +178,7 @@ pipeline {
     }
 
     stage('Update generator-living-atlas') {
+      when { expression { !params.ONLY_CLEAN } }
       steps {
         sh '''
           set -eu
@@ -182,6 +197,7 @@ pipeline {
     }
 
     stage('Decide redeploy') {
+      when { expression { !params.ONLY_CLEAN } }
       steps {
         script {
           def isManual = currentBuild.rawBuild.getCause(hudson.model.Cause$UserIdCause) != null
@@ -241,7 +257,7 @@ pipeline {
     }
 
     stage('Install generator deps (local checkout)') {
-      when { expression { env.DO_REDEPLOY == 'true' } }
+      when { expression { env.DO_REDEPLOY == 'true' && !params.ONLY_CLEAN } }
       steps {
         sh '''
           set -eu
@@ -267,7 +283,7 @@ pipeline {
     }
 
     stage('Install Yeoman + generator-living-atlas (npm)') {
-      when { expression { env.DO_REDEPLOY == 'true' } }
+      when { expression { env.DO_REDEPLOY == 'true' && !params.ONLY_CLEAN } }
       steps {
         sh '''
           set -eu
@@ -295,7 +311,7 @@ pipeline {
     }
 
     stage('Regenerate inventories with Yeoman (npm generator)') {
-      when { expression { env.DO_REDEPLOY == 'true' } }
+      when { expression { env.DO_REDEPLOY == 'true' && !params.ONLY_CLEAN } }
       steps {
         sh '''
           set -eu
@@ -310,7 +326,7 @@ pipeline {
     }
 
     stage('Redeploy') {
-      when { expression { env.DO_REDEPLOY == 'true' } }
+      when { expression { env.DO_REDEPLOY == 'true' && !params.ONLY_CLEAN } }
       steps {
         sh '''
           set -eu
