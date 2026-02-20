@@ -79,22 +79,30 @@
           delay: 5
           become: true
 
-        - name: "CAS Init: Install required Python MySQL bindings"
-          apt:
-            name:
-              - python3-pymysql
-              - python3-mysqldb
-            state: present
-          become: true
+        - name: "CAS Init: Add mysql container to in-memory inventory"
+          add_host:
+            name: "la_mysql"
+            ansible_connection: docker
+            ansible_python_interpreter: /usr/bin/python3
 
-        - name: "CAS Init: Initialize databases and users"
+        - name: "CAS Init: Initialize databases and users inside the container"
+          delegate_to: "la_mysql"
           block:
+            - name: Install required Python bindings inside container
+              raw: apt-get update && apt-get install -y python3-pymysql python3-mysqldb python3-pymongo
+
             - include_role:
                 name: cas5-dbs
               vars:
+                # Inside la_mysql, the mysql server is localhost (127.0.0.1)
                 cas_db_hostname: "127.0.0.1"
                 cas_mysql_src_host: "%"
-          become: true
+                # But mongodb is another container!
+                cas_tickets_host: "la_mongodb"
+                cas_services_host: "la_mongodb"
+                cas_audit_host: "la_mongodb"
+                cas_spring_session_host: "la_mongodb"
+          become: false
 
         - name: "CAS Init: Start CAS temporarily for Flyway migrations"
           command: docker compose up -d cas
@@ -104,7 +112,7 @@
 
         - name: "CAS Init: Wait for CAS to be healthy (Flyway done)"
           shell: |
-            docker inspect --format='{{ "{{.State.Health.Status}}" }}' la_cas
+            docker inspect --format='{{ "{{" }}.State.Health.Status{{ "}}" }}' la_cas
           register: cas_health
           until: cas_health.stdout == "healthy"
           retries: 30
