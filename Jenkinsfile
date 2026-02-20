@@ -99,8 +99,8 @@ pipeline {
                   if [ -d /data ]; then
                     echo "==> Content of /data before cleaning:"
                     sudo ls -la /data || true
-                    echo "==> Cleaning files in /data (preserving lost+found and docker cache)"
-                    sudo find /data -mindepth 1 -maxdepth 1 -not -name lost+found -not -name docker -print -exec rm -rf -- {} +
+                    echo "==> Cleaning files in /data (preserving lost+found and var-lib-containerd)"
+                    sudo find /data -mindepth 1 -maxdepth 1 -not -name lost+found -not -name var-lib-containerd -print -exec rm -rf -- {} +
                     echo "==> Content of /data after cleaning:"
                     sudo ls -la /data || true
                   else
