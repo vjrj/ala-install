@@ -86,7 +86,7 @@
             ansible_python_interpreter: /usr/bin/python3
 
         - name: "CAS Init: Initialize databases and users inside the container"
-          delegate_to: "la_mysql"
+          delegate_to: "mysql"
           block:
             - name: Install required Python bindings inside container
               raw: apt-get update && apt-get install -y python3-pymysql python3-mysqldb python3-pymongo
