@@ -20,6 +20,16 @@
     cas_services_host: "127.0.0.1"
 
   tasks:
+    - name: "Check for necessary host tools (Docker Compose host)"
+      package:
+        name:
+          - mysql-client
+          - python3-mysqldb
+          - python3-pymongo
+        state: present
+      become: true
+      ignore_errors: true
+
     - name: "Find the cas server host corresponding for this docker_compose host"
       set_fact:
         cas_server_host: "{{ item }}"
@@ -79,30 +89,21 @@
           delay: 5
           become: true
 
-        - name: "CAS Init: Add mysql container to in-memory inventory"
-          add_host:
-            name: "la_mysql"
-            ansible_connection: docker
-            ansible_python_interpreter: /usr/bin/python3
-
-        - name: "CAS Init: Initialize databases and users inside the container"
-          delegate_to: "mysql"
-          block:
-            - name: Install required Python bindings inside container
-              raw: apt-get update && apt-get install -y python3-pymysql python3-mysqldb python3-pymongo
-
-            - include_role:
-                name: cas5-dbs
-              vars:
-                # Inside la_mysql, the mysql server is localhost (127.0.0.1)
-                cas_db_hostname: "127.0.0.1"
-                cas_mysql_src_host: "%"
-                # But mongodb is another container!
-                cas_tickets_host: "la_mongodb"
-                cas_services_host: "la_mongodb"
-                cas_audit_host: "la_mongodb"
-                cas_spring_session_host: "la_mongodb"
-          become: false
+        - name: "CAS Init: Initialize databases and users from host"
+          include_role:
+            name: cas5-dbs
+          vars:
+            cas_db_hostname: "127.0.0.1"
+            user_store_db_hostname: "127.0.0.1"
+            apikey_db_hostname: "127.0.0.1"
+            cas_tickets_host: "127.0.0.1"
+            cas_services_host: "127.0.0.1"
+            cas_audit_host: "127.0.0.1"
+            cas_spring_session_host: "127.0.0.1"
+            cas_mysql_src_host: "%"
+            apikey_mysql_src_host: "%"
+            cas_add_mongo_users: true
+          become: true
 
         - name: "CAS Init: Start CAS temporarily for Flyway migrations"
           command: docker compose up -d cas
@@ -129,6 +130,7 @@
           include_tasks: roles/cas-management/tasks/oidc-tasks.yml
           vars:
             cas_services_host: "127.0.0.1"
+            deployment_type: "vm"
 
         - name: "CAS Init: Run database validations"
           include_tasks: roles/docker-compose/tasks/validate-db-init.yml
