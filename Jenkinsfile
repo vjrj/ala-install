@@ -85,7 +85,7 @@ pipeline {
                 if sudo -n true 2>/dev/null; then
                   if [ -d /data/docker-compose ] && command -v docker >/dev/null 2>&1; then
                     echo "==> Stopping docker-compose services and removing volumes"
-                    sudo find /data/docker-compose -maxdepth 2 -name "docker-compose.yml" -print -execdir docker compose down -v \; || true
+                    sudo find /data/docker-compose -maxdepth 2 -name "docker-compose.yml" -print -execdir docker compose down -v \\; || true
                   fi
 
                   if command -v systemctl >/dev/null 2>&1; then
