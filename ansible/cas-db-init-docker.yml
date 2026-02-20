@@ -75,7 +75,7 @@
           shell: |
             docker inspect --format='{{ "{{" }}.State.Health.Status{{ "}}" }}' la_mysql
           register: mysql_health
-          until: mysql_health.stdout == "healthy"
+          until: 'mysql_health.stdout == "healthy"'
           retries: 30
           delay: 5
           become: true
@@ -84,7 +84,7 @@
           shell: |
             docker inspect --format='{{ "{{" }}.State.Health.Status{{ "}}" }}' la_mongodb
           register: mongodb_health
-          until: mongodb_health.stdout == "healthy"
+          until: 'mongodb_health.stdout == "healthy"'
           retries: 30
           delay: 5
           become: true
@@ -115,7 +115,7 @@
           shell: |
             docker inspect --format='{{ "{{" }}.State.Health.Status{{ "}}" }}' la_cas
           register: cas_health
-          until: cas_health.stdout == "healthy"
+          until: 'cas_health.stdout == "healthy"'
           retries: 30
           delay: 10
           become: true
