@@ -74,31 +74,38 @@ pipeline {
 
           def jobs = [:]
           for (h in hosts) {
-            jobs[h] = {
+            def targetHost = h
+            jobs[targetHost] = {
               sh("""
                 set -eu
-                cat <<'EOF' | ssh ${h} bash -s
+                cat <<'EOF' | ssh ${targetHost} bash -s
                 set -eu
 
                 echo "==> Cleaning on \$(hostname)"
 
                 if sudo -n true 2>/dev/null; then
                   if [ -d /data/docker-compose ] && command -v docker >/dev/null 2>&1; then
-                    echo "==> Stopping docker-compose services and removing volumes"
+                    echo "==> Found /data/docker-compose, stopping services and removing volumes"
                     sudo find /data/docker-compose -maxdepth 2 -name "docker-compose.yml" -print -execdir docker compose down -v \\; || true
                   fi
 
                   if command -v systemctl >/dev/null 2>&1; then
-                    echo "==> Stopping docker and containerd"
+                    echo "==> Stopping docker and containerd services"
                     sudo systemctl stop docker containerd 2>/dev/null || true
-                  fi
-
-                  if [ -d /data ]; then
-                    echo "==> Cleaning /data (preserving lost+found and docker cache)"
-                    sudo find /data -mindepth 1 -maxdepth 1 -not -name lost+found -not -name docker -print -exec rm -rf -- {} +
                   fi
                   
                   sudo pkill -9 -f unattended-upgrade || true
+                  
+                  if [ -d /data ]; then
+                    echo "==> Content of /data before cleaning:"
+                    sudo ls -la /data || true
+                    echo "==> Cleaning files in /data (preserving lost+found and docker cache)"
+                    sudo find /data -mindepth 1 -maxdepth 1 -not -name lost+found -not -name docker -print -exec rm -rf -- {} +
+                    echo "==> Content of /data after cleaning:"
+                    sudo ls -la /data || true
+                  else
+                    echo "==> Directory /data not found, skipping cleanup"
+                  fi
                   
                   if command -v apt-get >/dev/null 2>&1; then
                     i=0
