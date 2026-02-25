@@ -9,6 +9,7 @@
 
 - name: Install aptitude using apt
   apt: name=aptitude state=latest update_cache=yes force_apt_get=yes
+  when: deployment_type != 'container'
   tags:
     - pipelines
     - apt
@@ -16,6 +17,7 @@
 - name: Install required system packages
   apt: name={{ item }} state=latest update_cache=yes
   loop: [ 'apt-transport-https', 'ca-certificates', 'curl', 'software-properties-common', 'python3-pip', 'virtualenv', 'python3-setuptools', 'unzip']
+  when: deployment_type != 'container'
   tags:
     - pipelines
     - apt
@@ -24,7 +26,7 @@
   apt_key:
     url: https://download.docker.com/linux/ubuntu/gpg
     state: present
-  when: use_docker_with_pipelines is defined and use_docker_with_pipelines | bool == True
+  when: (deployment_type != 'container') and (use_docker_with_pipelines is defined and use_docker_with_pipelines | bool == True)
   tags:
     - pipelines
 
@@ -32,7 +34,7 @@
   apt_repository:
     repo: deb https://download.docker.com/linux/ubuntu bionic stable
     state: present
-  when: use_docker_with_pipelines is defined and use_docker_with_pipelines | bool == True
+  when: (deployment_type != 'container') and (use_docker_with_pipelines is defined and use_docker_with_pipelines | bool == True)
   tags:
     - pipelines
 
@@ -43,7 +45,7 @@
     - docker-ce-cli
     - docker-compose
     - containerd.io
-  when: use_docker_with_pipelines is defined and use_docker_with_pipelines | bool == True
+  when: (deployment_type != 'container') and (use_docker_with_pipelines is defined and use_docker_with_pipelines | bool == True)
   tags:
     - pipelines
     - docker
@@ -65,11 +67,32 @@
     - docker
     - la-pipelines
 
+- name: create local pipelines data directories (container only)
+  file: path={{ item }} state=directory owner={{ spark_user }} group={{ spark_user }} recurse=true
+  with_items:
+    - "{{ data_dir }}/la-pipelines/data"
+    - "{{ data_dir }}/la-pipelines/data/all-datasets"
+    - "{{ data_dir }}/la-pipelines/data/species"
+    - "{{ data_dir }}/la-pipelines/data/jackknife"
+    - "{{ data_dir }}/la-pipelines/data/clustering"
+    - "{{ data_dir }}/la-pipelines/data/outlier"
+    - "{{ data_dir }}/la-pipelines/vocabularies"
+    - "{{ data_dir }}/la-pipelines/spark-tmp"
+    - "{{ data_dir }}/la-pipelines/dwca-import"
+    - "{{ data_dir }}/logs/pipelines"
+  when: deployment_type == 'container'
+  tags:
+    - properties
+    - la-pipelines-config
+    - pipelines
+    - docker
+    - la-pipelines
+
 - name: Update docker directory
   template: src={{ item }} dest=/etc/docker/daemon.json
   with_items:
     - daemon.json
-  when: use_docker_with_pipelines is defined and use_docker_with_pipelines | bool == True
+  when: (deployment_type != 'container') and (use_docker_with_pipelines is defined and use_docker_with_pipelines | bool == True)
   tags:
     - pipelines
     - properties-file
@@ -79,7 +102,7 @@
   service:
     name: docker
     state: restarted
-  when: use_docker_with_pipelines is defined and use_docker_with_pipelines | bool == True
+  when: (deployment_type != 'container') and (use_docker_with_pipelines is defined and use_docker_with_pipelines | bool == True)
   tags:
     - pipelines
     - docker
@@ -91,7 +114,7 @@
   community.general.snap:
     name:
       - yq
-  when: use_yq_via_snap is defined and use_yq_via_snap | bool == True
+  when: (deployment_type != 'container') and (use_yq_via_snap is defined and use_yq_via_snap | bool == True)
   tags:
     - la-pipelines
     - pipelines
@@ -102,7 +125,7 @@
   apt:
     name: yq
     state: absent
-  when: use_yq_via_ppa is defined and use_yq_via_ppa | bool == True
+  when: (deployment_type != 'container') and (use_yq_via_ppa is defined and use_yq_via_ppa | bool == True)
   tags:
     - pipelines
     - la-pipelines
@@ -113,7 +136,7 @@
   apt_repository:
     repo: 'ppa:rmescandon/yq'
     state: absent
-  when: use_yq_via_ppa is defined and use_yq_via_ppa | bool == True
+  when: (deployment_type != 'container') and (use_yq_via_ppa is defined and use_yq_via_ppa | bool == True)
   tags:
     - la-pipelines
     - pipelines
@@ -125,7 +148,7 @@
     keyserver: keyserver.ubuntu.com
     id: CC86BB64
     state: absent
-  when: use_yq_via_ppa is defined and use_yq_via_ppa | bool == True
+  when: (deployment_type != 'container') and (use_yq_via_ppa is defined and use_yq_via_ppa | bool == True)
   tags:
     - la-pipelines
     - pipelines
@@ -136,7 +159,7 @@
 - name: Update apt cache
   apt:
     update_cache: true
-  when: use_yq_via_ppa is defined and use_yq_via_ppa | bool == True
+  when: (deployment_type != 'container') and (use_yq_via_ppa is defined and use_yq_via_ppa | bool == True)
   tags:
     - pipelines
     - la-pipelines
@@ -147,7 +170,7 @@
   set_fact:
     yq_binary: "yq_linux_{{ 'amd64' if is_arm is not defined else 'arm' }}"
     yq_version: "{{ yq_bin_version | default('v4.16.2') }}"
-  when: use_yq_via_ppa is defined and use_yq_via_ppa | bool == True
+  when: (deployment_type != 'container') and (use_yq_via_ppa is defined and use_yq_via_ppa | bool == True)
   tags:
     - la-pipelines
     - pipelines
@@ -160,7 +183,7 @@
     dest: "/usr/bin/yq"
     mode: '0755'
   vars:
-  when: use_yq_via_ppa is defined and use_yq_via_ppa | bool == True
+  when: (deployment_type != 'container') and (use_yq_via_ppa is defined and use_yq_via_ppa | bool == True)
   tags:
     - la-pipelines
     - pipelines
@@ -171,7 +194,7 @@
 
 - name: Get docopts
   shell: curl -o /usr/local/bin/docopts -LJO https://github.com/docopt/docopts/releases/download/v0.6.3-rc2/docopts_linux_amd64
-  when: is_arm is not defined
+  when: (deployment_type != 'container') and (is_arm is not defined)
   tags:
     - la-pipelines
     - pipelines
@@ -179,7 +202,7 @@
 
 - name: Get docopts
   shell: curl -o /usr/local/bin/docopts -LJO https://github.com/docopt/docopts/releases/download/v0.6.3-rc2/docopts_linux_arm
-  when: is_arm is defined
+  when: (deployment_type != 'container') and (is_arm is defined)
   tags:
     - la-pipelines
     - pipelines
@@ -188,6 +211,7 @@
 
 - name: Make docopts executable
   shell: chmod +x /usr/local/bin/docopts
+  when: deployment_type != 'container'
   tags:
     - la-pipelines
     - pipelines
@@ -195,6 +219,7 @@
 
 - name: Update apt and install pipelines
   apt: update_cache=yes name=la-pipelines={{ pipelines_version }} force=yes
+  when: deployment_type != 'container'
   tags:
     - pipelines
     - la-pipelines
@@ -202,15 +227,16 @@
     - apt
 
 - name: Install pipelines config
-  template: src={{ item }} dest={{ data_dir }}/la-pipelines/config/{{ item }} mode=0644 output_encoding=iso-8859-1
-  with_items:
-    - la-pipelines-local.yaml
+  template:
+    src: "{{ (deployment_type == 'container') | ternary('la-pipelines-docker.yaml.j2', 'la-pipelines-local.yaml') }}"
+    dest: "{{ data_dir }}/la-pipelines/config/la-pipelines-local.yaml"
+    mode: 0644
+    output_encoding: iso-8859-1
   tags:
     - properties
     - la-pipelines-config
     - pipelines
     - la-pipelines
-    - properties
 
 - name: Copy docker YAML files to {{ data_dir }}
   copy: src={{ item }} dest={{ data_dir }}/{{ item }}
@@ -227,7 +253,7 @@
   with_items:
     - ala-name-service.sh
     - ala-sensitive-data-service.sh
-  when: use_docker_with_pipelines is defined and use_docker_with_pipelines | bool == True
+  when: (deployment_type != 'container') and (use_docker_with_pipelines is defined and use_docker_with_pipelines | bool == True)
   tags:
     - pipelines
     - pipelines-services
@@ -238,7 +264,7 @@
   with_items:
     - ala-name-service.service
     - ala-sensitive-data-service.service
-  when: use_docker_with_pipelines is defined and use_docker_with_pipelines | bool == True
+  when: (deployment_type != 'container') and (use_docker_with_pipelines is defined and use_docker_with_pipelines | bool == True)
   tags:
     - pipelines
     - pipelines-services
@@ -249,7 +275,7 @@
   with_items:
     - ala-name-service
     - ala-sensitive-data-service
-  when: use_docker_with_pipelines is defined and use_docker_with_pipelines | bool == True
+  when: (deployment_type != 'container') and (use_docker_with_pipelines is defined and use_docker_with_pipelines | bool == True)
   tags:
     - pipelines-services
     - pipelines
@@ -258,7 +284,7 @@
   service:
     name: ala-sensitive-data-service
     state: started
-  when: use_docker_with_pipelines is defined and use_docker_with_pipelines | bool == True
+  when: (deployment_type != 'container') and (use_docker_with_pipelines is defined and use_docker_with_pipelines | bool == True)
   tags:
     - pipelines
     - pipelines-services
@@ -268,7 +294,7 @@
   service:
     name: ala-name-service
     state: started
-  when: use_docker_with_pipelines is defined and use_docker_with_pipelines | bool == True
+  when: (deployment_type != 'container') and (use_docker_with_pipelines is defined and use_docker_with_pipelines | bool == True)
   tags:
     - pipelines
     - pipelines-services
@@ -305,6 +331,7 @@
     - "/migration"
   become: yes
   become_user: "{{ hadoop.user }}"
+  when: (deployment_type != 'container') and (hadoop_install_dir is defined)
   tags:
     - pipelines
     - hadoop
@@ -325,6 +352,7 @@
     - "/migration"
   become: yes
   become_user: "{{ hadoop.user }}"
+  when: (deployment_type != 'container') and (hadoop_install_dir is defined)
   tags:
     - pipelines
     - hadoop
@@ -334,7 +362,7 @@
   run_once: true
   uri:
     url: "http://api.gbif.org/v1/vocabularies/{{ item }}/releases/latest/export"
-    dest: /tmp/{{ item }}.json
+    dest: "{{ vocab_dest_dir | default('/tmp') }}/{{ item }}.json"
   with_items:
     - LifeStage
     - DegreeOfEstablishment
@@ -354,6 +382,7 @@
     - EstablishmentMeans
     - Pathway
   become_user: "{{ hadoop.user }}"
+  when: (deployment_type != 'container') and (hadoop_install_dir is defined)
   tags:
     - pipelines
     - hadoop

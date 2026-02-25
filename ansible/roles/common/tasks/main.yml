@@ -40,8 +40,8 @@
 
 - name: Check if deployment_type is valid
   fail:
-    msg: "'deployment_type' must be one of 'vm', 'swarm', 'k8s'. Current value is '{{ deployment_type }}'."
-  when: deployment_type not in ['vm', 'swarm', 'k8s']
+    msg: "'deployment_type' must be one of 'vm', 'swarm', 'k8s', 'container'. Current value is '{{ deployment_type }}'."
+  when: deployment_type not in ['vm', 'swarm', 'k8s', 'container']
   tags:
     - common
 
