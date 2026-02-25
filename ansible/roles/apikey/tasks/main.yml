@@ -92,6 +92,7 @@
     java_headless: true
     java_jre: true
     log_config_filename: logback.xml
+  when: deployment_type == 'vm' or deployment_type is undefined
   tags:
     - deploy
     - service
@@ -106,13 +107,14 @@
   until: apikeyService.status.ActiveState == "active"
   retries: 15
   delay: 30
+  when: deployment_type == 'vm' or deployment_type is undefined
   tags:
     - apikey
     - db
 
 - name: wait for apikey is running to create the apikeys
   wait_for: host=127.0.0.1 port={{ apikey_port | default('9002') }} delay=30
-  when: apikey_def_creator_email is defined and apikey_def_creator_userid is defined
+  when: (apikey_def_creator_email is defined and apikey_def_creator_userid is defined) and (deployment_type == 'vm' or deployment_type is undefined)
   tags:
     - apikey
     - db
@@ -140,7 +142,7 @@
     - { app: "ecodata", apikey: "{{ ecodata_api_key | default('') }}" }
   loop_control:
     loop_var: oitem
-  when: apikey_def_creator_email is defined and apikey_def_creator_userid is defined and oitem.apikey|length > 0
+  when: (apikey_def_creator_email is defined and apikey_def_creator_userid is defined and oitem.apikey|length > 0) and (deployment_type == 'vm' or deployment_type is undefined)
   tags:
     - apikeys_add
     - apikey

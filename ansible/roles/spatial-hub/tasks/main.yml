@@ -43,7 +43,7 @@
     - deploy
     - apache_vhost
     - spatial-hub
-  when: not webserver_nginx
+  when: not webserver_nginx and deployment_type == 'vm'
 
 - name: add nginx vhost if configured
   include_role:
