@@ -13,7 +13,7 @@
     owner: "{{ sensitive_data_user }}"
     group: "{{ sensitive_data_user }}"
     mode: 0755
-  when: deployment_type == 'swarm' or deployment_type == 'container'
+  when: deployment_type != 'vm'
   with_items:
     - "/data/ala-sensitive-data-service/config"
   tags:
@@ -104,4 +104,4 @@
 
 - name: Include docker tasks
   include_tasks: docker-tasks.yml
-  when: deployment_type == 'swarm' or deployment_type == 'container'
+  when: deployment_type != 'vm'

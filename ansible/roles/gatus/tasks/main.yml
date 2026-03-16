@@ -70,4 +70,4 @@
   vars:
     stack: la_gatus
     docker_compose_data_dir: "{{ gatus_docker_dir }}"
-  when: deployment_type == 'swarm'
+  when: deployment_type != 'vm'

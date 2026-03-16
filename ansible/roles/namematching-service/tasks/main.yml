@@ -39,7 +39,7 @@
     mode: 0755
   with_items:
     - "/data/ala-namematching-service/config"
-  when: deployment_type == 'swarm' or deployment_type == 'container'
+  when: deployment_type != 'vm'
   tags:
     - properties
     - namematching-service
@@ -93,4 +93,4 @@
 
 - name: Include docker tasks
   include_tasks: docker-tasks.yml
-  when: deployment_type == 'swarm' or deployment_type == 'container'
+  when: deployment_type != 'vm'
