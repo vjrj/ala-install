@@ -212,7 +212,7 @@
 
 - name: Include docker tasks
   include_tasks: docker-tasks.yml
-  when: deployment_type == 'swarm'
+  when: deployment_type != 'vm'
   tags: [docker, docker-service]
 
 - name: Include VM tasks
