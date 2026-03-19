@@ -41,14 +41,14 @@
   tags:
     - gatus
 
-- name: create the sample config from template
+- name: create the gatus base config from template
   template:
     src: "{{item.src}}"
     dest: "{{item.dest}}"
     force: true
   with_items:
     - {src: config.yaml,
-       dest: "{{ gatus_config_dir }}/sample.yaml"}
+       dest: "{{ gatus_config_dir }}/config.yaml"}
   tags:
     - gatus
 
