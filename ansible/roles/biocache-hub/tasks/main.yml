@@ -47,7 +47,7 @@
     - tomcat_vhost
     - deploy
     - biocache_hub
-  when: not exec_jar
+  when: not exec_jar and (deployment_type == 'vm' or deployment_type is undefined)
 
 #
 # Properties and data file configuration
@@ -194,5 +194,5 @@
   when: deployment_type != 'vm'
 
 - name: Include VM tasks
-  import_tasks: vm-tasks.yml
+  include_tasks: vm-tasks.yml
   when: deployment_type == 'vm'
