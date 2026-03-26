@@ -63,7 +63,7 @@
   tags:
     - nginx_vhost
     - gatus
-  when: webserver_nginx | bool 
+  when: webserver_nginx | bool and inventory_hostname in groups['gatus'] | default([])
 
 - name: Deploy gatus stack (Docker Swarm mode)
   import_tasks: ../../docker-common/tasks/stack-create.yml
