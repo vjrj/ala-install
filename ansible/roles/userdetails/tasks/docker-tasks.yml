@@ -14,54 +14,59 @@
     - docker-service
 
 - name: Deploy auth stack
-  import_tasks: ../../docker-common/tasks/stack-create.yml
+  include_tasks: ../../docker-common/tasks/stack-create.yml
+  when: deployment_type == 'swarm'
   vars:
     stack: la_auth
     docker_compose_data_dir: "{{ userdetails_data_dir }}/docker/"
 
 - name: Remove previous socat container for MySQL tunnel
-  import_tasks: ../../docker-common/tasks/socat-rm.yml
+  include_tasks: ../../docker-common/tasks/socat-rm.yml
+  when: deployment_type == 'swarm'
   vars:
     name: la_auth_mysql
-  run_once: true
   tags:
     - cas-dbs
 
 - name: Remove previous socat container for MongoDB tunnel
-  import_tasks: ../../docker-common/tasks/socat-rm.yml
+  include_tasks: ../../docker-common/tasks/socat-rm.yml
+  when: deployment_type == 'swarm'
   vars:
     name: la_auth_mongo
-  run_once: true
   tags:
     - cas-dbs
 
-- import_tasks: ../../docker-common/tasks/socat-rm.yml
+- name: Remove previous socat container for CAS tunnel
+  include_tasks: ../../docker-common/tasks/socat-rm.yml
+  when: deployment_type == 'swarm'
   vars:
     name: la_auth_cas
-  run_once: true
   tags:
     - cas-dbs
 
-- import_tasks: ../../docker-common/tasks/socat-rm.yml
+- name: Remove previous socat container for CAS management tunnel
+  include_tasks: ../../docker-common/tasks/socat-rm.yml
+  when: deployment_type == 'swarm'
   vars:
     name: la_auth_cas-management
-  run_once: true
   tags:
     - cas-dbs
 
-- import_tasks: ../../docker-common/tasks/socat.yml
+- name: Create socat tunnel for MySQL
+  include_tasks: ../../docker-common/tasks/socat.yml
+  when: deployment_type == 'swarm'
   vars:
     name: la_auth_mysql
     port: 3306
-  run_once: true
   tags:
     - cas-dbs
 
-- import_tasks: ../../docker-common/tasks/socat.yml
+- name: Create socat tunnel for MongoDB
+  include_tasks: ../../docker-common/tasks/socat.yml
+  when: deployment_type == 'swarm'
   vars:
     name: la_auth_mongo
     port: 27017
-  run_once: true
   tags:
     - cas-dbs
 
@@ -74,85 +79,94 @@
   vars:
     cas_db_hostname: 127.0.0.1
     user_store_db_hostname: 127.0.0.1
-    user_store_db_hostname: 127.0.0.1
     apikey_db_hostname: 127.0.0.1
     ticket_registry_db_hostname: 127.0.0.1
     cas_audit_host: 127.0.0.1
     cas_spring_session_host: 127.0.0.1
     cas_tickets_host: 127.0.0.1
-    cas_tickets_host: 127.0.0.1
-    cas_services_host: 127.0.0.1
     cas_services_host: 127.0.0.1
     cas_mysql_src_host: '%'
     apikey_mysql_src_host: '%'
 
-- import_tasks: ../../docker-common/tasks/socat-rm.yml
+- name: Remove socat tunnel for CAS (cleanup)
+  include_tasks: ../../docker-common/tasks/socat-rm.yml
+  when: deployment_type == 'swarm'
   vars:
     name: la_auth_cas
-  run_once: true
   tags:
     - cas-dbs
 
-- import_tasks: ../../docker-common/tasks/socat.yml
+- name: Create socat tunnel for CAS
+  include_tasks: ../../docker-common/tasks/socat.yml
+  when: deployment_type == 'swarm'
   vars:
     name: la_auth_cas
     port: "{{ cas_port | default('9000') }}"
-  run_once: true
   tags:
     - cas-dbs
 
-- import_tasks: ../../cas5/tasks/admin-account.yml
+- name: Run CAS admin account tasks
+  include_tasks: ../../cas5/tasks/admin-account.yml
+  when: deployment_type == 'swarm'
   vars:
     cas_db_hostname: 127.0.0.1
   run_once: true
   tags:
     - cas-dbs
 
-- import_tasks: ../../docker-common/tasks/socat-rm.yml
+- name: Remove socat tunnel for CAS management (cleanup)
+  include_tasks: ../../docker-common/tasks/socat-rm.yml
+  when: deployment_type == 'swarm'
   vars:
     name: la_auth_cas-management
-  run_once: true
   tags:
     - cas-dbs
 
-- import_tasks: ../../docker-common/tasks/socat.yml
+- name: Create socat tunnel for CAS management
+  include_tasks: ../../docker-common/tasks/socat.yml
+  when: deployment_type == 'swarm'
   vars:
     name: la_auth_cas-management
     port: "{{ cas_management_port | default('8070') }}"
-  run_once: true
   tags:
     - cas-dbs
 
-- import_tasks: ../../cas-management/tasks/oidc-tasks.yml
+- name: Run CAS management OIDC tasks
+  include_tasks: ../../cas-management/tasks/oidc-tasks.yml
+  when: deployment_type == 'swarm'
   run_once: true
   tags:
     - cas-dbs
     - cas-oidc
 
-- import_tasks: ../../docker-common/tasks/socat-rm.yml
+- name: Remove socat tunnel for MySQL (final cleanup)
+  include_tasks: ../../docker-common/tasks/socat-rm.yml
+  when: deployment_type == 'swarm'
   vars:
     name: la_auth_mysql
-  run_once: true
   tags:
     - cas-dbs
 
-- import_tasks: ../../docker-common/tasks/socat-rm.yml
+- name: Remove socat tunnel for MongoDB (final cleanup)
+  include_tasks: ../../docker-common/tasks/socat-rm.yml
+  when: deployment_type == 'swarm'
   vars:
     name: la_auth_mongo
-  run_once: true
   tags:
     - cas-dbs
 
-- import_tasks: ../../docker-common/tasks/socat-rm.yml
+- name: Remove socat tunnel for CAS (final cleanup)
+  include_tasks: ../../docker-common/tasks/socat-rm.yml
+  when: deployment_type == 'swarm'
   vars:
     name: la_auth_cas
-  run_once: true
   tags:
     - cas-dbs
 
-- import_tasks: ../../docker-common/tasks/socat-rm.yml
+- name: Remove socat tunnel for CAS management (final cleanup)
+  include_tasks: ../../docker-common/tasks/socat-rm.yml
+  when: deployment_type == 'swarm'
   vars:
     name: la_auth_cas-management
-  run_once: true
   tags:
     - cas-dbs
