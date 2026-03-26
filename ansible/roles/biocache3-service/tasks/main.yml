@@ -503,5 +503,5 @@
   tags: [ docker, docker-service ]
 
 - name: Include VM tasks
-  import_tasks: vm-tasks.yml
+  include_tasks: vm-tasks.yml
   when: deployment_type == 'vm'
