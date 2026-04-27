@@ -126,18 +126,20 @@
         proxy_set_header Connection "";
     {% endif %}
   {% else %}
-      {% if nginx_docker_swarm_resolver is defined and nginx_docker_swarm_resolver | bool == true %}
-        resolver 127.0.0.11 ipv6=off;
+      {% if nginx_docker_internal_resolver is defined and nginx_docker_internal_resolver | bool == true %}
+        {# Dynamic DNS resolution for Docker services (container/swarm deployment) #}
+        resolver 127.0.0.11 valid=30s ipv6=off;
         {% set proto = item.proxy_pass.split('://')[0] %}
         {% set rest_url = item.proxy_pass.split('://')[1] %}
         {% set host = rest_url.split(':')[0] %}
         {% set port_path = rest_url.split(':')[1] %}
         {% set port = port_path.split('/')[0] %}
+        {% set path_part = '/' + port_path.split('/', 1)[1] if '/' in port_path else '' %}
 
         set $backend_proto "{{ proto }}";
         set $backend_host "{{ host }}";
         set $backend_port "{{ port }}";
-        proxy_pass $backend_proto://$backend_host:$backend_port;
+        proxy_pass $backend_proto://$backend_host:$backend_port{{ path_part }};
       {% else %}
         proxy_pass {{ item.proxy_pass }};
       {% endif %}
