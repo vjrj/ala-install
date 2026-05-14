@@ -139,7 +139,10 @@
         set $backend_proto "{{ proto }}";
         set $backend_host "{{ host }}";
         set $backend_port "{{ port }}";
-        proxy_pass $backend_proto://$backend_host:$backend_port{{ path_part }};
+        proxy_pass $backend_proto://$backend_host:$backend_port;
+        {# NOTE: path_part is intentionally omitted — with variable proxy_pass nginx does NOT
+           strip the location prefix, so the original URI (already containing the context path)
+           is forwarded verbatim. Including path_part here doubles the path: /cas/cas/login. #}
       {% else %}
         proxy_pass {{ item.proxy_pass }};
       {% endif %}
