@@ -162,7 +162,7 @@
   when:
     - use_gatus is defined and use_gatus
     - groups['gatus'] is defined and groups['gatus'] | length > 0
-  delegate_to: "{{ groups['gatus'][0] }}"
+  delegate_to: "{{ groups['gatus'][0] if (groups['gatus'] is defined and groups['gatus'] | length > 0) else inventory_hostname }}"
   tags:
     - nginx_vhost
     - gatus
