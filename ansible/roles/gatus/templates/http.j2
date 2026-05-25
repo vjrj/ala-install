@@ -12,6 +12,8 @@ endpoints:
     interval: {{ gatus_interval | default('5m') }}
     conditions:
       - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 5000"
+      - "[BODY] != \"\""
 
 {% endif %}
 {% for entry in nginx_paths %}
@@ -28,5 +30,7 @@ endpoints:
     interval: {{ gatus_interval | default('5m') }}
     conditions:
       - "[STATUS] == 200"
+      - "[RESPONSE_TIME] < 5000"
+      - "[BODY] != \"\""
 {% endif %}
 {% endfor %}
