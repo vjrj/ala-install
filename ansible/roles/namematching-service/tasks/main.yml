@@ -81,6 +81,7 @@
     context_path: "{{ namematching_service_context_path }}"
     nginx_paths:
       - path: "{{ namematching_service_context_path }}"
+        sort_label: "1"
         is_proxy: true
         proxy_pass: "http://{{upstream_host}}:{{ namematching_service_port }}/{{ namematching_service_context_path }}"
   # notify:
