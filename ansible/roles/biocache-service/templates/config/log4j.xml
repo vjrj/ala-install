@@ -10,6 +10,18 @@
     <!--<param name="AcceptOnMatch" value="false"/>-->
     <!--</filter>-->
     <!--</appender>-->
+{% if deployment_type | default('vm') != 'vm' %}
+    <appender name="CONSOLE" class="org.apache.log4j.ConsoleAppender">
+        <param name="Target" value="System.out"/>
+        <layout class="org.apache.log4j.PatternLayout">
+            <param name="ConversionPattern" value="%d [%t] %p %4c (%F:%L) - %m%n"/>
+        </layout>
+        <filter class="org.apache.log4j.varia.LevelMatchFilter">
+            <param name="LevelToMatch" value="REMOTE#org.ala.client.appender.RestLevel" />
+            <param name="AcceptOnMatch" value="false"/>
+        </filter>
+    </appender>
+{% endif %}
     <appender name="FILE" class="org.apache.log4j.RollingFileAppender">
         <param name="File" value="${catalina.base}/logs/biocache-service.log"/>
         <param name="Append" value="true"/>
@@ -83,7 +95,9 @@
     </category>
     <root>
         <priority value ="WARN" />
-        <!-- <appender-ref ref="CONSOLE"/> -->
+{% if deployment_type | default('vm') != 'vm' %}
+        <appender-ref ref="CONSOLE"/>
+{% endif %}
         <appender-ref ref="FILE"/>
         <appender-ref ref="ASYNC" />
     </root>
