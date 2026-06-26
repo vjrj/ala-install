@@ -56,7 +56,9 @@
 
 - name: Install pipelines config
   template:
-    src: "{{ (deployment_type == 'container') | ternary('la-pipelines-docker.yaml.j2', 'la-pipelines-local.yaml') }}"
+    # Single parametrized template (FS backend via pipelines_use_hdfs). Replaces the
+    # old container/non-container split that pointed at the missing la-pipelines-docker.yaml.j2.
+    src: la-pipelines-local.yaml
     dest: "{{ data_dir }}/la-pipelines/config/la-pipelines-local.yaml"
     mode: 0644
     output_encoding: iso-8859-1
