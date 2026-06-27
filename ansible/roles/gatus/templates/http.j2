@@ -11,9 +11,12 @@ endpoints:
     url: "{{protocol}}://{{ hostname }}"
     interval: {{ gatus_interval | default('5m') }}
     conditions:
-      - "[STATUS] == 200"
-      - "[RESPONSE_TIME] < 5000"
-      - "[BODY] != \"\""
+      # "Up" = the service answers through nginx without a server error. ALA
+      # endpoints behind CAS legitimately return 302/401/403 (and param-less API
+      # paths 400/404) while perfectly healthy, so a strict ==200 + non-empty body
+      # produced massive false-reds. [STATUS] < 500 keeps only real outages red
+      # (502/503/504/timeout/no upstream).
+      - "[STATUS] < 500"
 
 {% endif %}
 {% for entry in nginx_paths %}
@@ -29,8 +32,11 @@ endpoints:
     url: "{{protocol}}://{{ hostname }}{{ entry.path }}"
     interval: {{ gatus_interval | default('5m') }}
     conditions:
-      - "[STATUS] == 200"
-      - "[RESPONSE_TIME] < 5000"
-      - "[BODY] != \"\""
+      # "Up" = the service answers through nginx without a server error. ALA
+      # endpoints behind CAS legitimately return 302/401/403 (and param-less API
+      # paths 400/404) while perfectly healthy, so a strict ==200 + non-empty body
+      # produced massive false-reds. [STATUS] < 500 keeps only real outages red
+      # (502/503/504/timeout/no upstream).
+      - "[STATUS] < 500"
 {% endif %}
 {% endfor %}
