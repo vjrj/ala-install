@@ -18,6 +18,9 @@
     hostname: "{{ spatial_service_hostname }}"
     context_path: "{{ spatial_service_context_path }}"
     allow_x_frame: "SAMEORIGIN"
+    # docker-local: proxy to the app container, not 127.0.0.1 (= nginx itself). Default
+    # keeps VM/bare-metal behaviour unchanged.
+    nginx_upstream_host: "{{ spatial_service_upstream_host | default('127.0.0.1') }}"
   tags:
     - nginx_vhost
     - deploy
@@ -31,22 +34,23 @@
     appname: "spatial-service"
     hostname: "{{ spatial_service_hostname }}"
     context_path: "{{ spatial_service_context_path }}"
+    nginx_upstream_host: "{{ spatial_service_upstream_host | default('127.0.0.1') }}"
     nginx_paths:
       - path: "{{ spatial_hub_context_path }}files/"
         is_proxy: false
         alias: "{{ data_dir }}/ala/runtime/files/"
       - path: "/alaspatial"
         is_proxy: true
-        proxy_pass: "http://127.0.0.1:8080{{spatial_service_context_path}}"
+        proxy_pass: "http://{{ spatial_service_upstream_host | default('127.0.0.1') }}:8080{{spatial_service_context_path}}"
       - path: "/layers-service"
         is_proxy: true
-        proxy_pass: "http://127.0.0.1:8080{{spatial_service_context_path}}"
+        proxy_pass: "http://{{ spatial_service_upstream_host | default('127.0.0.1') }}:8080{{spatial_service_context_path}}"
       - path: "/layers"
         is_proxy: false
         rewrite: "{{spatial_service_context_path}}/layers/index"
       - path: "/layers/more"
         is_proxy: true
-        proxy_pass: "http://127.0.0.1:8080{{spatial_service_context_path}}/layers/view/more"
+        proxy_pass: "http://{{ spatial_service_upstream_host | default('127.0.0.1') }}:8080{{spatial_service_context_path}}/layers/view/more"
   tags:
     - nginx_vhost
     - deploy
@@ -121,6 +125,9 @@
     owner: "{{ tomcat_user }}"
     group: "{{ tomcat_user }}"
     verify_checksum: always
+  # container config-gen must not pull this modelling jar (heavy maven download, not needed
+  # to boot the service); provision it at deploy or out-of-band on container deployments.
+  when: deployment_type == 'vm' or deployment_type is undefined
   tags:
     - spatial-service
     - spatial-deps
