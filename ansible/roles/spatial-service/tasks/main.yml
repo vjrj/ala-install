@@ -36,19 +36,27 @@
     context_path: "{{ spatial_service_context_path }}"
     nginx_upstream_host: "{{ spatial_service_upstream_host | default('127.0.0.1') }}"
     nginx_paths:
+      # sort_label required by the optimized nginx_vhost.j2 template (fast mode,
+      # used in docker-compose); it does `sort(attribute='sort_label')` with no
+      # default. Mirrors every other ALA role (bie-hub, biocache3-service, ...).
       - path: "{{ spatial_hub_context_path }}files/"
+        sort_label: "1"
         is_proxy: false
         alias: "{{ data_dir }}/ala/runtime/files/"
       - path: "/alaspatial"
+        sort_label: "2"
         is_proxy: true
         proxy_pass: "http://{{ spatial_service_upstream_host | default('127.0.0.1') }}:8080{{spatial_service_context_path}}"
       - path: "/layers-service"
+        sort_label: "3"
         is_proxy: true
         proxy_pass: "http://{{ spatial_service_upstream_host | default('127.0.0.1') }}:8080{{spatial_service_context_path}}"
       - path: "/layers"
+        sort_label: "4"
         is_proxy: false
         rewrite: "{{spatial_service_context_path}}/layers/index"
       - path: "/layers/more"
+        sort_label: "5"
         is_proxy: true
         proxy_pass: "http://{{ spatial_service_upstream_host | default('127.0.0.1') }}:8080{{spatial_service_context_path}}/layers/view/more"
   tags:
