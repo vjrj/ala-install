@@ -67,6 +67,9 @@
     - tomcat_vhost
     - spatial-service
     - spatial-service-deploy
+  # Container mode bakes the WAR into the image; only deploy to a local tomcat on VMs. Also avoids
+  # the custom `tomcat_vhost` module (ala-install/library), which isn't on the la-docker-compose path.
+  when: deployment_type == 'vm' or deployment_type is undefined
 
 - name: ensure target directories exist [data subdirectories etc.]
   file: path={{item}} state=directory owner={{tomcat_user}} group={{tomcat_user}}

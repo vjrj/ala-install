@@ -60,7 +60,9 @@
     - tomcat_vhost
     - deploy
     - data_quality_filter_service
-  when: not exec_jar
+  # Container mode bakes the artifact into the image; only deploy to a local tomcat on VMs (and only
+  # for non-exec-jar VM builds). Also avoids the custom `tomcat_vhost` module not on the docker path.
+  when: (deployment_type == 'vm' or deployment_type is undefined) and (not (exec_jar | default(false)))
 
 #
 # Properties and data file configuration

@@ -38,6 +38,9 @@
     - deploy
     - tomcat_vhost
     - regions
+  # Container mode bakes the WAR into the image; only deploy to a local tomcat on VMs. Also avoids
+  # the custom `tomcat_vhost` module (ala-install/library), which isn't on the la-docker-compose path.
+  when: deployment_type == 'vm' or deployment_type is undefined
 
 #
 # External configuration properties file
