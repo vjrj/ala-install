@@ -24,6 +24,11 @@
     - service
     - doi-service
     - service-conf
+  # Container mode bakes the artifact into the image; exec-jar is a VM/systemd deploy role
+  # (host user + systemd unit + maven download, which needs the host's lxml). Only run it on
+  # VMs — matches image-service. (CI #221: this ran in container mode and died on a broken
+  # host lxml during the maven download on 2023-2.)
+  when: deployment_type == 'vm' or deployment_type is undefined
 
 #
 # External configuration properties file

@@ -48,7 +48,9 @@
     - deploy
     - service
     - data_quality_filter_service
-  when: exec_jar
+  # Container mode bakes the artifact into the image; exec-jar is a VM/systemd deploy role.
+  # Only run it on VMs (matches image-service / logger-service).
+  when: exec_jar and (deployment_type == 'vm' or deployment_type is undefined)
 
 - include_tasks: ../../tomcat_deploy/tasks/main.yml
   vars:
