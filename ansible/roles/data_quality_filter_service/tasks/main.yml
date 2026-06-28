@@ -67,7 +67,7 @@
 #
 
 - name: ensure target directories exist [data subdirectories etc.]
-  file: path={{item}} state=directory owner={{data_quality_filter_service}} group={{data_quality_filter_service}}
+  file: path={{item}} state=directory owner={{ data_quality_filter_service_user | default(data_quality_filter_service) }} group={{ data_quality_filter_service_user | default(data_quality_filter_service) }}
   with_items:
     - "{{data_dir}}/{{data_quality_filter_service}}/config"
     - "{{data_dir}}/{{data_quality_filter_service}}/logs"
@@ -100,7 +100,7 @@
     - hub_config
 
 - name: copy logback config
-  template: src=config/logback_exec_jar.xml dest={{data_dir}}/{{data_quality_filter_service}}/config/logback.xml  owner={{data_quality_filter_service}} group={{data_quality_filter_service}}
+  template: src=config/logback_exec_jar.xml dest={{data_dir}}/{{data_quality_filter_service}}/config/logback.xml  owner={{ data_quality_filter_service_user | default(data_quality_filter_service) }} group={{ data_quality_filter_service_user | default(data_quality_filter_service) }}
   tags:
     - properties
     - data_quality_filter_service
@@ -129,8 +129,8 @@
 - name: set data ownership
   file:
     path: "{{data_dir}}/{{data_quality_filter_service}}"
-    owner: "{{data_quality_filter_service}}"
-    group: "{{data_quality_filter_service}}"
+    owner: "{{ data_quality_filter_service_user | default(data_quality_filter_service) }}"
+    group: "{{ data_quality_filter_service_user | default(data_quality_filter_service) }}"
     recurse: true
   notify:
      - restart {{data_quality_filter_service}}
@@ -147,4 +147,5 @@
   tags:
     - data_quality_filter_service
     - properties
-  when: exec_jar
+  # container mode runs the app as the compose service, not a host systemd unit
+  when: exec_jar and (deployment_type == 'vm' or deployment_type is undefined)
