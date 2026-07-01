@@ -38,7 +38,7 @@
     group: "{{ namematching_user }}"
     mode: 0755
   with_items:
-    - "/data/ala-namematching-service/config"
+    - "{{ data_dir }}/ala-namematching-service/config"
   when: deployment_type != 'vm'
   tags:
     - properties
