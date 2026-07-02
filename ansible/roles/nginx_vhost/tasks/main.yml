@@ -407,11 +407,16 @@
     - nginx_vhost
 
 # if not ssl or (ssl and not force_https): copy (70 per path) http
-# basename filter returns last part of path e.g. for /ws returns ws, for / returns empty
+# Fragment filename = <sort_label|basename>_<path>. sort_label sets the ORDER
+# (kept for the optimized/fast template); the normalized path is appended so the
+# name is UNIQUE within a role (e.g. /webportal/wms/reflect vs /ogc/wms/reflect,
+# same basename) AND across roles sharing one vhost (e.g. geoserver vs geonetwork,
+# spatial-hub vs spatial-service) whose per-role sort_labels would otherwise
+# collide and silently overwrite each other during assemble.
 - name: if not using force_https, add location http fragments
   template:
     src: "fragment_70_location_start.j2"
-    dest: "{{nginx_conf_dir}}/vhost_fragments/{{hostname}}/http_70_location_{{ item.sort_label | default(item.path | basename) }}_70_start"
+    dest: "{{nginx_conf_dir}}/vhost_fragments/{{hostname}}/http_70_location_{{ item.sort_label | default(item.path | basename) }}_{{ item.path | regex_replace('[^A-Za-z0-9]+', '_') }}_70_start"
   with_items:
     - "{{ nginx_paths }}"
   when: (ssl | bool == False or (ssl | bool == True and force_https | bool == False)) and vhost_required | bool == True and not nginx_vhost_fast_mode | bool
@@ -423,7 +428,7 @@
 - name: if not using force_https, add location http fragments
   template:
     src: "fragment_73_location.j2"
-    dest: "{{nginx_conf_dir}}/vhost_fragments/{{hostname}}/http_70_location_{{ item.sort_label | default(item.path | basename) }}_73_content"
+    dest: "{{nginx_conf_dir}}/vhost_fragments/{{hostname}}/http_70_location_{{ item.sort_label | default(item.path | basename) }}_{{ item.path | regex_replace('[^A-Za-z0-9]+', '_') }}_73_content"
   with_items:
     - "{{ nginx_paths }}"
   when: (ssl | bool == False or (ssl | bool == True and force_https | bool == False)) and vhost_required | bool == True and not nginx_vhost_fast_mode | bool
@@ -433,7 +438,7 @@
 - name: add cors fragment if required
   template:
     src: "fragment_74_location_cors.j2"
-    dest: "{{nginx_conf_dir}}/vhost_fragments/{{hostname}}/http_70_location_{{ item.sort_label | default(item.path | basename) }}_74_cors"
+    dest: "{{nginx_conf_dir}}/vhost_fragments/{{hostname}}/http_70_location_{{ item.sort_label | default(item.path | basename) }}_{{ item.path | regex_replace('[^A-Za-z0-9]+', '_') }}_74_cors"
   with_items:
     - "{{ nginx_paths }}"
   when: (ssl | bool == False or (ssl | bool == True and force_https | bool == False)) and vhost_required | bool == True and nginx_cors_origin_regexp is defined and not nginx_vhost_fast_mode | bool
@@ -445,7 +450,7 @@
 - name: if not using force_https, add location http fragments
   template:
     src: "fragment_75_location_end.j2"
-    dest: "{{nginx_conf_dir}}/vhost_fragments/{{hostname}}/http_70_location_{{ item.sort_label | default(item.path | basename) }}_75_end"
+    dest: "{{nginx_conf_dir}}/vhost_fragments/{{hostname}}/http_70_location_{{ item.sort_label | default(item.path | basename) }}_{{ item.path | regex_replace('[^A-Za-z0-9]+', '_') }}_75_end"
   with_items:
     - "{{ nginx_paths }}"
   when: (ssl | bool == False or (ssl | bool == True and force_https | bool == False)) and vhost_required | bool == True and not nginx_vhost_fast_mode | bool
@@ -502,7 +507,7 @@
 - name: add location https fragments
   template:
     src: "fragment_70_location_start.j2"
-    dest: "{{nginx_conf_dir}}/vhost_fragments/{{hostname}}/https_70_location_{{ item.sort_label | default(item.path | basename) }}_70_start"
+    dest: "{{nginx_conf_dir}}/vhost_fragments/{{hostname}}/https_70_location_{{ item.sort_label | default(item.path | basename) }}_{{ item.path | regex_replace('[^A-Za-z0-9]+', '_') }}_70_start"
   with_items:
     - "{{ nginx_paths }}"
   when: ssl | bool == True and vhost_required | bool == True and not nginx_vhost_fast_mode | bool
@@ -515,7 +520,7 @@
 - name: add location https fragments
   template:
     src: "fragment_73_location.j2"
-    dest: "{{nginx_conf_dir}}/vhost_fragments/{{hostname}}/https_70_location_{{ item.sort_label | default(item.path | basename) }}_73_content"
+    dest: "{{nginx_conf_dir}}/vhost_fragments/{{hostname}}/https_70_location_{{ item.sort_label | default(item.path | basename) }}_{{ item.path | regex_replace('[^A-Za-z0-9]+', '_') }}_73_content"
   with_items:
     - "{{ nginx_paths }}"
   when: ssl | bool == True and vhost_required | bool == True and not nginx_vhost_fast_mode | bool
@@ -525,7 +530,7 @@
 - name: add cors fragment if required
   template:
     src: "fragment_74_location_cors.j2"
-    dest: "{{nginx_conf_dir}}/vhost_fragments/{{hostname}}/https_70_location_{{ item.sort_label | default(item.path | basename) }}_74_cors"
+    dest: "{{nginx_conf_dir}}/vhost_fragments/{{hostname}}/https_70_location_{{ item.sort_label | default(item.path | basename) }}_{{ item.path | regex_replace('[^A-Za-z0-9]+', '_') }}_74_cors"
   with_items:
     - "{{ nginx_paths }}"
   when: ssl | bool == True and vhost_required | bool == True and nginx_cors_origin_regexp is defined and not nginx_vhost_fast_mode | bool
@@ -538,7 +543,7 @@
 - name: add location https fragments
   template:
     src: "fragment_75_location_end.j2"
-    dest: "{{nginx_conf_dir}}/vhost_fragments/{{hostname}}/https_70_location_{{ item.sort_label | default(item.path | basename) }}_75_end"
+    dest: "{{nginx_conf_dir}}/vhost_fragments/{{hostname}}/https_70_location_{{ item.sort_label | default(item.path | basename) }}_{{ item.path | regex_replace('[^A-Za-z0-9]+', '_') }}_75_end"
   with_items:
     - "{{ nginx_paths }}"
   when: ssl | bool == True and vhost_required | bool == True and not nginx_vhost_fast_mode | bool
