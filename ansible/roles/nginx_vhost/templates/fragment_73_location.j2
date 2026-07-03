@@ -126,7 +126,10 @@
         proxy_set_header Connection "";
     {% endif %}
   {% else %}
-      {% if nginx_docker_internal_resolver is defined and nginx_docker_internal_resolver | bool == true %}
+      {# item.static_upstream forces a static proxy_pass (resolved once at config load via
+         getaddrinfo -> /etc/hosts) for cross-host upstreams provided by docker extra_hosts, which
+         the 127.0.0.11 docker resolver below cannot see (it only knows docker-network names). #}
+      {% if nginx_docker_internal_resolver is defined and nginx_docker_internal_resolver | bool == true and not (item.static_upstream | default(false) | bool) %}
         {# Dynamic DNS resolution for Docker services (container/swarm deployment) #}
         resolver 127.0.0.11 valid=30s ipv6=off;
         {% set proto = item.proxy_pass.split('://')[0] %}
