@@ -11,7 +11,7 @@ endpoints:
     url: "{{protocol}}://{{ hostname }}"
     interval: {{ gatus_interval | default('5m') }}
     conditions:
-      - "[STATUS] == 200"
+      - "{{ gatus_up_condition | default('[STATUS] == 200') }}"
 
 {% endif %}
 {% for entry in nginx_paths %}
@@ -27,6 +27,6 @@ endpoints:
     url: "{{protocol}}://{{ hostname }}{{ entry.path }}"
     interval: {{ gatus_interval | default('5m') }}
     conditions:
-      - "[STATUS] == 200"
+      - "{{ gatus_up_condition | default('[STATUS] == 200') }}"
 {% endif %}
 {% endfor %}
