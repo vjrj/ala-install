@@ -243,6 +243,33 @@
   tags:
     - nginx_vhost
 
+# A location fragment filename encodes its label + path, so if a path or label
+# changes (or a location is dropped) the previously-rendered fragments linger and
+# nginx assembles a duplicate location. Before re-rendering this vhost's locations,
+# remove the fragments it owns for the paths we are about to write.
+- name: find this vhost's existing location fragments (idempotent re-render)
+  find:
+    paths: "{{ nginx_conf_dir }}/vhost_fragments/{{ hostname }}/"
+    patterns:
+      - "http*_location_{{ item.sort_label | default(item.path | basename) }}_*"
+      - "https*_location_{{ item.sort_label | default(item.path | basename) }}_*"
+  loop: "{{ nginx_paths }}"
+  register: nginx_stale_location_fragments
+  when: vhost_required | bool == True and not nginx_vhost_fast_mode | bool and nginx_paths is defined
+  tags:
+    - nginx_vhost
+
+- name: remove this vhost's stale location fragments (idempotent re-render)
+  file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ nginx_stale_location_fragments.results | default([]) | map(attribute='files') | flatten }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  when: vhost_required | bool == True and not nginx_vhost_fast_mode | bool and nginx_paths is defined
+  tags:
+    - nginx_vhost
+
 - name: ensure nginx cache dir is present if configured
   file: 
     path: "{{nginx_cache_path}}"
