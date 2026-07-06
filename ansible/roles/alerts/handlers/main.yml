@@ -1,6 +1,5 @@
-# Container-mode safe: skip_handlers=true (set by la-compose) suppresses the tomcat restart,
-# since there is no tomcat service in the container (the image bakes/runs the app). On VMs
-# skip_handlers is unset/false so the restart fires as before. Overrides common's ungated handler.
+# skip_handlers suppresses the tomcat restart in container deployments (no local tomcat);
+# on VMs it is unset/false so the restart fires as before.
 - name: restart tomcat
   service: name={{tomcat}} state=restarted enabled="yes"
   when:

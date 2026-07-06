@@ -1,7 +1,6 @@
 # Ansible generated
-{# NO-AWS overlay: filesystem backend is configurable.
-   pipelines_use_hdfs defaults to (deployment_type != 'container'): VM/cluster -> HDFS,
-   container -> local FS (bare paths). Override per-inventory with pipelines_use_hdfs. #}
+{# Filesystem backend is configurable: pipelines_use_hdfs defaults to
+   (deployment_type != 'container') — VM/cluster use HDFS, container uses local FS. #}
 {% set _use_hdfs = pipelines_use_hdfs | default((deployment_type | default('container')) != 'container') | bool %}
 {% set fs = ('hdfs://' ~ hadoop_master ~ ':' ~ hadoop_port) if _use_hdfs else '' %}
 run:

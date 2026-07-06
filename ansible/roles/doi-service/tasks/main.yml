@@ -24,10 +24,8 @@
     - service
     - doi-service
     - service-conf
-  # Container mode bakes the artifact into the image; exec-jar is a VM/systemd deploy role
-  # (host user + systemd unit + maven download, which needs the host's lxml). Only run it on
-  # VMs — matches image-service. (CI #221: this ran in container mode and died on a broken
-  # host lxml during the maven download on 2023-2.)
+  # exec-jar is a VM/systemd deploy step (host user + systemd unit + maven download);
+  # container images bake the artifact, so run it on VMs only.
   when: deployment_type == 'vm' or deployment_type is undefined
 
 #
@@ -111,8 +109,8 @@
     appname: "doi-service"
     hostname: "{{ doi_service_hostname }}"
     context_path: "{{ doi_service_context_path }}"
-    # docker-local: nginx must proxy to the app container, not 127.0.0.1 (which is nginx
-    # itself). Defaults to 127.0.0.1 so VM/bare-metal deploys are untouched.
+    # In container deployments nginx proxies to the app container; defaults to 127.0.0.1
+    # so VM/bare-metal deploys are untouched.
     nginx_upstream_host: "{{ doi_service_upstream_host | default('127.0.0.1') }}"
     nginx_paths:
       - path: "{{ doi_service_context_path }}"

@@ -5,8 +5,7 @@
 
 - name: create alerts DB
   mysql_db: name={{ alerts_db_name }} state=present encoding={{ alerts_db_encoding | default('utf8') }} login_user=root login_password='{{mysql_root_password}}'
-  # container mode (la-docker-compose) creates the DB via the mysql container init, not here
-  # (no local mysqld to connect to during config generation). Mirrors logger-service.
+  # In container deployments the DB is created by the datastore container init; only create it here on VMs.
   when: deployment_type == 'vm' or deployment_type is undefined
   tags:
     - db
@@ -82,6 +81,5 @@
     - alerts
     - tomcat_vhost
     - deploy
-  # Container mode bakes the WAR into the image; only deploy to a local tomcat on VMs. Also avoids
-  # the custom `tomcat_vhost` module (ala-install/library), which isn't on the la-docker-compose path.
+  # Deploy the WAR to a local tomcat only on VMs; container images bake the app.
   when: deployment_type == 'vm' or deployment_type is undefined

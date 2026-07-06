@@ -25,7 +25,7 @@
     - deploy
     - service
     - biocollect
-  # Container mode bakes the artifact into the image; exec-jar is a VM/systemd deploy role.
+  # exec-jar is a VM/systemd deploy step; container images bake the artifact.
   when: exec_jar and (deployment_type == 'vm' or deployment_type is undefined) and biocollect_repo_password is defined and biocollect_repo_username is defined
 
 - name: add jar and service (unauthenticated)
@@ -38,7 +38,7 @@
     - deploy
     - service
     - biocollect
-  # Container mode bakes the artifact into the image; exec-jar is a VM/systemd deploy role.
+  # exec-jar is a VM/systemd deploy step; container images bake the artifact.
   when: exec_jar and (deployment_type == 'vm' or deployment_type is undefined) and biocollect_repo_password is not defined and biocollect_repo_username is not defined
 
 #

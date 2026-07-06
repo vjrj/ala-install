@@ -88,8 +88,7 @@
     - tomcat_vhost
     - spatial-hub
     - spatial-hub-deploy
-  # Container mode bakes the WAR into the image; only deploy to a local tomcat on VMs. Also avoids
-  # the custom `tomcat_vhost` module (ala-install/library), which isn't on the la-docker-compose path.
+  # Deploy the WAR to a local tomcat only on VMs; container images bake the app.
   when: deployment_type == 'vm' or deployment_type is undefined
 
 - name: set data ownership
