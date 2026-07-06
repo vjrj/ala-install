@@ -13,9 +13,9 @@
     owner: "{{ sensitive_data_user }}"
     group: "{{ sensitive_data_user }}"
     mode: 0755
-  when: deployment_type == 'swarm'
+  when: deployment_type != 'vm'
   with_items:
-    - "/data/ala-sensitive-data-service/config"
+    - "{{ data_dir }}/ala-sensitive-data-service/config"
   tags:
     - properties
     - sensitive-data-service
@@ -83,15 +83,19 @@
     context_path: "{{ sensitive_data_service_context_path }}"
     nginx_paths:
       - path: "sensitive-species-data.xml"
+        sort_label: "1_sensitive_species_data"
         is_proxy: false
         alias: "{{ data_dir }}/sds/sensitive-species-data.xml"
       - path: "sensitivity-zones.xml"
+        sort_label: "2_sensitivity_zones"
         is_proxy: false
         alias: "{{ data_dir }}/sds/sensitivity-zones.xml"
       - path: "sensitivity-categories.xml"
+        sort_label: "3_sensitivity_categories"
         is_proxy: false
         alias: "{{ data_dir }}/sds/sensitivity-categories.xml"
       - path: "{{ sensitive_data_service_context_path }}"
+        sort_label: "9_default"
         is_proxy: true
         proxy_pass: "http://{{upstream_host}}:{{ sensitive_data_service_port }}/{{ sensitive_data_service_context_path }}"
   # notify:
@@ -104,4 +108,4 @@
 
 - name: Include docker tasks
   include_tasks: docker-tasks.yml
-  when: deployment_type == 'swarm'
+  when: deployment_type != 'vm'

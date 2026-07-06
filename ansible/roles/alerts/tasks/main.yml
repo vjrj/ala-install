@@ -5,12 +5,15 @@
 
 - name: create alerts DB
   mysql_db: name={{ alerts_db_name }} state=present encoding={{ alerts_db_encoding | default('utf8') }} login_user=root login_password='{{mysql_root_password}}'
+  # In container deployments the DB is created by the datastore container init; only create it here on VMs.
+  when: deployment_type == 'vm' or deployment_type is undefined
   tags:
     - db
     - alerts
 
 - name: create alerts DB user
   mysql_user: name={{ alerts_db_username }} password={{ alerts_db_password}} priv=*.*:ALL state=present login_user=root login_password='{{mysql_root_password}}'
+  when: deployment_type == 'vm' or deployment_type is undefined
   tags:
     - db
     - alerts
@@ -78,3 +81,5 @@
     - alerts
     - tomcat_vhost
     - deploy
+  # Deploy the WAR to a local tomcat only on VMs; container images bake the app.
+  when: deployment_type == 'vm' or deployment_type is undefined

@@ -8,7 +8,7 @@
     - deploy
     - apache_vhost
     - spatial-service
-  when: not webserver_nginx
+  when: not webserver_nginx | bool
 
 - name: add nginx vhost if configured
   include_role:
@@ -18,6 +18,9 @@
     hostname: "{{ spatial_service_hostname }}"
     context_path: "{{ spatial_service_context_path }}"
     allow_x_frame: "SAMEORIGIN"
+    # In container deployments nginx proxies to the app container; defaults to 127.0.0.1
+    # so VM/bare-metal deploys are untouched.
+    nginx_upstream_host: "{{ spatial_service_upstream_host | default('127.0.0.1') }}"
   tags:
     - nginx_vhost
     - deploy
@@ -31,22 +34,29 @@
     appname: "spatial-service"
     hostname: "{{ spatial_service_hostname }}"
     context_path: "{{ spatial_service_context_path }}"
+    nginx_upstream_host: "{{ spatial_service_upstream_host | default('127.0.0.1') }}"
     nginx_paths:
+      # sort_label orders the location blocks in the nginx_vhost.j2 template.
       - path: "{{ spatial_hub_context_path }}files/"
+        sort_label: "1"
         is_proxy: false
         alias: "{{ data_dir }}/ala/runtime/files/"
       - path: "/alaspatial"
+        sort_label: "2"
         is_proxy: true
-        proxy_pass: "http://127.0.0.1:8080{{spatial_service_context_path}}"
+        proxy_pass: "http://{{ spatial_service_upstream_host | default('127.0.0.1') }}:8080{{spatial_service_context_path}}"
       - path: "/layers-service"
+        sort_label: "3"
         is_proxy: true
-        proxy_pass: "http://127.0.0.1:8080{{spatial_service_context_path}}"
+        proxy_pass: "http://{{ spatial_service_upstream_host | default('127.0.0.1') }}:8080{{spatial_service_context_path}}"
       - path: "/layers"
+        sort_label: "4"
         is_proxy: false
         rewrite: "{{spatial_service_context_path}}/layers/index"
       - path: "/layers/more"
+        sort_label: "5"
         is_proxy: true
-        proxy_pass: "http://127.0.0.1:8080{{spatial_service_context_path}}/layers/view/more"
+        proxy_pass: "http://{{ spatial_service_upstream_host | default('127.0.0.1') }}:8080{{spatial_service_context_path}}/layers/view/more"
   tags:
     - nginx_vhost
     - deploy
@@ -63,6 +73,8 @@
     - tomcat_vhost
     - spatial-service
     - spatial-service-deploy
+  # Deploy the WAR to a local tomcat only on VMs; container images bake the app.
+  when: deployment_type == 'vm' or deployment_type is undefined
 
 - name: ensure target directories exist [data subdirectories etc.]
   file: path={{item}} state=directory owner={{tomcat_user}} group={{tomcat_user}}
@@ -121,6 +133,9 @@
     owner: "{{ tomcat_user }}"
     group: "{{ tomcat_user }}"
     verify_checksum: always
+  # container config-gen must not pull this modelling jar (heavy maven download, not needed
+  # to boot the service); provision it at deploy or out-of-band on container deployments.
+  when: deployment_type == 'vm' or deployment_type is undefined
   tags:
     - spatial-service
     - spatial-deps
