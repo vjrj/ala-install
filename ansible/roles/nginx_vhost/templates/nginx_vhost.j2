@@ -16,7 +16,7 @@
 {{ m.fragment_50_root() }}
 {{ m.fragment_55_include() -}}
 {{ m.fragment_60_robots() }}
-{# tolerate nginx_paths without sort_label: labeled first (sorted), unlabeled last — avoids a hard AnsibleUndefinedVariable when a role omits sort_label #}
+{# tolerate nginx_paths without sort_label: labeled first (sorted), unlabeled last, avoids a hard AnsibleUndefinedVariable when a role omits sort_label #}
 {% for item in (nginx_paths | selectattr('sort_label', 'defined') | sort(attribute='sort_label')) + (nginx_paths | rejectattr('sort_label', 'defined') | list) %}
 {{ m.fragment_70_location_start(item) -}}
 {{ m.fragment_73_location(item) -}}
@@ -38,7 +38,7 @@
 {{ m.fragment_50_root() }}
 {{ m.fragment_55_include() -}}
 {{ m.fragment_60_robots() }}
-{# tolerate nginx_paths without sort_label: labeled first (sorted), unlabeled last — avoids a hard AnsibleUndefinedVariable when a role omits sort_label #}
+{# tolerate nginx_paths without sort_label: labeled first (sorted), unlabeled last, avoids a hard AnsibleUndefinedVariable when a role omits sort_label #}
 {% for item in (nginx_paths | selectattr('sort_label', 'defined') | sort(attribute='sort_label')) + (nginx_paths | rejectattr('sort_label', 'defined') | list) %}
 {{ m.fragment_70_location_start(item) -}}
 {{ m.fragment_73_location(item) -}}
