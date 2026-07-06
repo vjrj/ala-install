@@ -15,7 +15,7 @@
     mode: 0755
   when: deployment_type != 'vm'
   with_items:
-    - "/data/ala-sensitive-data-service/config"
+    - "{{ data_dir }}/ala-sensitive-data-service/config"
   tags:
     - properties
     - sensitive-data-service
