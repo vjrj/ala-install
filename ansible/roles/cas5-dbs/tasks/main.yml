@@ -283,16 +283,23 @@
     - cas-dbs
     - cas-audit-indexes
 
+# Pass the script as a file, never on stdin. Fed through stdin mongosh becomes a REPL: an
+# uncaught exception is printed, execution continues to the next line and it still exits 0,
+# so a broken run reports success. The legacy shell takes the script as a positional
+# argument and aborts on an uncaught throw.
 - name: Create CAS audit repository indexes (ubuntu < 22.04)
-  shell: >
+  command: >
     mongo --host "{{ cas_audit_host | default('localhost') }}"
     --port "{{ cas_audit_port | default('27017') }}"
     --username "{{ mongodb_root_username }}" --password "{{ mongodb_root_password }}"
     --authenticationDatabase "{{ mongodb_root_database | default('admin') }}"
     "{{ cas_audit_db | default('cas-audit-repository') }}" --quiet
-    < /tmp/cas-audit-indexes.js
+    /tmp/cas-audit-indexes.js
   register: cas_audit_indexes_result
   changed_when: "'CAS_AUDIT_INDEXES_CHANGED' in cas_audit_indexes_result.stdout"
+  failed_when: >-
+    cas_audit_indexes_result.rc != 0
+    or 'CAS_AUDIT_INDEX_COUNT=' not in cas_audit_indexes_result.stdout
   run_once: true
   when:
     - cas_audit_indexes | default(false) | bool
@@ -302,15 +309,18 @@
     - cas-audit-indexes
 
 - name: Create CAS audit repository indexes (ubuntu >= 22.04)
-  shell: >
+  command: >
     mongosh --host "{{ cas_audit_host | default('localhost') }}"
     --port "{{ cas_audit_port | default('27017') }}"
     --username "{{ mongodb_root_username }}" --password "{{ mongodb_root_password }}"
     --authenticationDatabase "{{ mongodb_root_database | default('admin') }}"
     "{{ cas_audit_db | default('cas-audit-repository') }}" --quiet
-    < /tmp/cas-audit-indexes.js
+    --file /tmp/cas-audit-indexes.js
   register: cas_audit_indexes_result
   changed_when: "'CAS_AUDIT_INDEXES_CHANGED' in cas_audit_indexes_result.stdout"
+  failed_when: >-
+    cas_audit_indexes_result.rc != 0
+    or 'CAS_AUDIT_INDEX_COUNT=' not in cas_audit_indexes_result.stdout
   run_once: true
   when:
     - cas_audit_indexes | default(false) | bool
