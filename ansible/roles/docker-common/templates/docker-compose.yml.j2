@@ -39,7 +39,11 @@ services:
       RELAYHOST: {{ email_sender_server | default('') }}
       RELAYHOST_USERNAME: {{ email_sender | default('') }}
       RELAYHOST_PASSWORD: {{ email_sender_password | default('') }}
-      ALLOWED_SENDER_DOMAINS: {{ email_allowed_domains | default('l-a.site') }}
+      # Derived from this deployment's sender address, never from a hardcoded
+      # domain: email_allowed_domains is not emitted by the toolkit, so a literal
+      # default here would apply to every deployment. Empty (authorise nobody)
+      # beats authorising someone else's domain.
+      ALLOWED_SENDER_DOMAINS: {{ email_allowed_domains | default(email_sender | default('') | regex_replace('^.*@', '')) }}
     networks:
       la_internal:
 
