@@ -1,9 +1,10 @@
 ---
 - name: ensure target db directories exist
+  # Not run_once: every host that runs the stack needs this directory. See download-nameindex.yml
+  # for what run_once did to the index itself.
   file: path={{item}} state=directory
   with_items:
     - "{{ ala_namematching_service_docker_dir }}"
-  run_once: true
   tags:
     - docker
     - docker-service
@@ -21,3 +22,9 @@
   vars:
     stack: la_namematching_service
     docker_compose_data_dir: "{{ ala_namematching_service_docker_dir }}"
+
+# No service smoke test here on purpose: under la-compose this role only *generates*
+# configuration — the containers are started later by the la-compose role — so probing
+# 127.0.0.1:{{ namematching_service_port }} at this point would always time out. The
+# "namematching search" Gatus endpoint is the right place for that check, see
+# la-docker-compose roles/la-compose/vars/gatus-extra-endpoints.yml.
