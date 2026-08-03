@@ -82,15 +82,17 @@
     hostname: "{{ sensitive_data_service_hostname }}"
     context_path: "{{ sensitive_data_service_context_path }}"
     nginx_paths:
-      - path: "sensitive-species-data.xml"
+      # Leading slash like every other role: nginx renders the same location block either way,
+      # but consumers of nginx_paths that build a URL from it do not.
+      - path: "/sensitive-species-data.xml"
         sort_label: "1_sensitive_species_data"
         is_proxy: false
         alias: "{{ data_dir }}/sds/sensitive-species-data.xml"
-      - path: "sensitivity-zones.xml"
+      - path: "/sensitivity-zones.xml"
         sort_label: "2_sensitivity_zones"
         is_proxy: false
         alias: "{{ data_dir }}/sds/sensitivity-zones.xml"
-      - path: "sensitivity-categories.xml"
+      - path: "/sensitivity-categories.xml"
         sort_label: "3_sensitivity_categories"
         is_proxy: false
         alias: "{{ data_dir }}/sds/sensitivity-categories.xml"
