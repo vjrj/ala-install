@@ -149,6 +149,17 @@ collections:
 biocache:
   wsUrl: {{ biocache_service_url | default('https://biocache-ws.ala.org.au/ws') }}
 
+# grails-elasticsearch config (the Doi domain is @searchable). doi talks to ES via the
+# TransportClient (transport protocol, port 9300). The defaults below match the packaged
+# application.yml (localhost:9200), so VM/bare-metal deploys are unchanged; container deploys
+# override doi_es_host/doi_es_port to point at the dedicated ES 7.x sidecar (doi-elasticsearch:9300).
+elasticSearch:
+  client:
+    mode: {{ doi_es_client_mode | default('transport') }}
+    hosts:
+      - { host: {{ doi_es_host | default('localhost') }}, port: {{ doi_es_port | default('9200') }} }
+  cluster.name: {{ doi_es_cluster_name | default('elasticsearch') }}
+
 # swagger configuration
 swagger:
   info:
