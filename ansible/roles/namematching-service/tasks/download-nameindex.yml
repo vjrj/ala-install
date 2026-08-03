@@ -1,11 +1,46 @@
 ---
+# Install a name-matching Lucene index into {{ final_dest }}.
+#
+# NOTHING in this file may be run_once. The index is a *per-host* artifact: every host that
+# bind-mounts {{ final_dest }} needs its own copy on its own disk. With run_once the play
+# downloaded and rsynced on the first host of the play only, and every other namematching host
+# was left with an empty directory that Docker then happily bind-mounted — the container
+# crash-loops with:
+#     java.io.FileNotFoundException: /data/lucene/namematching-nm/cb
+# That is exactly what happened to gbif-es-docker-prod-2026-2/-3 in 2026-07: host -1 had the
+# full index, hosts -2 and -3 had an empty /data/lucene/namematching-nm and 400+ restarts.
 
-- name: ensure lucene base directory exists
-  file: path={{item}} state=directory
-  with_items:
-    - "{{ data_dir }}/lucene"
-    - "/tmp/nm"
-  run_once: true
+- name: nameindex | staging directories (the leaf is namespaced by the index checksum)
+  set_fact:
+    nameindex_stage_root: "{{ nameindex_tmp_dir | default('/tmp/nm') }}"
+    nameindex_stage: "{{ nameindex_tmp_dir | default('/tmp/nm') }}/{{ sha1 }}"
+  tags:
+    - nameindex
+
+- name: nameindex | ensure the lucene base directory exists
+  file:
+    path: "{{ data_dir }}/lucene"
+    state: directory
+  tags:
+    - nameindex
+
+# Wipe the whole staging root, not just our own subdir. It was never cleaned: a host that had
+# seen two releases kept both extracted trees (4.4 GB of dead weight on a disk at 93%), and the
+# "find the root dir" step below used to pick files[0] out of that pile — the `find` module
+# gives no ordering guarantee, so a stale tree could be installed instead of the new one, with
+# a perfectly matching archive checksum and a green play. Extraction is not skipped for
+# idempotency anyway, so nothing worth keeping is thrown away here.
+- name: nameindex | wipe the staging root (stale releases pile up there)
+  file:
+    path: "{{ nameindex_stage_root }}"
+    state: absent
+  tags:
+    - nameindex
+
+- name: nameindex | create a clean staging directory
+  file:
+    path: "{{ nameindex_stage }}"
+    state: directory
   tags:
     - nameindex
 
@@ -16,43 +51,87 @@
     force: "{{ force_nameindex_download | default(false) }}"
     timeout: 10000
     checksum: "sha1:{{ sha1 }}"
-  run_once: true
   tags:
     - nameindex
 
-- name: Untar nameindex source {{ dest }} to /tmp/nm to verify it
+- name: nameindex | measure the downloaded archive
+  stat:
+    path: "{{ dest }}"
+  register: nameindex_archive
+  tags:
+    - nameindex
+
+- name: nameindex | free space on the staging and destination filesystems
+  command: df --output=avail -B1 -- "{{ item }}"
+  register: nameindex_df
+  changed_when: false
+  loop:
+    - "{{ nameindex_stage_root }}"
+    - "{{ data_dir }}/lucene"
+  tags:
+    - nameindex
+
+# The index expands to roughly twice the archive and is then copied a second time into
+# final_dest, so a full install needs ~3x the tarball on each filesystem. Failing here beats
+# filling the root disk half way through an rsync.
+- name: nameindex | refuse to extract without room for the index
+  assert:
+    that:
+      - (item.stdout_lines | last | int) > (nameindex_archive.stat.size | int) * 3
+    fail_msg: >-
+      Not enough free space on {{ item.item }} to install the nameindex:
+      {{ (item.stdout_lines | last | int / 1024 / 1024) | round | int }} MB available,
+      {{ (nameindex_archive.stat.size | int * 3 / 1024 / 1024) | round | int }} MB needed
+      (3x the {{ (nameindex_archive.stat.size | int / 1024 / 1024) | round | int }} MB archive).
+  loop: "{{ nameindex_df.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  tags:
+    - nameindex
+
+- name: Untar nameindex source {{ dest }} to {{ nameindex_stage }} to verify it
   unarchive:
     src: "{{ dest }}"
-    dest: "/tmp/nm"
+    dest: "{{ nameindex_stage }}"
     remote_src: true
     extra_opts: ["--no-same-owner"]
-  run_once: true
   register: unarchive_result
   tags:
     - nameindex
 
-- name: Find the first directory/file in the untarred content
+- name: nameindex | find the root directory of the untarred content
   find:
-    paths: "/tmp/nm"
+    paths: "{{ nameindex_stage }}"
     file_type: directory
     recurse: false
-  run_once: true
   register: find_result
   tags:
     - nameindex
 
-- set_fact:
-    rootdir: "{{ find_result.files[0].path.split('/')[-1] }}"
+# A well-formed index archive has exactly one top-level directory. Anything else means the
+# archive is not what we think it is — stop instead of installing an arbitrary member.
+- name: nameindex | the archive must contain exactly one root directory
+  assert:
+    that:
+      - find_result.files | length == 1
+    fail_msg: >-
+      {{ url }} did not unpack to a single root directory
+      ({{ find_result.files | map(attribute='path') | map('basename') | list }}).
   tags:
     - nameindex
 
-- name: Rsync from {{rootdir}} to {{ final_dest }}
+- name: nameindex | remember the root directory name
+  set_fact:
+    rootdir: "{{ find_result.files[0].path | basename }}"
+  tags:
+    - nameindex
+
+- name: Rsync from {{ rootdir }} to {{ final_dest }}
   synchronize:
-    src: "/tmp/nm/{{ rootdir }}/"
+    src: "{{ nameindex_stage }}/{{ rootdir }}/"
     dest: "{{ final_dest }}"
     delete: true
     recursive: true
-  run_once: true
   delegate_to: "{{ inventory_hostname }}"
   tags:
     - nameindex
@@ -64,7 +143,115 @@
     # owner: "{{ namematching_user }}"
     # group: "{{ namematching_user }}"
     recurse: true
-  run_once: true
   tags:
     - nameindex
     - debug
+
+# --- post-install verification -------------------------------------------------------------
+# Derived from the artifact, not from a hardcoded list of directory names: whatever sub-indices
+# the archive ships (cb, id, vernacular, irmng, ...) must exist in final_dest and look like a
+# Lucene index. ALANameSearcher opens each of them by path and dies on the first one missing.
+
+- name: nameindex | list the sub-indices shipped by the archive
+  find:
+    paths: "{{ nameindex_stage }}/{{ rootdir }}"
+    file_type: directory
+    recurse: false
+  register: nameindex_subdirs
+  tags:
+    - nameindex
+
+- name: nameindex | look for a Lucene segments file in every installed sub-index
+  find:
+    paths: "{{ final_dest }}/{{ item.path | basename }}"
+    patterns: "segments_*"
+  register: nameindex_segments
+  loop: "{{ nameindex_subdirs.files }}"
+  loop_control:
+    label: "{{ item.path | basename }}"
+  tags:
+    - nameindex
+
+- name: nameindex | every sub-index must be installed and carry a segments file
+  assert:
+    that:
+      - (item.matched | int) > 0
+    fail_msg: >-
+      {{ final_dest | regex_replace('/$', '') }}/{{ item.item.path | basename }} is missing or is
+      not a Lucene index on {{ inventory_hostname }}. The name-matching service will fail to start
+      with "Unable to initialise searcher:
+      {{ final_dest | regex_replace('/$', '') }}/{{ item.item.path | basename }}".
+  loop: "{{ nameindex_segments.results }}"
+  loop_control:
+    label: "{{ item.item.path | basename }}"
+  tags:
+    - nameindex
+
+- name: nameindex | list the top-level files shipped by the archive
+  find:
+    paths: "{{ nameindex_stage }}/{{ rootdir }}"
+    file_type: file
+    recurse: false
+  register: nameindex_archive_files
+  tags:
+    - nameindex
+
+- name: nameindex | list the top-level files actually installed
+  find:
+    paths: "{{ final_dest }}"
+    file_type: file
+    recurse: false
+  register: nameindex_installed_files
+  tags:
+    - nameindex
+
+- name: nameindex | no top-level file may be lost in the copy
+  assert:
+    that:
+      - (nameindex_archive_files.files | map(attribute='path') | map('basename') | list)
+        | difference(nameindex_installed_files.files | map(attribute='path') | map('basename') | list)
+        | length == 0
+    fail_msg: >-
+      Missing in {{ final_dest }}:
+      {{ (nameindex_archive_files.files | map(attribute='path') | map('basename') | list)
+         | difference(nameindex_installed_files.files | map(attribute='path') | map('basename') | list) }}
+  tags:
+    - nameindex
+
+# The service links against one Lucene major version; installing an index built with another one
+# fails at runtime in a much less obvious way than a missing directory. The expected major is
+# read off the artifact name (…-lucene-8-…), so callers need no extra variable.
+- name: nameindex | Lucene major version expected by the artifact name
+  set_fact:
+    nameindex_expected_lucene: "{{ (url | regex_search('lucene-([0-9]+)', '\\1') | default([], true) | first) | default('', true) }}"
+  tags:
+    - nameindex
+
+- name: nameindex | read the Lucene version recorded in metadata.json
+  command: grep -o '"luceneVersion"[^,}]*' "{{ final_dest }}/metadata.json"
+  register: nameindex_metadata_lucene
+  changed_when: false
+  failed_when: false
+  when: nameindex_expected_lucene | length > 0
+  tags:
+    - nameindex
+
+- name: nameindex | the installed index must match the Lucene version in its name
+  assert:
+    that:
+      - nameindex_metadata_lucene.stdout is search('"' ~ nameindex_expected_lucene ~ '\\.')
+    fail_msg: >-
+      {{ url }} claims Lucene {{ nameindex_expected_lucene }} but the installed index reports
+      {{ nameindex_metadata_lucene.stdout | trim }}.
+  when:
+    - nameindex_expected_lucene | length > 0
+    - nameindex_metadata_lucene.rc | default(1) == 0
+  tags:
+    - nameindex
+
+- name: nameindex | drop the staging copy
+  file:
+    path: "{{ nameindex_stage }}"
+    state: absent
+  tags:
+    - nameindex
