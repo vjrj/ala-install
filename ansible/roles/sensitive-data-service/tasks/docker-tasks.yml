@@ -80,8 +80,14 @@
     extra_opts:
       - "--warning=no-unknown-keyword"
 
+# The legacy standalone stack (its own docker-compose.yml + swarm stack) only applies to the
+# self-contained ala-install deployment. Under la-docker-compose (deployment_type == 'container')
+# the service is rendered into the main compose (services/sensitive-data-service.yml), so skip
+# stack-create to avoid a stray, unused docker-compose.yml that pins the wrong image
+# (atlasoflivingaustralia/…:SNAPSHOT).
 - name: Deploy sensitive-data service stack
   import_tasks: ../../docker-common/tasks/stack-create.yml
   vars:
     stack: la_sensitive_data_service
     docker_compose_data_dir: "{{ ala_sensitive_data_service_docker_dir }}"
+  when: deployment_type != 'container'
