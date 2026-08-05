@@ -9,13 +9,21 @@
     - docker
     - docker-service
 
-- name: Download configured nameindex
+# The nameindex the INVENTORY points this service at
+# (ala_sensitive_data_service_namematching_source), not namematching-service's one. The two are
+# different artifacts on purpose: the sensitive-data-service links against an older Lucene major
+# than the namematching-service (e.g. lucene-6 vs lucene-8 of the same backbone build), and
+# opening the wrong one dies at boot with "Unable to initialise searcher: null". So it gets its
+# own copy under .../lucene/namematching-{{ nameindex_datestamp }}, which is exactly the path
+# sensitive-data-service-config.yml renders as `conservation.index`. Never install it into
+# .../namematching-nm: that directory belongs to namematching-service.
+- name: Download the nameindex configured for the sensitive-data-service
   import_tasks: ../../namematching-service/tasks/download-nameindex.yml
   vars:
-    dest: "{{ data_dir }}/lucene/namematching-nm.tgz"
-    final_dest: "{{ data_dir }}/lucene/namematching-nm/"
-    url: "{{ ala_namemaching_service_source | default('https://archives.ala.org.au/archives/nameindexes/20210811/namematching-20210811.tgz') }}"
-    sha1: "{{ ala_namemaching_service_source_sha1 | default('563814a7b5d886b746e10eb40c44f0d9bda62371') }}"
+    dest: "{{ data_dir }}/lucene/namematching-{{ nameindex_datestamp }}.tgz"
+    final_dest: "{{ data_dir }}/lucene/namematching-{{ nameindex_datestamp }}/"
+    url: "{{ ala_sensitive_data_service_namematching_source | default('https://archives.ala.org.au/archives/nameindexes/20210811-3/namematching-20210811-3.tgz') }}"
+    sha1: "{{ ala_sensitive_data_service_namematching_sha1 | default('f9e42325db8d41ca0c8afeb6aeadf670978a13ac') }}"
 
 - block:
     - name: Downloading SDS configs using configured URL
@@ -69,6 +77,50 @@
       get_url:
         url: "https://archives.ala.org.au/archives/layers/sds-layers.tgz"
         dest: "{{ data_dir}}/biocache/layers/sds-layers.tgz"
+
+# The rescue above only fires on an HTTP error. A local sds-webapp2 that answers the data paths
+# with its own error page (200 + text/html) is downloaded verbatim, and the service then dies
+# parsing HTML as XML ("Content is not allowed in prolog"). Check what actually landed.
+- name: Check the SDS data files really are XML
+  ansible.builtin.command: "head -c 5 {{ data_dir }}/sds/{{ item }}"
+  changed_when: false
+  loop:
+    - sensitive-species-data.xml
+    - sensitivity-zones.xml
+    - sensitivity-categories.xml
+  register: sds_xml_head
+
+- name: Re-download from the ALA archive whatever did not come back as XML
+  get_url:
+    url: "https://sds.ala.org.au/{{ item.item }}"
+    dest: "{{ data_dir }}/sds/{{ item.item }}"
+    timeout: 60
+    force: true
+  loop: "{{ sds_xml_head.results }}"
+  loop_control:
+    label: "{{ item.item }}"
+  when: item.stdout is not match('<\?xml')
+
+- name: Re-check the SDS data files
+  ansible.builtin.command: "head -c 5 {{ data_dir }}/sds/{{ item }}"
+  changed_when: false
+  loop:
+    - sensitive-species-data.xml
+    - sensitivity-zones.xml
+    - sensitivity-categories.xml
+  register: sds_xml_head_final
+
+- name: Fail if a SDS data file is still not XML
+  assert:
+    that:
+      - item.stdout is match('<\?xml')
+    fail_msg: >-
+      {{ data_dir }}/sds/{{ item.item }} is not XML (starts with {{ item.stdout | trim }}).
+      Neither {{ sds_url }} nor https://sds.ala.org.au served it — the sensitive-data-service
+      would crash-loop parsing it.
+  loop: "{{ sds_xml_head_final.results }}"
+  loop_control:
+    label: "{{ item.item }}"
 
 # SDS def ALA tgz is created with a MacOS tar
 # https://github.com/yarnpkg/yarn/issues/770
