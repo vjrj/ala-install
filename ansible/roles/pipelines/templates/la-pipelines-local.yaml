@@ -133,7 +133,12 @@ solr:
   includeSampling: {{ include_sampling }}
   includeJackKnife: {{ include_jackknife }}
   includeClustering: {{ include_clustering }}
-  numOfPartitions: {{ solr_num_of_partitions | default('3') }}
+  # Buckets the latitude_longitude join key is salted across, sized against the hottest
+  # coordinate: numOfPartitions >= (records on the most common coordinate) / 20000.
+  # Keep >= 2: IndexRecordToSolrPipeline computes the bucket as nextInt(numOfPartitions - 1),
+  # so 1 throws "bound must be positive" and the effective count is one less than set here.
+  # https://github.com/AtlasOfLivingAustralia/pipelines/pull/17
+  numOfPartitions: {{ solr_num_of_partitions | default('10') }}
 validation-report:
   checkSolr: {{ check_solr }}
   checkSampling: {{ include_sampling }}
