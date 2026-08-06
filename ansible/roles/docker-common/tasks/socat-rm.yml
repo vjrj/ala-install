@@ -2,3 +2,4 @@
 - name: Remove socat container for {{ name }} tunnel
   command: docker service rm socat-{{ name }}
   ignore_errors: true
+  when: deployment_type == 'swarm'
