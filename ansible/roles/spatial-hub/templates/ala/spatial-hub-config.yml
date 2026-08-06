@@ -117,7 +117,7 @@ lists:
   facets: {{ lists_facets | default(true) }}
   migratoryDR: {{ lists_migratory_data_resource_uid | default('dr1005') }}
   iconicSpeciesDR: {{ lists_iconic_species_data_resource_uid | default('dr781') }}
-{% if lists_version == 2 %}
+{% if (lists_version | default(1)) == 2 %}
   listTypes:
     - id: 'COMMON_HABITAT'
       label: "Common habitat list"
