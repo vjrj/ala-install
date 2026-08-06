@@ -34,10 +34,12 @@
         <AsyncLogger name="org.pac4j" level="info" />
         <AsyncLogger name="org.apereo" level="${sys:cas.log.level}/"/>
         <AsyncLogger name="org.thymeleaf" level="warn" />
-        <AsyncLogger name="org.apereo.inspektr.audit.support.Slf4jLoggingAuditTrailManager" level="info"/>
-        <Root level="warn">
-            <AppenderRef ref="cas-management"/>
-            <!-- <AppenderRef ref="console"/> -->
-        </Root>
+         <AsyncLogger name="org.apereo.inspektr.audit.support.Slf4jLoggingAuditTrailManager" level="info"/>
+         <Root level="warn">
+             <AppenderRef ref="cas-management"/>
+{% if deployment_type != 'vm' %}
+             <AppenderRef ref="console"/>
+{% endif %}
+         </Root>
     </Loggers>
 </Configuration>
