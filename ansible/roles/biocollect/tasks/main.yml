@@ -25,7 +25,8 @@
     - deploy
     - service
     - biocollect
-  when: exec_jar and biocollect_repo_password is defined and biocollect_repo_username is defined
+  # exec-jar is a VM/systemd deploy step; container images bake the artifact.
+  when: exec_jar and (deployment_type == 'vm' or deployment_type is undefined) and biocollect_repo_password is defined and biocollect_repo_username is defined
 
 - name: add jar and service (unauthenticated)
   include_role:
@@ -37,7 +38,8 @@
     - deploy
     - service
     - biocollect
-  when: exec_jar and biocollect_repo_password is not defined and biocollect_repo_username is not defined
+  # exec-jar is a VM/systemd deploy step; container images bake the artifact.
+  when: exec_jar and (deployment_type == 'vm' or deployment_type is undefined) and biocollect_repo_password is not defined and biocollect_repo_username is not defined
 
 #
 # External configuration properties file

@@ -1,0 +1,6 @@
+# skip_handlers suppresses the tomcat restart in container deployments (no local tomcat);
+# on VMs it is unset/false so the restart fires as before.
+- name: restart tomcat
+  service: name={{tomcat}} state=restarted enabled="yes"
+  when:
+  - skip_handlers | default("false") | bool == false
