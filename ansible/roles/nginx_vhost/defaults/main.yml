@@ -1,6 +1,9 @@
 ---
 redirect: ''
+# Host filesystem root where Ansible writes nginx config; use nginx_conf_path in templates for
+# include paths inside nginx (container/runtime), which may differ when nginx_conf_dir is e.g. /data/.../nginx.
 nginx_conf_dir: '/etc/nginx'
+nginx_conf_path: '/etc/nginx/conf.d'
 nginx_access_log: "/var/log/nginx/access.log main"
 ssl: true
 # By default activate HTTP/2, which also allows HTTP/1.1 connections
