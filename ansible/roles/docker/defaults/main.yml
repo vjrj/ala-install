@@ -1,2 +1,17 @@
 # To avoid collisions in shared data dirs we use inventory_hostname
 docker_dir: "{{ docker_data_dir | default('/data/docker/' + inventory_hostname) }}"
+
+# Daemon-wide container log rotation. Without log-opts the json-file driver never
+# truncates: on gbif-es-docker-prod-2026 a single la_geoserver reached 5.4 GB and
+# la_spatial-service 3.5 GB, and the root filesystem (29 GB, no separate /var or
+# /data volume) hit 100% — the deploy then died on `mkdir: No space left on
+# device` before it could do anything. 100m x 5 caps every container at 500 MB.
+#
+# This only takes effect when the `docker` role runs, which site.yml gates behind
+# manage_docker_daemon (false on a redeploy over a live stack, because rewriting
+# this file restarts the daemon and drops every container for ~20s). The
+# docker-housekeeping role installs a logrotate rule that covers the same ground
+# without a restart, so the two are complementary — not alternatives.
+docker_log_driver: json-file
+docker_log_max_size: 100m
+docker_log_max_file: "5"
