@@ -6,6 +6,7 @@
 - name: create logger DB
   mysql_db: name={{logger_db_name}} state=present encoding=utf8 login_user=root login_password='{{mysql_root_password}}'
   register: dbschema
+  when: deployment_type == 'vm' or deployment_type is undefined
   tags:
     - logger-service
     - db
@@ -13,6 +14,7 @@
 - name: create logger DB user
   mysql_user: name='{{logger_db_username}}' password='{{logger_db_password}}' priv=*.*:ALL state=present login_user=root login_password='{{mysql_root_password}}'
   register: dbuser
+  when: deployment_type == 'vm' or deployment_type is undefined
   tags:
     - logger-service
     - db
@@ -21,7 +23,7 @@
   copy: src={{item}} dest=/tmp
   with_items:
     - db/
-  when: dbschema.changed
+  when: dbschema.changed and (deployment_type == 'vm' or deployment_type is undefined)
   tags:
     - logger-service
     - db
@@ -40,7 +42,7 @@
     - /tmp/update_breakdown_summary_information.sql
 # The following is broken on MySQL-8.0, reenable if it becomes an issue in future
 #    - /tmp/definer_user.sql
-  when: dbschema.changed
+  when: dbschema.changed and (deployment_type == 'vm' or deployment_type is undefined)
   tags:
     - logger-service
     - db
@@ -71,7 +73,7 @@
     - logger-service
     - deploy
     - apache_vhost
-  when: not webserver_nginx
+  when: (not webserver_nginx) and (deployment_type == 'vm' or deployment_type is undefined)
 
 - name: copy all SQL auth ip scripts
   template: src={{ item }} dest={{data_dir}}/logger/setup/
@@ -86,7 +88,7 @@
 - name: create auth ip in db if does not exists
   shell: "mysql --host={{ logger_db_hostname }} --user={{ logger_db_username }} --password={{ logger_db_password }} {{ logger_db_name }} -e \"set @ip='{{ item }}'; set @host_name='{{ item }}'; source {{data_dir}}/logger/setup/auth-ip.sql;\""
   loop: "{{ (logger_authorize_ip_list | regex_replace(' ', '')).split(',') }}"
-  when: logger_authorize_ip_list is defined
+  when: logger_authorize_ip_list is defined and (deployment_type == 'vm' or deployment_type is undefined)
   ignore_errors: no
   tags:
     - logger-service
@@ -114,19 +116,19 @@
         is_proxy: true
         use_cache: true
         force_cache: true
-        proxy_pass: "http://127.0.0.1:8080{{logger_proxy_target}}/service/logger/reasons"
+        proxy_pass: "http://{{ logger_service_upstream_host | default('127.0.0.1') }}:8080{{logger_proxy_target}}/service/logger/reasons"
       - path: "{{logger_context_path}}/service/logger/sources"
         sort_label: "1_logger_sources"
         is_proxy: true
         use_cache: true
         force_cache: true
-        proxy_pass: "http://127.0.0.1:8080{{logger_proxy_target}}/service/logger/sources"
+        proxy_pass: "http://{{ logger_service_upstream_host | default('127.0.0.1') }}:8080{{logger_proxy_target}}/service/logger/sources"
       - path: "{{logger_context_path}}/service/logger/events"
         sort_label: "1_logger_events"
         is_proxy: true
         use_cache: true
         force_cache: true
-        proxy_pass: "http://127.0.0.1:8080{{logger_proxy_target}}/service/logger/events"
+        proxy_pass: "http://{{ logger_service_upstream_host | default('127.0.0.1') }}:8080{{logger_proxy_target}}/service/logger/events"
       - path: "{{logger_context_path}}/service/logger"
         sort_label: "8_service_logger"
         is_proxy: true
@@ -134,20 +136,20 @@
         force_cache: false
         extra_logs: ["{{ logger_service_extra_postdata_logging }}"]
         extra_limit_zones: "{{ logger_service_extra_limit_zones }}"
-        proxy_pass: "http://127.0.0.1:8080{{logger_proxy_target}}/service/logger"
+        proxy_pass: "http://{{ logger_service_upstream_host | default('127.0.0.1') }}:8080{{logger_proxy_target}}/service/logger"
       - path: "{{logger_context_path}}/admin"
         sort_label: "8_admin"
         is_proxy: true
         use_cache: false
         force_cache: false
         extra_limit_zones: "{{ logger_service_extra_limit_zones_admin }}"
-        proxy_pass: "http://127.0.0.1:8080{{logger_proxy_target}}/admin"
+        proxy_pass: "http://{{ logger_service_upstream_host | default('127.0.0.1') }}:8080{{logger_proxy_target}}/admin"
       - path: "{{logger_context_path}}"
         sort_label: "9_default"
         is_proxy: true
         use_cache: false
         force_cache: false
-        proxy_pass: "http://127.0.0.1:8080{{logger_proxy_target}}"
+        proxy_pass: "http://{{ logger_service_upstream_host | default('127.0.0.1') }}:8080{{logger_proxy_target}}"
   tags:
     - nginx_vhost
     - deploy
@@ -163,7 +165,7 @@
     - logger-service
     - deploy
     - tomcat_vhost
-  when: not exec_jar
+  when: (not exec_jar) and (deployment_type == 'vm' or deployment_type is undefined)
 
 - name: add logger-service jar and setup service
   include_role:
@@ -177,7 +179,7 @@
     - deploy
     - service
     - logger-service
-  when: exec_jar
+  when: exec_jar and (deployment_type == 'vm' or deployment_type is undefined)
 
 - name: ensure target directories exist [data subdirectories etc.]
   file: path={{item}} state=directory owner=logger group=logger
@@ -189,7 +191,7 @@
   tags:
     - logger-service
     - properties
-  when: exec_jar
+  when: exec_jar and (deployment_type == 'vm' or deployment_type is undefined)
 
 - name: set data ownership for /opt/atlas/logger
   file: path=/opt/atlas/logger owner=logger group=logger recurse=true
@@ -198,7 +200,7 @@
   tags:
     - logger-service
     - properties
-  when: exec_jar
+  when: exec_jar and (deployment_type == 'vm' or deployment_type is undefined)
 
 - name: set data ownership for /var/log/atlas/logger
   file: path=/var/log/atlas/logger owner=logger group=logger recurse=true
@@ -207,7 +209,7 @@
   tags:
     - logger-service
     - properties
-  when: exec_jar
+  when: exec_jar and (deployment_type == 'vm' or deployment_type is undefined)
 
 - name: copy all config.properties
   template: src=logger-config.properties dest={{data_dir}}/logger/config/logger-config.properties output_encoding=iso-8859-1

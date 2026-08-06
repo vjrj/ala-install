@@ -191,6 +191,12 @@ userdetails:
 #  NOTE: Some of these will be ignored if default_config exists
 security:
   cas:
+    # Required by the CAS filter at servlet init even when CAS is bypassed (disableCAS/enabled
+    # below), without 'appServerName' or 'service' the app fails to start embedded Tomcat
+    # ("One of 'security.cas.appServerName' or 'security.cas.service' ... is required by the CAS
+    # filters"). Other ALA apps (alerts/collectory/biocache-hub) set it from their base_url; the
+    # spatial-service template was missing it.
+    appServerName: {{ spatial_service_base_url | default(spatial_base_url | default('http://localhost:8080')) }}
     casServerName: {{ auth_base_url }}
     casServerUrlPrefix: {{ auth_cas_url }}
     loginUrl: {{ auth_cas_url }}/login

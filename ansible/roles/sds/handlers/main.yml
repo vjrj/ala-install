@@ -1,0 +1,6 @@
+# On VMs sds-webapp2 is deployed into the shared tomcat, so a config change restarts tomcat.
+# In container deployments la-compose sets skip_handlers=true (the container is restarted by the
+# compose config-hash mechanism instead), so this no-ops. Mirrors doi-service's own handler.
+- name: restart sds tomcat
+  service: name={{ tomcat | default('tomcat9') }} state=restarted enabled=yes
+  when: skip_handlers | default("false") | bool == false

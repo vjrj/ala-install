@@ -9,13 +9,19 @@
     - docker
     - docker-service
 
-- name: Download configured nameindex
+# The nameindex this role is configured with (ala_sensitive_data_service_namematching_source,
+# the same variable the apt path passes to debconf), not namematching-service's one — they are
+# separate settings and need not name the same artifact. It goes to
+# .../lucene/namematching-{{ nameindex_datestamp }}, which is the path
+# sensitive-data-service-config.yml renders as `conservation.index`, instead of
+# .../namematching-nm, which belongs to namematching-service.
+- name: Download the nameindex configured for the sensitive-data-service
   import_tasks: ../../namematching-service/tasks/download-nameindex.yml
   vars:
-    dest: "{{ data_dir }}/lucene/namematching-nm.tgz"
-    final_dest: "{{ data_dir }}/lucene/namematching-nm/"
-    url: "{{ ala_namemaching_service_source | default('https://archives.ala.org.au/archives/nameindexes/20210811/namematching-20210811.tgz') }}"
-    sha1: "{{ ala_namemaching_service_source_sha1 | default('563814a7b5d886b746e10eb40c44f0d9bda62371') }}"
+    dest: "{{ data_dir }}/lucene/namematching-{{ nameindex_datestamp }}.tgz"
+    final_dest: "{{ data_dir }}/lucene/namematching-{{ nameindex_datestamp }}/"
+    url: "{{ ala_sensitive_data_service_namematching_source | default('https://archives.ala.org.au/archives/nameindexes/20210811-3/namematching-20210811-3.tgz') }}"
+    sha1: "{{ ala_sensitive_data_service_namematching_sha1 | default('f9e42325db8d41ca0c8afeb6aeadf670978a13ac') }}"
 
 - block:
     - name: Downloading SDS configs using configured URL
@@ -80,8 +86,14 @@
     extra_opts:
       - "--warning=no-unknown-keyword"
 
+# The legacy standalone stack (its own docker-compose.yml + swarm stack) only applies to the
+# self-contained ala-install deployment. Under la-docker-compose (deployment_type == 'container')
+# the service is rendered into the main compose (services/sensitive-data-service.yml), so skip
+# stack-create to avoid a stray, unused docker-compose.yml that pins the wrong image
+# (atlasoflivingaustralia/…:SNAPSHOT).
 - name: Deploy sensitive-data service stack
   import_tasks: ../../docker-common/tasks/stack-create.yml
   vars:
     stack: la_sensitive_data_service
     docker_compose_data_dir: "{{ ala_sensitive_data_service_docker_dir }}"
+  when: deployment_type != 'container'

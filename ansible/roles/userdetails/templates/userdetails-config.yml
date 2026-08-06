@@ -83,6 +83,9 @@ serverURL: {{ userdetails_server_name }}
 serverName: {{ userdetails_server_name }}
 grails:
   serverURL: {{ userdetails_server_name }}/{{ userdetails_context_path | default('userdetails') }}
+  mail:
+    host: "{{ mail_host | default('localhost') }}"
+    port: {{ mail_port | default('25') }}
 server:
   port: {{ userdetails_port | default('9001') }}
   servlet:

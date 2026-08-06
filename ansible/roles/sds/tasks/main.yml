@@ -25,23 +25,26 @@
         sort_label: "1"
         disable: "{{ disable_location_service | default('False') }}"
         is_proxy: true
-        proxy_pass: "http://127.0.0.1:8080{{ sds_context_path }}"
+        proxy_pass: "http://{{ sds_upstream_host | default('127.0.0.1') }}:8080{{ sds_context_path }}"
       - path: "{{ sds_context_path }}"
         sort_label: "2"
         is_proxy: true
-        proxy_pass: "http://127.0.0.1:8080{{ sds_context_path }}"
+        proxy_pass: "http://{{ sds_upstream_host | default('127.0.0.1') }}:8080{{ sds_context_path }}"
   tags:
     - nginx_vhost
     - deploy
     - sds
   when: webserver_nginx | bool 
 
+# Container images bake the WAR (livingatlases/sds-webapp2), so download/deploy it on VMs only.
 - include_tasks: ../../tomcat_deploy/tasks/main.yml
   vars:
     war_url: '{{ sds_webapp_url }}'
     context_path: '{{ sds_context_path }}'
     hostname: '{{ sds_hostname }}'
-  when: sds_webapp_local_build is not defined
+  when:
+    - sds_webapp_local_build is not defined
+    - deployment_type == 'vm' or deployment_type is undefined
   tags:
     - sds
     - tomcat_vhost
@@ -52,7 +55,9 @@
     war_local_build: '{{ sds_webapp_local_build }}'
     context_path: '{{ sds_context_path }}'
     hostname: '{{ sds_hostname }}'
-  when: sds_webapp_local_build is defined
+  when:
+    - sds_webapp_local_build is defined
+    - deployment_type == 'vm' or deployment_type is undefined
   tags:
     - sds
     - tomcat_vhost
@@ -60,10 +65,12 @@
 
 
 - name: ensure target directories exist [data subdirectories etc.]
-  file: path={{item}} state=directory owner={{tomcat_user}} group={{tomcat_user}}
+  file: path={{item}} state=directory owner={{ sds_user | default(tomcat_user) }} group={{ sds_user | default(tomcat_user) }}
   with_items:
     - "{{data_dir}}/sds/config"
     - "{{data_dir}}/sds/data"
+    # container: logback.xml writes to /var/log/tomcat9, bound to {{data_dir}}/sds/logs (uid 1000)
+    - "{{data_dir}}/sds/logs"
     - "{{data_dir}}/lucene"
   tags:
     - sds
@@ -101,9 +108,9 @@
     - properties-file
 
 - name: set data ownership
-  file: path={{data_dir}}/sds owner={{tomcat_user}} group={{tomcat_user}} recurse=true
+  file: path={{data_dir}}/sds owner={{ sds_user | default(tomcat_user) }} group={{ sds_user | default(tomcat_user) }} recurse=true
   notify:
-    - restart tomcat
+    - restart sds tomcat
   tags:
     - sds
     - properties

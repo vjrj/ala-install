@@ -76,6 +76,13 @@ info:
 
 flyway:
   baselineOnMigrate: {{ image_service_baseline_on_migrate | default('true') }}
+  # Flyway builds its own datasource and otherwise defaults to localhost:5432,
+  # which fails in Docker where postgres is a separate host. Point it at the same
+  # DB as dataSource below ({{ image_service_db_host | default('localhost') }} =
+  # 'localhost' on VMs, 'postgres' in Docker) so migrations run in both topologies.
+  url: "jdbc:postgresql://{{ image_service_db_host | default('localhost') }}/{{ image_service_db_name }}?autoReconnect=true&connectTimeout=0&useUnicode=true&characterEncoding=UTF-8"
+  user: {{ image_service_db_username }}
+  password: {{ image_service_db_password }}
 
 dataSource:
   url: "jdbc:postgresql://{{ image_service_db_host | default('localhost') }}/{{ image_service_db_name }}?autoReconnect=true&connectTimeout=0&useUnicode=true&characterEncoding=UTF-8"
