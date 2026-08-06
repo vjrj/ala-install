@@ -24,6 +24,9 @@
     - service
     - doi-service
     - service-conf
+  # exec-jar is a VM/systemd deploy step (host user + systemd unit + maven download);
+  # container images bake the artifact, so run it on VMs only.
+  when: deployment_type == 'vm' or deployment_type is undefined
 
 #
 # External configuration properties file
@@ -94,6 +97,8 @@
     name: doi-service
     state: restarted
     enabled: yes
+  # container mode runs the jar as the compose service, not a host systemd unit
+  when: deployment_type == 'vm' or deployment_type is undefined
   tags:
     - doi-service
 
@@ -104,10 +109,13 @@
     appname: "doi-service"
     hostname: "{{ doi_service_hostname }}"
     context_path: "{{ doi_service_context_path }}"
+    # In container deployments nginx proxies to the app container; defaults to 127.0.0.1
+    # so VM/bare-metal deploys are untouched.
+    nginx_upstream_host: "{{ doi_service_upstream_host | default('127.0.0.1') }}"
     nginx_paths:
       - path: "{{ doi_service_context_path }}"
         is_proxy: true
-        proxy_pass: "http://127.0.0.1:{{ doi_service_port }}/{{ doi_service_context_path }}"
+        proxy_pass: "http://{{ doi_service_upstream_host | default('127.0.0.1') }}:{{ doi_service_port }}/{{ doi_service_context_path }}"
   # notify:
   #   - reload nginx
   tags:

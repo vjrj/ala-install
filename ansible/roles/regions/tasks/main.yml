@@ -38,6 +38,8 @@
     - deploy
     - tomcat_vhost
     - regions
+  # Deploy the WAR to a local tomcat only on VMs; container images bake the app.
+  when: deployment_type == 'vm' or deployment_type is undefined
 
 #
 # External configuration properties file
