@@ -11,6 +11,11 @@
 - name: Set service user  - tomcat or a systemd service user (collectory by default)
   set_fact:
     data_owner_user: "{{ collectory_service_system_user if exec_jar else tomcat_user }}"
+  tags:
+    - config
+    - properties
+    - properties-file
+    - collectory
 
 - name: run collectory on Tomcat or as systemd
   debug:
@@ -22,6 +27,11 @@
       {% endif %}
       Version: {{ version }}.{{ packaging }}
       Service user: {{ data_owner_user }}
+  tags:
+    - config
+    - properties
+    - properties-file
+    - collectory
 
 - name: "ensure system user for collectory exists - "
   user:
@@ -91,7 +101,7 @@
 - include_tasks: ../../docker-common/tasks/common.yml
   tags:
     - docker
-  when: deployment_type == 'swarm'
+  when: deployment_type != 'vm'
 
 - name: add nginx vhost if configured
   include_role:
@@ -109,8 +119,8 @@
 
 - name: Include docker tasks
   include_tasks: docker-tasks.yml
-  when: deployment_type == 'swarm'
+  when: deployment_type != 'vm'
 
 - name: Include VM tasks
-  import_tasks: vm-tasks.yml
+  include_tasks: vm-tasks.yml
   when: deployment_type == 'vm'

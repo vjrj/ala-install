@@ -29,7 +29,17 @@
     - "{{data_dir}}/userdetails"
     - "{{data_dir}}/userdetails/config"
     - "{{data_dir}}/userdetails/"
-    - "/var/log/atlas/userdetails"
+  tags:
+    - properties
+    - userdetails
+
+- name: ensure log directory exists (non-container mode)
+  file:
+    path: "/var/log/atlas/userdetails"
+    state: directory
+    owner: "{{ userdetails_user | default('userdetails') }}"
+    group: "{{ userdetails_user | default('userdetails') }}"
+  when: deployment_type != 'container'
   tags:
     - properties
     - userdetails
@@ -84,7 +94,7 @@
 - include_tasks: ../../docker-common/tasks/common.yml
   tags:
     - docker
-  when: deployment_type == 'swarm'
+  when: deployment_type != 'vm'
 
 - name: add nginx vhost
   include_role:
@@ -106,8 +116,8 @@
 
 - name: Include docker tasks
   include_tasks: docker-tasks.yml
-  when: deployment_type == 'swarm'
+  when: deployment_type != 'vm'
 
 - name: Include VM tasks
-  import_tasks: vm-tasks.yml
+  include_tasks: vm-tasks.yml
   when: deployment_type == 'vm'

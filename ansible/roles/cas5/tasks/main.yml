@@ -115,7 +115,7 @@
 - include_tasks: ../../docker-common/tasks/common.yml
   tags:
     - docker
-  when: deployment_type == 'swarm'
+  when: deployment_type != 'vm'
 
 - name: add nginx vhost (.well-known not static)
   include_role:
@@ -209,8 +209,8 @@
 
 - name: Include docker tasks
   include_tasks: docker-tasks.yml
-  when: deployment_type == 'swarm'
+  when: deployment_type != 'vm'
 
 - name: Include VM tasks
-  import_tasks: vm-tasks.yml
+  include_tasks: vm-tasks.yml
   when: deployment_type == 'vm'
