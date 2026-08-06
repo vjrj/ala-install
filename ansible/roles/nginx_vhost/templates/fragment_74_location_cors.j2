@@ -2,6 +2,6 @@
     {% if deployment_type == 'swarm' %}
         include /etc/nginx/conf.d/ala_cors_{{appname}};
     {% else %}
-        include {{nginx_conf_dir}}/conf.d/ala_cors_{{appname}};
+        include {{ nginx_conf_path }}/ala_cors_{{ appname }};
     {% endif %}
 {% endif %}
