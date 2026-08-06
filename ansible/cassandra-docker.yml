@@ -1,7 +1,7 @@
 ---
 - hosts: cassandra3
   vars:
-    deployment_type: swarm
+    deployment_type: "{{ deployment_type | default('container') }}"
     skip_handlers: true
   roles:
     - common

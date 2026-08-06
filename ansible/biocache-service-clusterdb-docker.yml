@@ -1,7 +1,7 @@
 ---
 - hosts: biocache-service-clusterdb
   vars:
-    deployment_type: swarm
+    deployment_type: "{{ deployment_type | default('container') }}"
     skip_handlers: true
     nginx_conf_dir: "{{ data_dir }}/nginx"
     tomcat_user: "{{ docker_default_user }}"

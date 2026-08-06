@@ -8,4 +8,4 @@
 
 - name: Deploy cas-servers in Docker Swarm
   import_playbook: auth-docker.yml
-  when: (deployment_type | default('vm')) == 'swarm'
+  when: (deployment_type | default('vm')) != 'vm'
