@@ -4,7 +4,7 @@
 - hosts: collectory
   vars:
     # This select the docker-tasks.yml
-    deployment_type: swarm
+    deployment_type: "{{ deployment_type | default('container') }}"
     # This creates the collectory vhost in a directory that later is
     # mounted as a volume in a nginx image
     nginx_conf_dir: "{{ data_dir }}/nginx"
