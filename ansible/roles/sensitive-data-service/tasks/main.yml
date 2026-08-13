@@ -40,6 +40,34 @@
   when:
     - sds_ala_namematching_service_version is defined
 
+# This service links Lucene 8 and opens index formats 7-9 only. Handed the lucene-6 build (the
+# one the pipelines' ala-name-matching library wants, so the two live side by side in the same
+# inventory and get mixed up), it downloads a gigabyte, installs it, passes every check in
+# download-nameindex.yml -- that one only verifies the artifact is internally consistent -- and
+# then crash-loops at boot with "Unable to initialise searcher: ... IndexFormatTooOldException
+# ... 6 (needs to be between 7 and 9)". Which is a 12-minute health-gate timeout and an opaque
+# restart loop away from the actual mistake. Fail here instead, while the fix is still one line.
+# Only artifacts that advertise their Lucene major in the file name can be checked.
+- name: sds | the nameindex must be a Lucene major this service can open (7-9)
+  vars:
+    _sds_nameindex_url: >-
+      {{ ala_sensitive_data_service_namematching_source
+         | default('https://archives.ala.org.au/archives/nameindexes/20210811-3/namematching-20210811-3.tgz') }}
+    _sds_nameindex_lucene: "{{ (_sds_nameindex_url | regex_search('lucene-([0-9]+)', '\\1') | default([], true) | first) | default('', true) }}"
+  assert:
+    that:
+      - _sds_nameindex_lucene | int >= 7
+      - _sds_nameindex_lucene | int <= 9
+    fail_msg: >-
+      ala_sensitive_data_service_namematching_source names a lucene-{{ _sds_nameindex_lucene }}
+      index ({{ _sds_nameindex_url }}), but the sensitive-data-service only opens formats 7-9 and
+      will crash-loop on it. Point it at the lucene-8 build of the same taxonomy; the lucene-6 one
+      belongs to custom_namematching_url / nameindex_datestamp (pipelines), not here.
+  when: _sds_nameindex_lucene | length > 0
+  tags:
+    - sensitive-data-service
+    - nameindex
+
 - name: Include VM tasks
   import_tasks: vm-tasks.yml
   when: deployment_type == 'vm'
