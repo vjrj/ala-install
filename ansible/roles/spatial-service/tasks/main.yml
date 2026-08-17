@@ -153,17 +153,34 @@
 # to change it.
 # retries x delay must outlast a raw.githubusercontent.com rate-limit window: 3x5s did
 # not (build #354 died here while GitHub 429'd the whole deploy), so give it ~2.5 min.
+#
+# And when even that is not enough, warn instead of failing — restoring the tolerance the
+# old ignore_errors had. maxent.jar is an optional modelling dependency: spatial-service
+# starts and serves without it, only Maxent model runs need it. In #355 a sustained 429
+# took the task's host out of the play entirely, so the datastores it owns (Solr among
+# them) were never deployed and services on the OTHER hosts failed their health gate
+# waiting on them. A modelling jar must not be able to do that to a cluster.
 - name: Download maxent.jar
-  get_url:
-    url: "https://raw.githubusercontent.com/mrmaxent/Maxent/master/ArchivedReleases/{{ maxent_version | default('3.4.3') }}/maxent.jar"
-    dest: "{{data_dir}}/spatial-data/modelling/maxent/maxent.jar"
-    owner: "{{ tomcat_user }}"
-    group: "{{ tomcat_user }}"
-    mode: '0644'
-  register: maxent_dl
-  retries: 5
-  delay: 30
-  until: maxent_dl is succeeded
+  block:
+    - name: Download maxent.jar
+      get_url:
+        url: "https://raw.githubusercontent.com/mrmaxent/Maxent/master/ArchivedReleases/{{ maxent_version | default('3.4.3') }}/maxent.jar"
+        dest: "{{data_dir}}/spatial-data/modelling/maxent/maxent.jar"
+        owner: "{{ tomcat_user }}"
+        group: "{{ tomcat_user }}"
+        mode: '0644'
+      register: maxent_dl
+      retries: 5
+      delay: 30
+      until: maxent_dl is succeeded
+  rescue:
+    - name: Warn that Maxent modelling will be unavailable
+      debug:
+        msg: >-
+          maxent.jar could not be downloaded ({{ maxent_dl.msg | default('unknown error') }}).
+          spatial-service will start without it; Maxent model runs will fail until
+          {{data_dir}}/spatial-data/modelling/maxent/maxent.jar is placed by hand or a later
+          deploy fetches it. Not failing the play: this is an optional modelling dependency.
   tags:
     - spatial-service
     - spatial-deps
