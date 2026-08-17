@@ -7,8 +7,18 @@
   *satisfied* when Gatus never reached the host at all: a failed request leaves the status
   at 0, and a host with broken DNS or a certificate that does not cover it then sits green.
   gatus_up_condition (the older single-condition variable) is still honoured.
+
+  The vhost ROOT gets its own, stricter condition. A relaxed '[STATUS] < 500' is right for
+  the rest, since plenty of API paths answer 400/404 without parameters while perfectly
+  healthy. But a 404 on the ROOT cannot mean that: it means nothing is serving this
+  server_name, i.e. the request landed on the wrong machine, and under '< 500' every check
+  in the group then reports green. Set gatus_root_up_condition to relax it.
+
+  gatus_up_conditions (plural) replaces the whole pair, so it wins for the root too: an
+  explicit full override must not be quietly overruled by the root default.
 #}
 {% set up_conditions = gatus_up_conditions | default(['[CONNECTED] == true', gatus_up_condition | default('[STATUS] == 200')]) %}
+{% set root_conditions = gatus_root_up_conditions | default(gatus_up_conditions | default(['[CONNECTED] == true', gatus_root_up_condition | default('[STATUS] < 400')])) %}
 endpoints:
 {% if ssl == true %}
 {% set protocol = 'https' %}
@@ -21,7 +31,7 @@ endpoints:
     url: "{{protocol}}://{{ hostname }}"
     interval: {{ gatus_interval | default('5m') }}
     conditions:
-{% for condition in up_conditions %}
+{% for condition in root_conditions %}
       - "{{ condition }}"
 {% endfor %}
 
@@ -42,7 +52,7 @@ endpoints:
     url: "{{protocol}}://{{ hostname }}{{ '/' ~ (entry.path | regex_replace('^/+', '')) }}"
     interval: {{ gatus_interval | default('5m') }}
     conditions:
-{% for condition in up_conditions %}
+{% for condition in (root_conditions if suffix_name == 'root' else up_conditions) %}
       - "{{ condition }}"
 {% endfor %}
 {% endif %}
