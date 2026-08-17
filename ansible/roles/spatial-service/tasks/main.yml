@@ -151,6 +151,8 @@
 # ignore_errors), so we fetch the same version directly from the upstream mrmaxent GitHub
 # mirror (no Cloudflare). A newer 3.4.4 exists under ArchivedReleases; bump maxent_version
 # to change it.
+# retries x delay must outlast a raw.githubusercontent.com rate-limit window: 3x5s did
+# not (build #354 died here while GitHub 429'd the whole deploy), so give it ~2.5 min.
 - name: Download maxent.jar
   get_url:
     url: "https://raw.githubusercontent.com/mrmaxent/Maxent/master/ArchivedReleases/{{ maxent_version | default('3.4.3') }}/maxent.jar"
@@ -159,8 +161,8 @@
     group: "{{ tomcat_user }}"
     mode: '0644'
   register: maxent_dl
-  retries: 3
-  delay: 5
+  retries: 5
+  delay: 30
   until: maxent_dl is succeeded
   tags:
     - spatial-service
