@@ -8,8 +8,20 @@
   datos-sensibles.gbif.es checks sat green for weeks with their DNS broken that way, and the
   gbif.es apex sat green with a certificate that does not cover it. gatus_up_condition (the
   older single-condition variable) is still honoured.
+
+  The vhost ROOT gets its own, stricter condition. '[STATUS] < 500' is right for the rest:
+  plenty of ALA API paths answer 400/404 without parameters while perfectly healthy, so a
+  blanket '< 400' would paint the dashboard red for no reason. But a 404 on the root of a
+  vhost cannot mean that — it means nothing is serving this server_name, i.e. the request
+  landed on the wrong machine. That is precisely what stayed hidden on gbif.es: extra_hosts
+  pinned registros-ws.gbif.es to a decommissioned 2021 VM, every path 404'd, and all ~25
+  checks in the group reported green under '< 500'. Set gatus_root_up_condition to relax it.
+
+  gatus_up_conditions (plural) means "replace the whole pair", so it wins for the root too —
+  an explicit full override must not be quietly overruled by the root default.
 #}
 {% set up_conditions = gatus_up_conditions | default(['[CONNECTED] == true', gatus_up_condition | default('[STATUS] == 200')]) %}
+{% set root_conditions = gatus_root_up_conditions | default(gatus_up_conditions | default(['[CONNECTED] == true', gatus_root_up_condition | default('[STATUS] < 400')])) %}
 endpoints:
 {% if ssl == true %}
 {% set protocol = 'https' %}
@@ -22,7 +34,7 @@ endpoints:
     url: "{{protocol}}://{{ hostname }}"
     interval: {{ gatus_interval | default('5m') }}
     conditions:
-{% for condition in up_conditions %}
+{% for condition in root_conditions %}
       - "{{ condition }}"
 {% endfor %}
 
@@ -44,7 +56,7 @@ endpoints:
     url: "{{protocol}}://{{ hostname }}{{ '/' ~ (entry.path | regex_replace('^/+', '')) }}"
     interval: {{ gatus_interval | default('5m') }}
     conditions:
-{% for condition in up_conditions %}
+{% for condition in (root_conditions if suffix_name == 'root' else up_conditions) %}
       - "{{ condition }}"
 {% endfor %}
 {% endif %}
