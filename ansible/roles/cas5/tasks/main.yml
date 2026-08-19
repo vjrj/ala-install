@@ -136,7 +136,7 @@
           - "Pragma"
           - "Expires"
         # merge keeps the server level security headers, requires nginx >= 1.29.3
-        header_inherit: "{{ nginx_header_inherit | default('merge') }}"
+        header_inherit: "{{ nginx_header_inherit | default('off') }}"
         response_headers:
           - 'Cache-Control "max-age=3600, stale-while-revalidate=600, stale-if-error=86400"'
       - path: "/{{ cas_context_path | default('cas') }}"
