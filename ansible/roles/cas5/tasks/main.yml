@@ -125,7 +125,20 @@
     hostname: "{{ cas_host_name }}"
     context_path: "{{ cas_context_path | default('cas') }}"
     nginx_paths:
+      # Regex location, so proxy_pass must not have a URI part and the request URI is passed through unchanged
+      - path: "~ ^/{{ cas_context_path | default('cas') }}/oidc/\\.well-known"
+        sort_label: "cas_1_well_known"
+        appname: "cas"
+        is_proxy: true
+        proxy_pass: "http://{{ cas_docker_host | default('127.0.0.1') }}:{{ cas_port | default('9000') }}"
+        hide_headers:
+          - "Cache-Control"
+          - "Pragma"
+          - "Expires"
+        response_headers:
+          - 'Cache-Control "max-age=3600, stale-while-revalidate=600, stale-if-error=86400"'
       - path: "/{{ cas_context_path | default('cas') }}"
+        sort_label: "cas_2_app"
         appname: "cas"
         is_proxy: true
         proxy_pass: "http://{{ cas_docker_host | default('127.0.0.1') }}:{{ cas_port | default('9000') }}/{{ cas_context_path | default('cas') }}"
@@ -148,6 +161,8 @@
         is_proxy: false
         rewrite_path_alt: " /{{ cas_context_path | default('cas') }}/oidc/.well-known break"
         default_type: "application/json"
+        response_headers:
+          - 'Cache-Control "max-age=3600, stale-while-revalidate=600, stale-if-error=86400"'
       - path: "/{{ cas_context_path | default('cas') }}"
         sort_label: "cas_2_app"
         appname: "cas"
