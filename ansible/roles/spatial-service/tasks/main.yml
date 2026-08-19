@@ -133,6 +133,7 @@
 
 # AMNH's ?op=download endpoint is behind a Cloudflare bot-challenge and 403s automated
 # clients (hence the old ignore_errors); the mrmaxent GitHub mirror serves the same jar.
+# 3x5s is not enough to ride out a GitHub outage or a rate-limit window; ~2.5 min is.
 - name: Download maxent.jar
   get_url:
     url: "https://raw.githubusercontent.com/mrmaxent/Maxent/master/ArchivedReleases/{{ maxent_version | default('3.4.3') }}/maxent.jar"
@@ -141,8 +142,8 @@
     group: "{{ tomcat_user }}"
     mode: '0644'
   register: maxent_dl
-  retries: 3
-  delay: 5
+  retries: 5
+  delay: 30
   until: maxent_dl is succeeded
   tags:
     - spatial-service
