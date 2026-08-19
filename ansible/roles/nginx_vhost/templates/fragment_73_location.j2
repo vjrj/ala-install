@@ -11,6 +11,19 @@
 {% if item.disable is defined and item.disable | bool == True %}
         return 404;
 {% endif %}
+{% if item.hide_headers is defined and item.hide_headers|length > 0 %}
+{% for next_hide_header in item.hide_headers %}
+        proxy_hide_header {{ next_hide_header }};
+{% endfor %}
+{% endif %}
+{% if item.response_headers is defined and item.response_headers|length > 0 %}
+{% if item.header_inherit is defined and item.header_inherit %}
+        add_header_inherit {{ item.header_inherit }};
+{% endif %}
+{% for next_response_header in item.response_headers %}
+        add_header {{ next_response_header }};
+{% endfor %}
+{% endif %}
 {% if item.extra_logs is defined and item.extra_logs|length > 0 %}
         access_log {{ nginx_access_log }};
 {% for next_extra_log in item.extra_logs %}
