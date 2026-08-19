@@ -134,17 +134,28 @@
 # AMNH's ?op=download endpoint is behind a Cloudflare bot-challenge and 403s automated
 # clients (hence the old ignore_errors); the mrmaxent GitHub mirror serves the same jar.
 # 3x5s is not enough to ride out a GitHub outage or a rate-limit window; ~2.5 min is.
+# When even that is not enough, warn instead of failing: maxent.jar is optional (only
+# Maxent model runs need it), and a fatal here takes the whole host out of the play.
 - name: Download maxent.jar
-  get_url:
-    url: "https://raw.githubusercontent.com/mrmaxent/Maxent/master/ArchivedReleases/{{ maxent_version | default('3.4.3') }}/maxent.jar"
-    dest: "{{data_dir}}/spatial-data/modelling/maxent/maxent.jar"
-    owner: "{{ tomcat_user }}"
-    group: "{{ tomcat_user }}"
-    mode: '0644'
-  register: maxent_dl
-  retries: 5
-  delay: 30
-  until: maxent_dl is succeeded
+  block:
+    - name: Download maxent.jar
+      get_url:
+        url: "https://raw.githubusercontent.com/mrmaxent/Maxent/master/ArchivedReleases/{{ maxent_version | default('3.4.3') }}/maxent.jar"
+        dest: "{{data_dir}}/spatial-data/modelling/maxent/maxent.jar"
+        owner: "{{ tomcat_user }}"
+        group: "{{ tomcat_user }}"
+        mode: '0644'
+      register: maxent_dl
+      retries: 5
+      delay: 30
+      until: maxent_dl is succeeded
+  rescue:
+    - name: Warn that Maxent modelling will be unavailable
+      debug:
+        msg: >-
+          maxent.jar could not be downloaded ({{ maxent_dl.msg | default('unknown error') }}).
+          spatial-service starts without it; Maxent model runs will fail until a later deploy
+          fetches it.
   tags:
     - spatial-service
     - spatial-deps
