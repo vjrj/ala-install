@@ -17,6 +17,9 @@
 {% endfor %}
 {% endif %}
 {% if item.response_headers is defined and item.response_headers|length > 0 %}
+{% if item.header_inherit is defined and item.header_inherit %}
+        add_header_inherit {{ item.header_inherit }};
+{% endif %}
 {% for next_response_header in item.response_headers %}
         add_header {{ next_response_header }};
 {% endfor %}
