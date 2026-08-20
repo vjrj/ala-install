@@ -4,12 +4,28 @@
     - properties
     - gatus
 
-- name: Ensure data directory exists
+- name: Ensure data directory exists (container mode)
+  file:
+    path: "{{ data_dir }}/{{ item }}"
+    state: directory
+    mode: '0755'
+    owner: "{{ docker_default_user | default(ansible_user_id) }}"
+    group: "{{ docker_default_user | default(ansible_user_id) }}"
+  with_items:
+    - "gatus"
+  when: deployment_type == 'container'
+  tags:
+    - gatus
+
+- name: Ensure data directory exists (non-container mode)
   file:
     path: /srv/{{ gatus_url }}/www/{{ item }}
     state: directory
   with_items:
     - "{{ gatus_path }}"
+  # Not "== 'vm'": that is false for any inventory which does not set the variable to
+  # exactly that. Only container mode uses the data_dir layout above.
+  when: deployment_type | default('') != 'container'
   tags:
     - gatus
 
@@ -27,14 +43,14 @@
   tags:
     - gatus
 
-- name: create the sample config from template
+- name: create the gatus base config from template
   template:
     src: "{{item.src}}"
     dest: "{{item.dest}}"
     force: true
   with_items:
     - {src: config.yaml,
-       dest: "{{ gatus_config_dir }}/sample.yaml"}
+       dest: "{{ gatus_config_dir }}/config.yaml"}
   tags:
     - gatus
 
@@ -49,10 +65,11 @@
   tags:
     - nginx_vhost
     - gatus
-  when: webserver_nginx | bool 
+  when: webserver_nginx | bool and inventory_hostname in groups['gatus'] | default([])
 
 - name: Deploy gatus stack
   import_tasks: ../../docker-common/tasks/stack-create.yml
   vars:
     stack: la_gatus
     docker_compose_data_dir: "{{ gatus_docker_dir }}"
+  when: deployment_type != 'vm'
