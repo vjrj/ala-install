@@ -3,6 +3,15 @@
 # Nothing in this file may be run_once: the index is a per-host artifact, and every host
 # that mounts {{ final_dest }} needs its own copy on its own disk.
 
+# Nothing ever removed /tmp/nm, so every index extracted there stayed for good, and
+# "Find the first directory" below picks files[0] out of whatever accumulated.
+- name: wipe the nameindex staging directory
+  file:
+    path: "/tmp/nm"
+    state: absent
+  tags:
+    - nameindex
+
 - name: ensure lucene base directory exists
   file: path={{item}} state=directory
   with_items:
