@@ -37,7 +37,14 @@ endpoints:
 
 {% endif %}
 {% for entry in nginx_paths %}
-{% if entry.path not in (nginx_paths_gatus_exclude | default([])) %}
+{# Two kinds of entry cannot be probed at all. An nginx location modifier (~, ~*, =, ^~, @)
+   is a matching rule, not a URL: rendering it produced checks like
+   "https://host/~* -location". And a disabled location is not served, so fragment_73
+   skips it and so must this. #}
+{% set path_head = (entry.path | trim)[:1] %}
+{% if entry.path not in (nginx_paths_gatus_exclude | default([]))
+      and path_head not in ['~', '=', '@', '^']
+      and not (entry.disable | default(false) | bool) %}
 {% set suffix_name = entry.path | replace("/", "-") %}
 {% if suffix_name == "-" %}
 {% set suffix_name = "root" %}
