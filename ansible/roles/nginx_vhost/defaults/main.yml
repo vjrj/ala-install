@@ -1,6 +1,11 @@
 ---
 redirect: ''
 nginx_conf_dir: '/etc/nginx'
+# The prefix nginx resolves at runtime for its conf.d includes. It defaults to the
+# directory Ansible writes into, which is the same string on a package install;
+# override it when the config is written somewhere other than where the server
+# reads it back from.
+nginx_conf_path: "{{ nginx_conf_dir }}/conf.d"
 nginx_access_log: "/var/log/nginx/access.log main"
 ssl: true
 # By default activate HTTP/2, which also allows HTTP/1.1 connections
