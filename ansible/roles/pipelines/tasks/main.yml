@@ -7,8 +7,11 @@
     - properties
     - la-pipelines-config
 
+# Host-provisioning tasks below are skipped in container deployments (the pipelines
+# image ships these dependencies); on VMs they run exactly as before.
 - name: Install aptitude using apt
   apt: name=aptitude state=latest update_cache=yes force_apt_get=yes
+  when: deployment_type | default('vm') != 'container'
   tags:
     - pipelines
     - apt
@@ -16,6 +19,7 @@
 - name: Install required system packages
   apt: name={{ item }} state=latest update_cache=yes
   loop: [ 'apt-transport-https', 'ca-certificates', 'curl', 'software-properties-common', 'python3-pip', 'virtualenv', 'python3-setuptools', 'unzip']
+  when: deployment_type | default('vm') != 'container'
   tags:
     - pipelines
     - apt
@@ -58,6 +62,27 @@
     - "{{ data_dir }}/dwca-tmp"
     - "{{ data_dir }}/dwca-export"
     - "{{ data_dir }}/migration"
+  tags:
+    - properties
+    - la-pipelines-config
+    - pipelines
+    - docker
+    - la-pipelines
+
+- name: create local pipelines data directories (container only)
+  file: path={{ item }} state=directory owner={{ spark_user }} group={{ spark_user }} recurse=true
+  with_items:
+    - "{{ data_dir }}/la-pipelines/data"
+    - "{{ data_dir }}/la-pipelines/data/all-datasets"
+    - "{{ data_dir }}/la-pipelines/data/species"
+    - "{{ data_dir }}/la-pipelines/data/jackknife"
+    - "{{ data_dir }}/la-pipelines/data/clustering"
+    - "{{ data_dir }}/la-pipelines/data/outlier"
+    - "{{ data_dir }}/la-pipelines/vocabularies"
+    - "{{ data_dir }}/la-pipelines/spark-tmp"
+    - "{{ data_dir }}/la-pipelines/dwca-import"
+    - "{{ data_dir }}/logs/pipelines"
+  when: deployment_type | default('vm') == 'container'
   tags:
     - properties
     - la-pipelines-config
@@ -171,7 +196,7 @@
 
 - name: Get docopts
   shell: curl -o /usr/local/bin/docopts -LJO https://github.com/docopt/docopts/releases/download/v0.6.3-rc2/docopts_linux_amd64
-  when: is_arm is not defined
+  when: is_arm is not defined and deployment_type | default('vm') != 'container'
   tags:
     - la-pipelines
     - pipelines
@@ -179,7 +204,7 @@
 
 - name: Get docopts
   shell: curl -o /usr/local/bin/docopts -LJO https://github.com/docopt/docopts/releases/download/v0.6.3-rc2/docopts_linux_arm
-  when: is_arm is defined
+  when: is_arm is defined and deployment_type | default('vm') != 'container'
   tags:
     - la-pipelines
     - pipelines
@@ -188,6 +213,7 @@
 
 - name: Make docopts executable
   shell: chmod +x /usr/local/bin/docopts
+  when: deployment_type | default('vm') != 'container'
   tags:
     - la-pipelines
     - pipelines
@@ -195,6 +221,7 @@
 
 - name: Update apt and install pipelines
   apt: update_cache=yes name=la-pipelines={{ pipelines_version }} force=yes
+  when: deployment_type | default('vm') != 'container'
   tags:
     - pipelines
     - la-pipelines
@@ -202,15 +229,18 @@
     - apt
 
 - name: Install pipelines config
-  template: src={{ item }} dest={{ data_dir }}/la-pipelines/config/{{ item }} mode=0644 output_encoding=iso-8859-1
-  with_items:
-    - la-pipelines-local.yaml
+  template:
+    # Single parametrized template (FS backend via pipelines_use_hdfs). Replaces the
+    # old container/non-container split that pointed at the missing la-pipelines-docker.yaml.j2.
+    src: la-pipelines-local.yaml
+    dest: "{{ data_dir }}/la-pipelines/config/la-pipelines-local.yaml"
+    mode: 0644
+    output_encoding: iso-8859-1
   tags:
     - properties
     - la-pipelines-config
     - pipelines
     - la-pipelines
-    - properties
 
 - name: Copy docker YAML files to {{ data_dir }}
   copy: src={{ item }} dest={{ data_dir }}/{{ item }}
@@ -305,6 +335,7 @@
     - "/migration"
   become: yes
   become_user: "{{ hadoop.user }}"
+  when: deployment_type | default('vm') != 'container'
   tags:
     - pipelines
     - hadoop
@@ -325,6 +356,7 @@
     - "/migration"
   become: yes
   become_user: "{{ hadoop.user }}"
+  when: deployment_type | default('vm') != 'container'
   tags:
     - pipelines
     - hadoop
@@ -340,6 +372,7 @@
     - DegreeOfEstablishment
     - EstablishmentMeans
     - Pathway
+  when: deployment_type | default('vm') != 'container'
   tags:
     - pipelines
     - hadoop
@@ -354,6 +387,7 @@
     - EstablishmentMeans
     - Pathway
   become_user: "{{ hadoop.user }}"
+  when: deployment_type | default('vm') != 'container'
   tags:
     - pipelines
     - hadoop
