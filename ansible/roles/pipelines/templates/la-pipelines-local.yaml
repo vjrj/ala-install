@@ -92,9 +92,21 @@ images:
   targetPath: {{ fs }}{{ pipelines_data_dir }}
   recognisedPaths: "{{ image_service_url }}"
 sampling:
+{% if _use_hdfs %}
   baseUrl: {{ layers_service_url | default('https://sampling.ala.org.au/sampling-service') }}/
+{% endif %}
   inputPath: {{ fs }}{{ pipelines_data_dir }}
   allDatasetsInputPath: {{ fs }}/pipelines-all-datasets
+{% if not _use_hdfs %}
+{# `sampling.baseUrl` is not a SamplingPipelineOptions property: the pipelines jar aborts
+   at option parsing with "Class interface au.org.ala.pipelines.options.SamplingPipelineOptions
+   missing a property named 'baseUrl'". The key the jar reads is samplingService.wsUrl, and
+   the base la-pipelines.yaml defaults it to ALA's PUBLIC sampling service -- so leaving it
+   unset silently samples against sampling.ala.org.au. Emit the override here. HDFS
+   deployments are left exactly as they were. #}
+samplingService:
+  wsUrl: {{ layers_service_url | default('https://sampling.ala.org.au/sampling-service') }}/
+{% endif %}
 speciesLists:
   inputPath: {{ fs }}{{ pipelines_data_dir }}
   targetPath: {{ fs }}{{ pipelines_data_dir }}
