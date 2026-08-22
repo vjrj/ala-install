@@ -36,6 +36,7 @@
   when:
     - ansible_os_family == "Debian"
     - deployment_type == 'vm' or deployment_type is undefined
+  become: true
   tags:
     - common
     - apt_update
@@ -52,6 +53,7 @@
     path: "{{ data_dir }}"
     state: directory
   when: deployment_type == 'vm' or deployment_type is undefined
+  become: true
   tags:
     - common
 
