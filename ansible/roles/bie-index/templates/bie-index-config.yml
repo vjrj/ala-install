@@ -32,9 +32,17 @@ security:
     clientId: {{ (bie_index_client_id | default(clientId)) | default('') }}
     secret: {{ (bie_index_client_secret | default(secret)) | default('') }}
     discoveryUri: {{ discoveryUri | default('') }}
-# cognito specific configs
+    # Login scope. Rendered for EVERY auth_system, not just cognito: when the key is absent
+    # the app falls back to the ala-auth plugin's compiled-in default, which still carries
+    # `user_defined` -- a scope that does not exist in a stock CAS registry (verified: it is
+    # absent from scopes_supported in /cas/oidc/.well-known/openid-configuration) and that
+    # therefore ships in every login redirect this deployment emits. Same shape as the
+    # data-quality fix (ala-install 5f069483) and collectory (4f12d521). One key, so no
+    # duplicate-key ambiguity in the YAML; the cognito default is preserved by the branch.
+    # Upstream finding 8.3: living-atlases/la-toolkit#28.
+    scope: {{ scope | default('openid' if (auth_system is defined and auth_system == 'cognito') else 'openid profile email ala roles') }}
 {% if auth_system is defined and auth_system == 'cognito' %}
-    scope: {{ scope | default('openid')}}
+# cognito specific configs
     alaUseridClaim: {{ alaUseridClaim | default('') }}
     logoutAction: {{ logoutAction | default('') }}
 {% endif %}
