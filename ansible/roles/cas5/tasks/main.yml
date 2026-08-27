@@ -163,17 +163,11 @@
         default_type: "application/json"
         response_headers:
           - 'Cache-Control "max-age=60, stale-while-revalidate=600, stale-if-error=86400"'
-          - 'Vary origin,access-control-request-method,access-control-request-headers,accept-encoding'
-          - 'Strict-Transport-Security "max-age=15768000 ; includeSubDomains"'
-          - 'X-content-Type-Options nosniff'
-          - 'X-Xss-Protection "1; mode=block"'
-          - 'Content-Security-Policy "frame-ancestors self *.ala.org.au;"'
           - 'Strict-Transport-Security "max-age=31536000; includeSubDomains"'
           - 'Referrer-Policy strict-origin-when-cross-origin'
           - 'X-Frame-Options DENY'
-          - 'X-Content-Type-Options nosniff'
-          - 'Content-Security-Policy upgrade-insecure-requests'
           - 'X-Xss-Protection "1; mode=block"'
+          - 'Content-Security-Policy: upgrade-insecure-requests'
       - path: "/{{ cas_context_path | default('cas') }}"
         sort_label: "cas_2_app"
         appname: "cas"
