@@ -2,7 +2,13 @@
   "lists": [
     {
       "uid": "dr33773",
-      "wikiUrl": "url"
+      "wikiUrl": "url",
+      "environment": "production"
+    },
+    {
+      "uid": "dr23315",
+      "wikiUrl": "url",
+      "environment": "test"
     }
   ]
 }
