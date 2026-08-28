@@ -135,10 +135,8 @@
           - "Cache-Control"
           - "Pragma"
           - "Expires"
-        # merge keeps the server level security headers, requires nginx >= 1.29.3
-        header_inherit: "{{ nginx_header_inherit | default('off') }}"
         response_headers:
-          - 'Cache-Control "max-age=3600, stale-while-revalidate=600, stale-if-error=86400"'
+          - 'Cache-Control "max-age=60, stale-while-revalidate=600, stale-if-error=86400"'
       - path: "/{{ cas_context_path | default('cas') }}"
         sort_label: "cas_2_app"
         appname: "cas"
@@ -163,10 +161,14 @@
         is_proxy: false
         rewrite_path_alt: " /{{ cas_context_path | default('cas') }}/oidc/.well-known break"
         default_type: "application/json"
-        # merge keeps the server level security headers, requires nginx >= 1.29.3
-        header_inherit: "{{ nginx_header_inherit | default('merge') }}"
         response_headers:
-          - 'Cache-Control "max-age=3600, stale-while-revalidate=600, stale-if-error=86400"'
+          - 'Cache-Control "max-age=60, stale-while-revalidate=600, stale-if-error=86400"'
+          - 'Content-Security-Policy upgrade-insecure-requests'
+          - 'Referrer-Policy strict-origin-when-cross-origin always'
+          - 'Strict-Transport-Security "max-age=31536000; includeSubDomains" always'
+          - 'X-Content-Type-Options nosniff always'
+          - 'X-Frame-Options DENY always'
+          - 'X-Xss-Protection "1; mode=block"'
       - path: "/{{ cas_context_path | default('cas') }}"
         sort_label: "cas_2_app"
         appname: "cas"
