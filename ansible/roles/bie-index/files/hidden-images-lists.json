@@ -1,8 +1,14 @@
 {
   "lists": [
     {
-      "uid": "dr22612",
-      "imageId": "image Id"
+      "uid": "dr35486",
+      "imageId": "imageId",
+      "environment": "prod"
+    },
+    {
+      "uid": "dr23395",
+      "imageId": "imageId",
+      "environment": "test"
     }
   ]
 }
