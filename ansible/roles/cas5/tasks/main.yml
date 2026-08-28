@@ -163,7 +163,7 @@
         default_type: "application/json"
         response_headers:
           - 'Cache-Control "max-age=60, stale-while-revalidate=600, stale-if-error=86400"'
-          - 'Content-Security-Policy: upgrade-insecure-requests'
+          - 'Content-Security-Policy upgrade-insecure-requests'
           - 'Referrer-Policy strict-origin-when-cross-origin'
           - 'Strict-Transport-Security "max-age=31536000; includeSubDomains"'
           - 'X-Frame-Options DENY'
