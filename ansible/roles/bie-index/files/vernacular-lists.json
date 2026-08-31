@@ -27,13 +27,25 @@
   "lists": [
     {
       "uid": "dr33742",
-      "vernacularNameField": "raw Vernacular Name",
-      "kingdomField": "raw Kingdom",
-      "phylumField": "raw Phylum",
-      "classField": "raw Class",
-      "orderField": "raw Order",
-      "familyField": "raw Family",
-      "statusField": "raw Status",
+      "vernacularNameField": "raw_Vernacular_Name",
+      "kingdomField": "rawKingdom",
+      "phylumField": "rawPhylum",
+      "classField": "rawClass",
+      "orderField": "rawOrder",
+      "familyField": "rawFamily",
+      "statusField": "rawStatus",
+      "defaultStatus": "traditionalKnowledge",
+      "defaultLanguage": "W11"
+    },
+    {
+      "uid": "dr23303",
+      "vernacularNameField": "raw_Vernacular_Name",
+      "kingdomField": "rawKingdom",
+      "phylumField": "rawPhylum",
+      "classField": "rawClass",
+      "orderField": "rawOrder",
+      "familyField": "rawFamily",
+      "statusField": "rawStatus",
       "defaultStatus": "traditionalKnowledge",
       "defaultLanguage": "W11"
     }
