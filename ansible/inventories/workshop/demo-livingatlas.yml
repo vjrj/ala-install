@@ -96,6 +96,14 @@ map_default_latitude = 54.00366
 map_default_longitude = -2.547855
 map_default_zoom = 5
 
+# CARTO basemap tiles. Without a key the tiles carry an "API KEY REQUIRED"
+# watermark. Get one at https://carto.com and uncomment:
+# carto_api_key = your-carto-key
+#
+# Alternatively set the full tile URL yourself, which overrides carto_api_key:
+# default_map_url = https://basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}.png?key=your-carto-key
+# map_mininal_url = https://basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}.png?key=your-carto-key
+
 grouped_facets_json=grouped_facets_default.json
 biocache_grouped_facets_url=file:///data/ala-hub/config/grouped_facets_default.json
 

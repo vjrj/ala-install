@@ -1,2 +1,10 @@
 ---
 biocache_hub_docker_dir: "{{ data_dir }}/{{ biocache_hub }}/docker"
+
+# Basemap tiles. Set carto_api_key (in [all:vars]) to your CARTO key to remove
+# the "API KEY REQUIRED" watermark; the template appends it to carto_basemap_url.
+# Setting map_mininal_url (historical name, keeps the typo) or map_minimal_url to
+# a full URL still overrides everything, query string included, so inventories
+# that already append the key to the URL keep working untouched.
+carto_api_key: ""
+carto_basemap_url: "https://basemaps.cartocdn.com/rastertiles/light_all/{z}/{x}/{y}.png"
