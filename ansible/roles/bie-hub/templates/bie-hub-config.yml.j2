@@ -193,7 +193,7 @@ defaultDecimalLongitude: {{ default_map_lon }}
 defaultZoomLevel: {{ default_map_zoom }}
 map:
   default:
-    url: {{ default_map_url }}
+    url: "{{ default_map_url | default(carto_basemap_url ~ (('?key=' ~ carto_api_key) if carto_api_key else '')) }}"
   simpleMapButton: {{ map_simpleMapButton }}
   records:
     colour: {{ default_map_colour }}
