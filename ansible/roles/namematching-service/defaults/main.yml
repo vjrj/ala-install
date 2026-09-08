@@ -8,3 +8,10 @@ namematching_service_context_path:
 # * = latest
 ala_namematching_service_version: "*"
 ala_namematching_service_docker_dir: "{{ data_dir }}/ala-namematching-service/docker"
+
+# Which species group files to install: groups-<variant>.json / subgroups-<variant>.json
+# when the role ships them, else the ALA-taxonomy defaults. Mirrors the nameindex role's
+# own default so an index and its group files stay in step; override it when the index is
+# fetched through custom_namematching_url, where the variant name says nothing about the
+# taxonomy inside.
+species_groups_variant: "{{ nameindex_to_use | default('col') }}"
