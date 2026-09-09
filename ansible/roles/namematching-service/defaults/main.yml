@@ -10,8 +10,17 @@ ala_namematching_service_version: "*"
 ala_namematching_service_docker_dir: "{{ data_dir }}/ala-namematching-service/docker"
 
 # Which species group files to install: groups-<variant>.json / subgroups-<variant>.json
-# when the role ships them, else the ALA-taxonomy defaults. Mirrors the nameindex role's
-# own default so an index and its group files stay in step; override it when the index is
-# fetched through custom_namematching_url, where the variant name says nothing about the
-# taxonomy inside.
-species_groups_variant: "{{ nameindex_to_use | default('col') }}"
+# when the role ships them, else the ALA-taxonomy defaults.
+#
+# Opt-in on purpose, empty by default. Deriving it from nameindex_to_use looked tidier, but
+# a single ala-install checkout is commonly shared by every portal a la-toolkit manages, and
+# there it would silently swap the group files under any deployment that happens to use the
+# COL index -- a change nobody asked for, in a file whose effect only shows up as
+# misclassified occurrences after the next ingest. Say which variant you want, or keep the
+# ALA-taxonomy default you have today.
+#
+# Which one is right depends on the taxonomy inside the index, not on where it came from:
+# an index fetched through custom_namematching_url says nothing about its own backbone.
+# scripts/validate-species-groups.sh in la-docker-compose answers that against a live
+# service before you deploy anything.
+species_groups_variant: ""
