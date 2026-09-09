@@ -153,13 +153,18 @@
   pause: prompt="nginx_paths value is {{nginx_paths}}"
   when: nginx_paths_debug_enabled is defined and nginx_paths_debug_enabled | bool == True
 
+# The check file has to land on the host that runs gatus, and in that host's
+# gatus_config_dir: gatus only reads its own config directory. Writing it on the
+# application host leaves the check invisible whenever the two are not the same
+# machine.
 - name: add gatus monitor of nginx_paths
   template:
     src: ../../gatus/templates/http.j2
-    dest: "{{ gatus_config_dir }}/{{appname}}-http.yaml"
-  with_items:
-    - "{{ nginx_paths}}"
-  when: use_gatus is defined and use_gatus
+    dest: "{{ hostvars[groups['gatus'][0]]['gatus_config_dir'] | default(gatus_config_dir) }}/{{ appname }}-http.yaml"
+  delegate_to: "{{ groups['gatus'][0] }}"
+  when:
+    - use_gatus is defined and use_gatus
+    - groups['gatus'] is defined and groups['gatus'] | length > 0
   tags:
     - nginx_vhost
     - gatus
