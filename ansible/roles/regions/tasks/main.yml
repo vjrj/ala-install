@@ -20,7 +20,11 @@
   include_role:
     name: nginx_vhost
   vars:
-    appname: "regions"
+    # Parameterised like biocache-hub's: appname is host-global (it names the
+    # gatus check file, {{ appname }}-http.yaml, and the vhost fragment suffix),
+    # so two instances on one host would clobber each other. The default keeps
+    # every single-instance deployment byte-identical.
+    appname: "{{ regions_appname | default('regions') }}"
     hostname: "{{ regions_hostname }}"
     context_path: "{{ regions_context_path }}"
   tags:

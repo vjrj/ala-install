@@ -189,7 +189,11 @@
   include_role:
     name: nginx_vhost
   vars:
-    appname: "bie-hub"
+    # Parameterised like biocache-hub's: appname is host-global (it names the
+    # gatus check file, {{ appname }}-http.yaml, and the vhost fragment suffix),
+    # so two instances on one host would clobber each other. The default keeps
+    # every single-instance deployment byte-identical.
+    appname: "{{ bie_hub_appname | default('bie-hub') }}"
     hostname: "{{ bie_hub_hostname }}"
     context_path: "{{ bie_hub_context_path }}"
     nginx_paths: "{{ bie_nginx_paths }}"
