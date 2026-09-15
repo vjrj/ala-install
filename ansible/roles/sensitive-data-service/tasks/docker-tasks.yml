@@ -1,14 +1,17 @@
 ---
 # No run_once here, same reason as in main.yml: the downloads below write into
 # {{ data_dir }}/biocache/layers on every host, not just the first.
+# Untagged on purpose: the downloads right below write into these directories and
+# carry no tags of their own, so gating their creation behind `docker` meant that a
+# run with --skip-tags docker (the documented way to redeploy without touching the
+# engine) reached "Downloading SDS layers" with no {{ data_dir }}/biocache/layers to
+# write to. It only ever worked because the directory survived from an earlier run,
+# so it failed exactly on a first deploy, or on a fresh data_dir.
 - name: ensure target db directories exist
   file: path={{item}} state=directory
   with_items:
     - "{{ ala_sensitive_data_service_docker_dir }}"
     - "{{ data_dir }}/biocache/layers"
-  tags:
-    - docker
-    - docker-service
 
 # The nameindex this role is configured with (ala_sensitive_data_service_namematching_source,
 # the same variable the apt path passes to debconf), not namematching-service's one — they are
