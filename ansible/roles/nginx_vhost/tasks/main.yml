@@ -269,7 +269,9 @@
   file:
     path: "{{ item.path }}"
     state: absent
-  loop: "{{ nginx_stale_location_fragments.results | default([]) | map(attribute='files') | flatten }}"
+  # A skipped iteration of the find above (a stub path of a vhost shared across hosts)
+  # registers a result with no `files`, and the loop is templated before the `when`.
+  loop: "{{ nginx_stale_location_fragments.results | default([]) | selectattr('files', 'defined') | map(attribute='files') | flatten }}"
   loop_control:
     label: "{{ item.path | basename }}"
   when: vhost_required | bool == True and not nginx_vhost_fast_mode | bool and nginx_paths is defined
