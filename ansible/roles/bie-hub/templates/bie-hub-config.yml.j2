@@ -119,7 +119,7 @@ skin:
   orgNameShort: {{ orgNameShort }}
   favicon: {{ skin_favicon }}
 
-languageCodesUrl: file://{{ data_dir }}/{{ bie_hub  }}/config/languages.json
+languageCodesUrl: {{ bie_hub_language_codes_url | default('file://' ~ data_dir ~ '/' ~ bie_hub ~ '/config/languages.json') }}
 
 # Facets displayed on search page
 facets: {{ bie_hub_facets }}
@@ -193,7 +193,7 @@ literature:
     api: {{ trove_service_url  }}
     apikey: {{ trove_api_key }}
 external:
-  blacklist: file://{{ data_dir }}/{{ bie_hub }}/config/blacklist.json
+  blacklist: {{ bie_hub_blacklist_url | default('file://' ~ data_dir ~ '/' ~ bie_hub ~ '/config/blacklist.json') }}
 
 # Mapping options
 defaultDecimalLatitude: {{ default_map_lat }}
