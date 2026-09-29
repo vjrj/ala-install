@@ -77,7 +77,10 @@
 # The layers archive has its own URL (sds_layers_url) and its own fallback: a failure
 # fetching the XML configs above must not also swap the layers for ALA's archive (a
 # different file, ~30 min from archives.ala.org.au instead of seconds from a mirror).
-- block:
+# sds_layers_download=false lets a caller fetch and unpack it itself (la-docker-compose
+# does it in the background, off the deploy's critical path).
+- when: sds_layers_download | default(true) | bool
+  block:
     - name: Downloading SDS layers using configured URL
       get_url:
         url: "{{ sds_layers_url }}"
@@ -91,6 +94,7 @@
 # SDS def ALA tgz is created with a MacOS tar
 # https://github.com/yarnpkg/yarn/issues/770
 - name: Extracting SDS layers
+  when: sds_layers_download | default(true) | bool
   unarchive:
     src: "{{ data_dir }}/biocache/layers/sds-layers.tgz"
     dest: "{{ data_dir }}/biocache/layers/"
