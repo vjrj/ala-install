@@ -48,12 +48,11 @@
         url: "{{ sds_url }}/ws/layers"
         dest: "{{ data_dir }}/sds/layers.json"
         timeout: 60
-
-    - name: Downloading SDS layers using configured URL
-      get_url:
-        url: "{{ sds_layers_url }}"
-        dest: "{{ data_dir }}/biocache/layers/sds-layers.tgz"
   rescue:
+    - name: "WARNING: SDS configs from sds_url failed, using ALA's"
+      debug:
+        msg: "WARNING: could not download the SDS configs from {{ sds_url | default('(sds_url unset)') }}; falling back to https://sds.ala.org.au"
+
     - name: Downloading SDS configs using default URL
       get_url:
         url: "https://sds.ala.org.au/{{ item }}"
@@ -75,6 +74,15 @@
         dest: "{{ data_dir }}/sds/layers.json"
         timeout: 60
 
+# The layers archive has its own URL (sds_layers_url) and its own fallback: a failure
+# fetching the XML configs above must not also swap the layers for ALA's archive (a
+# different file, ~30 min from archives.ala.org.au instead of seconds from a mirror).
+- block:
+    - name: Downloading SDS layers using configured URL
+      get_url:
+        url: "{{ sds_layers_url }}"
+        dest: "{{ data_dir }}/biocache/layers/sds-layers.tgz"
+  rescue:
     - name: Downloading SDS layers using default URL
       get_url:
         url: "https://archives.ala.org.au/archives/layers/sds-layers.tgz"
