@@ -57,35 +57,17 @@
     - properties-file
     - namematching-service
 
-# The species group files map display groups ("Fishes", "Monocots") onto concrete taxon
-# names, and SpeciesGroupsUtil resolves those names against the deployed name index. Every
-# backbone spells its ranks differently, so a file is only valid for the backbone it was
-# written against: the ALA-taxonomy default resolves `Osteichthyes` on a COL index to an
-# unranked clade whose lft/rgt range contains Aves and Mammalia, and every bird and mammal
-# comes back tagged "Fishes".
-#
-# So pick the variant matching the index: groups-<species_groups_variant>.json when that
-# file ships with the role, else the ALA-taxonomy default. Group NAMES stay identical
-# across variants on purpose — the occurrence facet exposes them as
-# `species_group.<Name>` i18n codes, so renaming one silently breaks its translations.
-# scripts/validate-species-groups.sh in la-docker-compose checks a file against a live
-# index, including that name-set contract.
+# A relative src is looked up in this role's files/, an absolute one anywhere (e.g.
+# "{{ inventory_dir }}/files/..."), so a portal can ship its own species groups.
 - name: Customize species group files
   copy:
-    src: "{{ lookup('ansible.builtin.first_found', _sg_candidates) }}"
-    dest: "{{data_dir}}/ala-namematching-service/config/{{ item }}.json"
+    src: "{{ item.src }}"
+    dest: "{{data_dir}}/ala-namematching-service/config/{{ item.dest }}"
     owner: "{{ namematching_user }}"
     group: "{{ namematching_user }}"
-  vars:
-    _sg_candidates:
-      files:
-        - "{{ item }}-{{ species_groups_variant }}.json"
-        - "{{ item }}.json"
-      paths:
-        - "{{ role_path }}/files"
   with_items:
-    - "groups"
-    - "subgroups"
+    - { src: "{{ namematching_groups_file }}", dest: "groups.json" }
+    - { src: "{{ namematching_subgroups_file }}", dest: "subgroups.json" }
   notify:
     - restart ala-namematching-service
   tags:

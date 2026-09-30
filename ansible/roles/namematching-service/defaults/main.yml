@@ -9,18 +9,9 @@ namematching_service_context_path:
 ala_namematching_service_version: "*"
 ala_namematching_service_docker_dir: "{{ data_dir }}/ala-namematching-service/docker"
 
-# Which species group files to install: groups-<variant>.json / subgroups-<variant>.json
-# when the role ships them, else the ALA-taxonomy defaults.
-#
-# Opt-in on purpose, empty by default. Deriving it from nameindex_to_use looked tidier, but
-# a single ala-install checkout is commonly shared by every portal a la-toolkit manages, and
-# there it would silently swap the group files under any deployment that happens to use the
-# COL index -- a change nobody asked for, in a file whose effect only shows up as
-# misclassified occurrences after the next ingest. Say which variant you want, or keep the
-# ALA-taxonomy default you have today.
-#
-# Which one is right depends on the taxonomy inside the index, not on where it came from:
-# an index fetched through custom_namematching_url says nothing about its own backbone.
-# scripts/validate-species-groups.sh in la-docker-compose answers that against a live
-# service before you deploy anything.
-species_groups_variant: ""
+# Species group files. groups.json sets species_group and subgroups.json species_subgroup
+# on each record; both resolve their taxon names against the deployed name index, so they
+# must be written for the same backbone. biocache_groups_file/biocache_subgroups_file
+# (biocache3-properties) must use the same group and subgroup names.
+namematching_groups_file: groups.json
+namematching_subgroups_file: subgroups.json

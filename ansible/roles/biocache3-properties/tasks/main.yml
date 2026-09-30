@@ -29,14 +29,17 @@
     - biocache-properties
     - biocache-config-properties
 
+# groups.json (/explore/groups) and subgroups.json (/explore/hierarchy) must use the names
+# namematching writes to species_group and species_subgroup (namematching_groups_file and
+# namematching_subgroups_file in namematching-service), or those groups count 0 records.
 - name: copy biocache groups config
-  copy: src=groups.json dest={{data_dir}}/biocache/config/groups.json
+  copy: src="{{ biocache_groups_file | default('groups.json') }}" dest={{data_dir}}/biocache/config/groups.json
   tags:
     - properties
     - biocache-properties
-    -
+
 - name: copy biocache subgroups config
-  copy: src=subgroups.json dest={{data_dir}}/biocache/config/subgroups.json
+  copy: src="{{ biocache_subgroups_file | default('subgroups.json') }}" dest={{data_dir}}/biocache/config/subgroups.json
   tags:
     - properties
     - biocache-properties
