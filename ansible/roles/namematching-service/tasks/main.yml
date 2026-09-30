@@ -57,15 +57,17 @@
     - properties-file
     - namematching-service
 
+# A relative src is looked up in this role's files/, an absolute one anywhere (e.g.
+# "{{ inventory_dir }}/files/..."), so a portal can ship its own species groups.
 - name: Customize species group files
   copy:
-    src: "{{item}}"
-    dest: "{{data_dir}}/ala-namematching-service/config/{{item}}"
+    src: "{{ item.src }}"
+    dest: "{{data_dir}}/ala-namematching-service/config/{{ item.dest }}"
     owner: "{{ namematching_user }}"
     group: "{{ namematching_user }}"
   with_items:
-    - "groups.json"
-    - "subgroups.json"
+    - { src: "{{ namematching_groups_file }}", dest: "groups.json" }
+    - { src: "{{ namematching_subgroups_file }}", dest: "subgroups.json" }
   notify:
     - restart ala-namematching-service
   tags:

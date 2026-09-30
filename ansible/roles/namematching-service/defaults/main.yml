@@ -8,3 +8,10 @@ namematching_service_context_path:
 # * = latest
 ala_namematching_service_version: "*"
 ala_namematching_service_docker_dir: "{{ data_dir }}/ala-namematching-service/docker"
+
+# Species group files. groups.json sets species_group and subgroups.json species_subgroup
+# on each record; both resolve their taxon names against the deployed name index, so they
+# must be written for the same backbone. biocache_groups_file/biocache_subgroups_file
+# (biocache3-properties) must use the same group and subgroup names.
+namematching_groups_file: groups.json
+namematching_subgroups_file: subgroups.json
