@@ -40,6 +40,8 @@ security:
     logoutAction: cognito
     alaUseridClaim: username
     logoutUrl: {{ oidc_logoutUrl }}
+{% elif oidc_logoutUrl is defined %}
+    logoutUrl: {{ oidc_logoutUrl }}
 {% endif %}
   jwt:
     enabled: {{ jwt_enabled | default('false') }}
@@ -85,6 +87,10 @@ app:
 #headerAndFooter:
 #  baseURL: "{{ header_and_footer_baseurl | default('https://www.ala.org.au/commonui-bs3') }}"
 #  version: "{{ header_and_footer_version | default('2') }}"
+{% if spatial_hub_header_and_footer | default(false) | bool %}
+headerAndFooter:
+  baseURL: "{{ header_and_footer_baseurl | default('https://www.ala.org.au/commonui-bs3') }}"
+{% endif %}
 
 ala.baseURL: "{{ ala_base_url | default('https://www.ala.org.au') }}"
 bie.baseURL: "{{ bie_base_url | default('https://bie.ala.org.au') }}"
@@ -97,10 +103,19 @@ namematching:
     baseURL: "{{ namematching_url | default('https://namematching-ws.ala.org.au') }}"
 
 userdetails:
+{% if spatial_userdetails_url is defined %}
+  url: "{{ spatial_userdetails_url }}"
+{% endif %}
   web:
     url: "{{ userdetails_web_url | default('https://auth.ala.org.au/userdetails/') }}"
   api:
     url: "{{ userdetails_api_url | default('https://api.ala.org.au/userdetails/') }}"
+{% if spatial_userdetails_url is defined %}
+
+# ala-auth-plugin conf
+userDetails:
+  url: "{{ spatial_userdetails_url }}"
+{% endif %}
 
 favicon:
   url: "{{ favicon_url | default('https://www.ala.org.au/wp-content/themes/ala2011/images/favicon.ico') }}"
@@ -259,6 +274,10 @@ startup:
   zoom: {{ startup_zoom | default(4) }}
   baselayer:
     default: {{ startup_baselayer_default | default('osm') }}
+{% if startup_baselayers is defined %}
+  baselayers:
+{{ (startup_baselayers if startup_baselayers is mapping else startup_baselayers | from_json) | to_nice_yaml(indent=2) | indent(4, true) }}
+{% endif %}
 #  baselayers:
 #    google_roadmaps:
 #      name: 'Streets'
@@ -304,12 +323,16 @@ defaultareas:
     wkt: 'POLYGON(({{ default_area_bbox[0] }} {{ default_area_bbox[1] }}, {{ default_area_bbox[2] }} {{ default_area_bbox[1] }}, {{ default_area_bbox[2] }} {{ default_area_bbox[3] }}, {{ default_area_bbox[0] }} {{ default_area_bbox[3] }}, {{ default_area_bbox[0] }} {{ default_area_bbox[1] }}))'
     areaSqKm: {{ default_area_sqkm }}
     bbox: {{ default_area_bbox }}
-  - name: 'World'
+  - name: '{{ default_world_area_name | default('World') }}'
     fqs: []
     wkt: 'POLYGON((-180 -90.0,180.0 -90.0,180.0 90.0,-180 90.0,-180 -90.0))'
     areaSqKm: 510000000
     bbox: [-180, -90, 180, 90]
 
+{% if preset_wms_servers is defined %}
+presetWMSServers:
+{{ preset_wms_servers | to_nice_yaml(indent=2) | indent(2, true) }}
+{% endif %}
 #presetWMSServers:
 #  - name: "AusCover"
 #    url: "http://data.auscover.org.au/geoserver/wms?request=getCapabilities"

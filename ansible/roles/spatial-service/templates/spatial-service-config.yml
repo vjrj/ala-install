@@ -180,10 +180,24 @@ logging:
 #    url: {{ auth_base_url }}/userdetails/
 
 userdetails:
+{% if spatial_userdetails_url is defined %}
+  baseUrl: {{ spatial_userdetails_url }}
+  url: {{ spatial_userdetails_url }}
+{% endif %}
   web:
     url: {{ userdetails_web_url | default('https://auth.ala.org.au/userdetails/') }}
   api:
     url: {{ userdetails_api_url | default('https://api.ala.org.au/userdetails/') }}
+{% if spatial_userdetails_url is defined %}
+
+# ala-auth-plugin conf
+userDetails:
+  url: {{ spatial_userdetails_url }}
+{% endif %}
+{% if favicon_url is defined %}
+
+skin.favicon: {{ favicon_url }}
+{% endif %}
 
 #
 #  CAS SETTINGS
@@ -205,9 +219,20 @@ security:
     disableCAS: {{ bypass_cas | default(true) }}
     gateway: {{ gateway_cas | default(false) }}
     enabled: {{ cas_enabled | default(false) }}
+{% if spatial_service_cas_uri_filter_pattern is defined %}
+    uriFilterPattern: {{ spatial_service_cas_uri_filter_pattern | to_json }}
+{% endif %}
   apikey:
     check:
       serviceUrl:  {{api_key_service_url | default('https://auth.ala.org.au/apikey/ws/check?apikey=') }}
+{% if spatial_service_apikey_userdetails_url is defined %}
+    userdetails:
+      serviceUrl: {{ spatial_service_apikey_userdetails_url }}
+{% endif %}
+{% if spatial_service_apikey_auth_url is defined %}
+    auth:
+      serviceUrl: {{ spatial_service_apikey_auth_url }}
+{% endif %}
 
 # oidc related
   oidc:
@@ -215,6 +240,7 @@ security:
     clientId: {{ spatial_client_id | default(spatial_service_oidc_client_id) }}
     secret: {{ spatial_client_secret | default(spatial_service_oidc_secret) }}
     discoveryUri: {{oidc_discoveryUri}}
+    discovery-uri: {{oidc_discoveryUri}}
 {% if auth_system is defined and auth_system == 'cognito' %}
     allowUnsignedIdTokens: true
     scope: 'openid profile email ala/attrs ala/roles'
@@ -272,6 +298,12 @@ namematching.url: {{ namematching_url | default('https://namematching-ws.ala.org
 # spatial-service 3.x reads namematching.baseURL
 namematching.baseURL: {{ namematching_url | default('https://namematching-ws.ala.org.au') }}
 
+{% if spatial_service_apikey_check_enabled is defined %}
+# ala-auth-plugin conf
+apikey.check.enabled: {{ spatial_service_apikey_check_enabled }}
+apikey.check.url: {{ api_key_service_url | default('https://auth.ala.org.au/apikey/ws/check?apikey=') }}
+
+{% endif %}
 # Internal sandbox service for processing uploaded CSV files
 sandboxEnabled: {{ spatial_sandbox_enable | default('false') }}
 sandboxSolrUrl: {{ spatial_sandbox_solr_url | default('') }}
