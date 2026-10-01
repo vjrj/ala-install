@@ -82,7 +82,34 @@
     - nginx_vhost
     - deploy
     - spatial-hub
-  when: webserver_nginx | bool 
+  when: webserver_nginx | bool
+
+# A custom layout (skin.layout + /data/spatial-hub/views/layouts) may load its own files with
+# <asset:stylesheet src="css/x.css"/>. The hub copies /data/spatial-hub/assets into its
+# exploded war, which a hub running as a jar (3.x, docker) does not have, so those files 404.
+# List them here and nginx serves each one from the assets dir:
+#   spatial_hub_extra_assets = ["css/gbif-es-spatial-extra.css", "js/gbif-es-spatial-extra.js"]
+- name: Serve the portal's own hub assets from nginx
+  include_role:
+    name: nginx_vhost
+  vars:
+    appname: "spatial-hub"
+    hostname: "{{ spatial_hub_hostname }}"
+    context_path: "{{ spatial_hub_context_path }}"
+    nginx_paths: >-
+      {%- set out = [] -%}
+      {%- for f in spatial_hub_extra_assets -%}
+        {%- set _ = out.append({'path': spatial_hub_context_path ~ 'assets/' ~ f,
+                                'sort_label': '2-' ~ (f | regex_replace('[^A-Za-z0-9]', '-')),
+                                'is_proxy': false,
+                                'alias': (spatial_hub_extra_assets_dir | default(data_dir ~ '/spatial-hub/assets')) ~ '/' ~ f}) -%}
+      {%- endfor -%}
+      {{ out }}
+  tags:
+    - nginx_vhost
+    - deploy
+    - spatial-hub
+  when: webserver_nginx | bool and spatial_hub_extra_assets | default([]) | length > 0
 
 - include_tasks: ../../tomcat_deploy/tasks/main.yml
   vars:
