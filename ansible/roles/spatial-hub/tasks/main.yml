@@ -11,16 +11,22 @@
     - spatial-hub-config
     - properties
 
+# A portal can ship its own copy of any of these files (e.g. a translated menu) from its
+# inventory, as menu_config_json does in the regions role:
+#   spatial_hub_menu_config_json = {{ inventory_dir }}/files/spatial-hub/menu-config.json
+# Otherwise every deploy overwrites them with the role template.
 - name: copy all config.yml
   template:
-    src: "{{spatial_hub_portal|lower}}/{{item}}"
-    dest: "{{data_dir}}/spatial-hub/config/{{item}}"
+    src: "{{ item.src if item.src else (spatial_hub_portal | lower ~ '/' ~ item.file) }}"
+    dest: "{{data_dir}}/spatial-hub/config/{{item.file}}"
     owner: "{{tomcat_user}}"
     group: "{{tomcat_user}}"
   with_items:
-    - "spatial-hub-config.yml"
-    - "menu-config.json"
-    - "view-config.json"
+    - { file: "spatial-hub-config.yml", src: "{{ spatial_hub_config_yml | default('') }}" }
+    - { file: "menu-config.json", src: "{{ spatial_hub_menu_config_json | default('') }}" }
+    - { file: "view-config.json", src: "{{ spatial_hub_view_config_json | default('') }}" }
+  loop_control:
+    label: "{{ item.file }}"
   tags:
     - config
     - spatial-hub
