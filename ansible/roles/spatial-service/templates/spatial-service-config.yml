@@ -269,6 +269,8 @@ openapi:
 {% endif %}
 
 namematching.url: {{ namematching_url | default('https://namematching-ws.ala.org.au') }}
+# spatial-service 3.x reads namematching.baseURL
+namematching.baseURL: {{ namematching_url | default('https://namematching-ws.ala.org.au') }}
 
 # Internal sandbox service for processing uploaded CSV files
 sandboxEnabled: {{ spatial_sandbox_enable | default('false') }}
