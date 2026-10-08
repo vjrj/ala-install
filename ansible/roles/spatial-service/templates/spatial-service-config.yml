@@ -59,7 +59,15 @@ auth.admin_role: {{ auth_admin_role | default('ROLE_ADMIN') }}
 app.http.header.userId: {{ app_http_header_userid | default('X-ALA-userId') }}
 
 headerAndFooter:
+{% if spatial_service_bootstrap5 | default(false) | bool %}
+  # spatial-service 3.2+ admin pages use ala-bootstrap5: it renders {assets,banner,footer}.mustache from this
+  # URL (the Bootstrap 5 branding build, <branding>/bs5, e.g. base-branding `npm run build:bs5`). The hub and
+  # the other modules keep using header_and_footer_baseurl (Bootstrap 3). Set
+  # spatial_service_header_and_footer_baseurl to override, e.g. https://demo.gbif.es/brand-2025-vite-bs5/bs5
+  baseURL: {{ spatial_service_header_and_footer_baseurl | default(((header_and_footer_baseurl | regex_replace('/+$', '')) ~ '/bs5') if (header_and_footer_baseurl is defined and 'commonui-bs3' not in header_and_footer_baseurl) else 'https://www.ala.org.au/commonui-bs5-2019', true) }}
+{% else %}
   baseURL: {{ header_and_footer_baseurl | default('https://www.ala.org.au/commonui-bs3-2019') }}
+{% endif %}
   version: "{{ header_and_footer_version | default('2') }}"
 
 ala.baseURL: {{ ala_base_url | default('https://www.ala.org.au') }}
