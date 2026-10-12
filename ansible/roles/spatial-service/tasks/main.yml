@@ -155,11 +155,13 @@
   block:
     - name: Download maxent.jar
       get_url:
-        url: "https://raw.githubusercontent.com/mrmaxent/Maxent/master/ArchivedReleases/{{ maxent_version | default('3.4.3') }}/maxent.jar"
+        url: "https://raw.githubusercontent.com/mrmaxent/Maxent/master/ArchivedReleases/{{ maxent_version | default('3.4.4') }}/maxent.jar"
         dest: "{{data_dir}}/spatial-data/modelling/maxent/maxent.jar"
         owner: "{{ tomcat_user }}"
         group: "{{ tomcat_user }}"
         mode: '0644'
+        # replace a jar of another version (3.4.3 fails on JDK 17 with ClassCastException [D -> [F in Extractor.extractSample)
+        force: true
       register: maxent_dl
       retries: 5
       delay: 30
