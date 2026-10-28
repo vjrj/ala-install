@@ -14,19 +14,21 @@ security:
   cas:
     enabled: {{ userdetails_use_cas | default('true') }}
     authenticateOnlyIfLoggedInFilterPattern : {{ userdetails_authenticate_only_if_logged_in_filter_pattern | default('') }}
-{% if userdetails_use_cas | default('true') %}
+    # Rendered even with CAS off: these keys carry compiled auth.ala.org.au defaults, and with
+    # OIDC on they still sit in the running config pointing at ALA (/alaAdmin/viewConfig).
     casServerName: {{ cas_server_name }}
     casServerUrlPrefix: ${security.cas.casServerName}/{{ cas_context_path | default('cas') }}
     loginUrl: ${security.cas.casServerUrlPrefix}/login
     logoutUrl: ${security.cas.casServerUrlPrefix}/logout
     appServerName: {{ userdetails_server_name }}
-{% endif %}
   oidc:
     enabled: {{ userdetails_use_oidc | default('false') }}
 {% if userdetails_use_oidc | default('false') %}
     client-id: {{ userdetails_client_id | default(userdetails_oidc_client_id) | default('') }}
     secret: {{ userdetails_client_secret | default(userdetails_oidc_secret) | default('') }}
     discovery-uri: {{ oidc_discovery_uri }}
+    # viewConfig showed the camelCase key on its compiled auth.ala.org.au default beside ours.
+    discoveryUri: {{ oidc_discovery_uri }}
 {% if userdetails_backend == 'cognito' %}
     logoutUrl: {{ userdetails_oidc_logoutUrl | default('') }}
     logoutAction: cognito

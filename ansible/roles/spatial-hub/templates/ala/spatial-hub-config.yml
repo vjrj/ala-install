@@ -40,8 +40,14 @@ security:
     logoutAction: cognito
     alaUseridClaim: username
     logoutUrl: {{ oidc_logoutUrl }}
-{% elif oidc_logoutUrl is defined %}
+{% else %}
+    # The plugin's compiled default is the cognito scope (ala/attrs ala/roles), which CAS does
+    # not know: it releases no roles, and an admin gets 403 on /alaAdmin. Same fix as
+    # data-quality, biocache-hub, alerts, logger-service and regions.
+    scope: '{{ scope | default('openid profile email ala roles') }}'
+{% if oidc_logoutUrl is defined %}
     logoutUrl: {{ oidc_logoutUrl }}
+{% endif %}
 {% endif %}
   jwt:
     enabled: {{ jwt_enabled | default('false') }}
