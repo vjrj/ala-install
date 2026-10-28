@@ -231,14 +231,15 @@ elasticsearch:
 {% endif %}
 
 # Swagger UI's "Authorize" endpoints. Unset, image-service keeps its compiled defaults, which
-# are ALA's CAS (auth.ala.org.au/cas/oidc/*). Same suffixes as those defaults, on our CAS.
+# are ALA's CAS (auth.ala.org.au/cas/oidc/*). CAS names them oidcAuthorize and oidcAccessToken
+# (its .well-known), and a refresh goes to the token endpoint.
 {% if openapi_oauth_url is defined %}
 openapi:
   components:
     security:
       oauth2:
         baseUrl: {{ openapi_oauth_url }}
-        authorizationUrl: {{ openapi_oauth_url }}/authorize
-        refreshUrl: {{ openapi_oauth_url }}/refresh
-        tokenUrl: {{ openapi_oauth_url }}/token
+        authorizationUrl: {{ openapi_oauth_url }}/oidcAuthorize
+        refreshUrl: {{ openapi_oauth_url }}/oidcAccessToken
+        tokenUrl: {{ openapi_oauth_url }}/oidcAccessToken
 {% endif %}
