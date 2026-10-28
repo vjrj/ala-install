@@ -60,7 +60,7 @@ lists:
 {% if lists_use_new_species_lists is defined and lists_use_new_species_lists | bool %}
   useListWs: true
   url: "{{ lists_service_url | default('https://lists-ws.ala.org.au') }}"
-  urlUi:  "{{ lists_url | default('https://lists.ala.org.au') }}"
+  urlUi:  "{{ lists_ui_url | default(lists_url | default('https://lists.ala.org.au')) }}"
   threatenedSpeciesUrl: '/speciesList/?isThreatened=true&isAuthoritative=true&pageSize=1000'
   invasiveSpeciesUrl: '/speciesList/?isInvasive=true&isAuthoritative=true&pageSize=1000'
 {% else %}

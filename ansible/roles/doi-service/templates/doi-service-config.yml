@@ -52,6 +52,18 @@ security:
       serviceUrl: {{ apikey_check_url | default('https://auth.ala.org.au/apikey/ws/check?apikey=') }}
     userdetails:
       serviceUrl: {{ apikey_userdetails_url }}
+  # The lowercase spelling as well. The ala-ws-security plugin reads security.apikey.* and ships
+  # compiled defaults for it pointing at auth.ala.org.au, so rendering only apiKey left the
+  # running service checking API keys against ALA (seen in /alaAdmin/viewConfig). Same defect
+  # and same fix as collectory, alerts and biocache3.
+  apikey:
+    enabled: {{ doi_apikey_check_enabled | default(apikey_check_enabled) | default('false') }}
+    auth:
+      serviceUrl: {{ apikey_auth_url }}
+    check:
+      serviceUrl: {{ apikey_check_url | default('https://auth.ala.org.au/apikey/ws/check?apikey=') }}
+    userdetails:
+      serviceUrl: {{ apikey_userdetails_url }}
 webservice:
   jwt: {{ webservice_jwt | default('false') }}
   jwt-scopes: {{ doi_webservice_jwt_scopes | default(webservice_jwt_scopes) | default('') }}
@@ -185,3 +197,8 @@ userdetails:
   url: {{ userdetails_url | default('https://auth.ala.org.au/userdetails') }}
 userdetails.web.url: {{ userdetails_web_url | default('https://auth.ala.org.au/userdetails/') }}
 userdetails.api.url: {{ userdetails_api_url | default('https://api.ala.org.au/userdetails/') }}
+
+# Data quality filter service. Unset, the compiled default is ALA's
+# (data-quality-service.ala.org.au).
+dqservice:
+  url: {{ data_quality_url | default('https://data-quality-service.ala.org.au/') }}

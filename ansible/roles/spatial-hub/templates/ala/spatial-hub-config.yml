@@ -126,7 +126,9 @@ layersService:
 lists:
   version: {{ lists_version | default(1) | int }}
   url: "{{ lists_url | default('https://lists.ala.org.au') }}"
-  urlUi: "{{ lists_ui_url | default('https://lists.ala.org.au') }}"
+  # The UI the hub links every species list to. Falls back to lists_url, not to ALA: a portal
+  # that only sets lists_url would otherwise send its own list ids to lists.ala.org.au.
+  urlUi: "{{ lists_ui_url | default(lists_url | default('https://lists.ala.org.au')) }}"
   threatenedSpeciesUrl: "{{ lists_threatened_species_url | default('/ws/speciesList/?isThreatened=eq:true&isAuthoritative=eq:true') }}"
   invasiveSpeciesUrl: "{{ lists_invasive_species_url | default('/ws/speciesList/?isInvasive=eq:true&isAuthoritative=eq:true') }}"
   facets: {{ lists_facets | default(true) }}
