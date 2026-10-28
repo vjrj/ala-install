@@ -150,7 +150,9 @@ speciesList:
   useListWs: {{ lists_use_new_species_lists | default(false) }}
   wsURL: {{ species_list_ws_url }}
 speciesListService:
-  baseURL: {{ specieslist_service_url }}
+  # bie-hub appends /ws/species/<guid> itself, so a /ws here asks for /ws/ws/... (404, species
+  # pages without their lists). Strip it, whichever form the inventory carries.
+  baseURL: {{ specieslist_service_url | regex_replace('/+$', '') | regex_replace('/ws$', '') }}
 alerts:
   baseUrl: {{ alerts_url }}
 regions:

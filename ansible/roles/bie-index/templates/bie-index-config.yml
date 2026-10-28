@@ -120,7 +120,10 @@ lists:
   show: /list/{0}
 {% else %}
   useListWs: false
-  service: {{ specieslist_service_url | default('https://lists.ala.org.au/ws') }}
+  # The legacy lists API lives under /ws. Normalise it here: an inventory that sets the
+  # bare lists base (e.g. [bie-hub:vars] when bie-hub and bie-index share a host) would
+  # otherwise leave every list lookup 404ing.
+  service: {{ (specieslist_service_url | default('https://lists.ala.org.au/ws')) | regex_replace('/+$', '') | regex_replace('/ws$', '') }}/ws
   ui: {{ specieslist_url | default('https://lists.ala.org.au') }}
   conservation: /speciesList?isAuthoritative=eq:true&isThreatened=eq:true&max={0}&offset={1}
   search: /speciesList/?isAuthoritative=eq:true&max={0}&offset={1}
