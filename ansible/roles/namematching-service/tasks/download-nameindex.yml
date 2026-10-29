@@ -20,6 +20,9 @@
   tags:
     - nameindex
 
+# Retried: one download that arrives corrupt (checksum mismatch) or cut fails the host,
+# and in a multi-host deploy the other hosts then fail waiting for its services. get_url
+# checks the temporary file and leaves dest alone on a mismatch, so a retry downloads again.
 - name: Download nameindex {{ url }} into {{ dest }}
   get_url:
     url: "{{ url }}"
@@ -27,6 +30,10 @@
     force: "{{ force_nameindex_download | default(false) }}"
     timeout: 10000
     checksum: "sha1:{{ sha1 }}"
+  register: nameindex_download
+  retries: "{{ nameindex_download_retries | default(3) }}"
+  delay: "{{ nameindex_download_delay | default(30) }}"
+  until: nameindex_download is succeeded
   tags:
     - nameindex
 
