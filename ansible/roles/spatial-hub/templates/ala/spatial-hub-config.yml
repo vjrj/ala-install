@@ -108,20 +108,18 @@ bieService:
 namematching:
     baseURL: "{{ namematching_url | default('https://namematching-ws.ala.org.au') }}"
 
+{# Always written: left out, the WAR's compiled default (auth.ala.org.au) is what runs. #}
+{% set _spatial_userdetails_url = spatial_userdetails_url | default(userdetails_web_url | default('https://auth.ala.org.au/userdetails/')) %}
 userdetails:
-{% if spatial_userdetails_url is defined %}
-  url: "{{ spatial_userdetails_url }}"
-{% endif %}
+  url: "{{ _spatial_userdetails_url }}"
   web:
     url: "{{ userdetails_web_url | default('https://auth.ala.org.au/userdetails/') }}"
   api:
     url: "{{ userdetails_api_url | default('https://api.ala.org.au/userdetails/') }}"
-{% if spatial_userdetails_url is defined %}
 
 # ala-auth-plugin conf
 userDetails:
-  url: "{{ spatial_userdetails_url }}"
-{% endif %}
+  url: "{{ _spatial_userdetails_url }}"
 
 favicon:
   url: "{{ favicon_url | default('https://www.ala.org.au/wp-content/themes/ala2011/images/favicon.ico') }}"
@@ -199,6 +197,11 @@ sandboxService:
 sandboxSpatial:
   hubUrl: {{ spatial_sandbox_hub_url | default('https://sandbox.test.ala.org.au/ala-hub') }}
   serviceUrl: {{ spatial_sandbox_service_url | default('https://sandbox.test.ala.org.au/biocache-service') }}
+{% else %}
+{# Not used without use_spatial_sandbox, but the WAR compiles in sandbox-test.ala.org.au. #}
+sandboxSpatial:
+  hubUrl: {{ biocache_url | default('https://biocache.ala.org.au') }}
+  serviceUrl: {{ biocache_service_url | default('https://biocache-ws.ala.org.au/ws') }}
 {% endif %}
 
 gazField: {{ gaz_field | default('cl2123') }}
