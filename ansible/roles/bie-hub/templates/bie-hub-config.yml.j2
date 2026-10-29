@@ -1,5 +1,5 @@
 grails:
-  serverURL: {{ bie_base_url }}{{bie_hub_context_path}}
+  serverURL: {{ bie_base_url }}{{ '' if bie_base_url.endswith(bie_hub_context_path) else bie_hub_context_path }}
   cors:
     enabled: true
 serverName: {{ bie_base_url }}
