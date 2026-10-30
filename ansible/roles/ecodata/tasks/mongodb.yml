@@ -1,0 +1,126 @@
+# Mongo users and database
+- name: Create the ecodata database and user
+  mongodb_user:
+    login_user: "{{ mongodb_root_username }}"
+    login_password: "{{ mongodb_root_password }}"
+    login_port: "{{ mongodb_port }}"
+    database: "{{ ecodata_database }}"
+    name: "{{ ecodata_username }}"
+    password: "{{ ecodata_password }}"
+    roles:
+      - { db: "{{ ecodata_database }}", role: "dbAdmin" }
+      - { db: "{{ ecodata_database }}", role: "readWrite" }
+  tags:
+    - mongodb-org-user
+
+
+- name: Setup mongo logging to support logrotate
+  blockinfile:
+    path: /etc/mongod.conf
+    insertafter: "systemLog:"
+    marker_begin: "BEGIN_logrorate"
+    marker_end: "END_logrotate"
+    block: |2
+        logRotate: reopen
+  tags:
+    - mongodb-org
+    -
+
+
+
+- name: Add mongo logrotate config
+  template:
+    src: logRotate
+    dest: /etc/logrotate.d/mongodb
+  tags:
+    - mongodb-org
+
+- name: Insert replication set name both Server
+  blockinfile:
+    path: /etc/mongod.conf
+    block: |
+      replication:
+        replSetName: rs0
+  notify:
+  - restart mongod
+  tags: mongodb-org
+  when: mongo_cluster_enabled
+
+  # Copy the keyfile for authentication
+- name: copy security key file to nodes
+  copy: src={{ ecodata_local_authentication_keyFile }} dest=/etc/mongodb-keyFile mode=0400
+  tags: mongodb-org
+  when:  mongo_cluster_enabled
+
+# changes access right of the key file for mongo,
+- name: change access right of key file
+  file: path=/etc/mongodb-keyFile state=file owner=mongodb group=mongodb mode=0400
+  when: mongo_cluster_enabled
+
+- name: Enable security
+  blockinfile:
+    path: /etc/mongod.conf
+    backup: yes
+    marker: '# {mark} Enable mongodb security authorization'
+    block: |
+      security:
+        authorization: enabled
+        keyFile: /etc/mongodb-keyFile
+  notify:
+    - restart mongod
+  tags: mongodb-org
+  when: mongo_cluster_enabled
+
+- name: Stop mongo Service
+  service:
+    name: mongod
+    state: stopped
+
+- name: Start mongod as a service with security
+  service:
+    name: mongod
+    state: started
+
+- name: Updating bind IPs mongodb 3.4
+  replace:
+    path: /etc/mongod.conf
+    regexp: 'bindIp: 127.0.0.1'
+    replace: "bindIp: {{ host_ip_address }},127.0.0.1"
+  notify:
+    - restart mongod
+  tags: mongodb-org
+  when: mongo_cluster_enabled
+
+- name: Stop mongod db server
+  service:
+    name: mongod
+    state: stopped
+
+- name: Start mongod server
+  service:
+    name: mongod
+    state: started
+
+# copying script to create a replica set
+- name: copy initrs script
+  template:
+    src: initRS.j2
+    dest: ./initRS.j2
+  when: mongo_cluster_enabled and is_primary
+
+## Initialize the replica set
+- name: Initialize the replica set in primary node
+  command: mongosh --host "{{ internal_primary_hostname }}" --authenticationDatabase "{{ mongodb_root_database | default('admin') }}" -u "{{ mongodb_root_username }}" -p "{{ mongodb_root_password }}" "{{ mongodb_root_database | default('admin') }}" initRS.j2
+  when: mongo_cluster_enabled and is_primary
+
+- name: Stop mongod db server
+  service:
+    name: mongod
+    state: stopped
+  tags: mongodb-org
+
+- name: Start mongod server
+  service:
+    name: mongod
+    state: started
+  tags: mongodb-org

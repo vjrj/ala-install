@@ -1,5 +1,5 @@
 sofficePath: /usr/bin/soffice
-htmltopdfPath: /usr/local/bin/wkhtmltopdf
+htmltopdfPath: {{ pdf_htmltopdf_path }}
 storageDir: {{ pdf_dir }}
 
 server:
@@ -10,7 +10,7 @@ server:
   connector:
     type: http
     port: {{service_port}}
-    bindHost: 127.0.0.1
+    bindHost: {{ pdf_bind_host }}
 
 logging:
   level: "INFO"

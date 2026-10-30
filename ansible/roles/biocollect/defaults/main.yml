@@ -1,6 +1,7 @@
 
 # Option to redirect root requests e.g. https://biocollect.ala.org.au/ to an info page elsewhere
 biocollect_rewrite_root: False
+biocollect_upstream_host: 127.0.0.1
 log_config_filename: logback.xml
 biocollect_repo_url: https://maven.pkg.github.com/atlasoflivingaustralia/biocollect
 ala_default_vhost_include_paths: False

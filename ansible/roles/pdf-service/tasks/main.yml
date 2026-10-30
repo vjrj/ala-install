@@ -9,6 +9,7 @@
   group:
     name: "{{ pdf_user }}"
     state: present
+  when: pdf_on_vm
 
 - name: Add the user 'pdfgen'
   user:
@@ -16,6 +17,7 @@
     comment: pdf-service user
     group: "{{ pdf_user }}"
     system: true
+  when: pdf_on_vm
 
 #
 # install docker
@@ -24,7 +26,7 @@
   apt: pkg=docker.io update_cache=yes state=latest
   tags:
     - docker
-  when: use_docker
+  when: use_docker and pdf_on_vm
 
 
 - name: enable docker to run on startup and start it
@@ -34,7 +36,7 @@
     state: started
   tags:
     - docker
-  when: use_docker
+  when: use_docker and pdf_on_vm
 
 
 - apt_repository:
@@ -42,7 +44,7 @@
     state: present
   tags:
     - libreoffice
-  when: not use_docker
+  when: not use_docker and pdf_on_vm
 
 - name: install libreoffice when not using a docker container
   apt:
@@ -56,7 +58,7 @@
     install_recommends: no
   tags:
     - libreoffice
-  when: not use_docker
+  when: not use_docker and pdf_on_vm
 
 - name: ensure target directories exist [data subdirectories etc.]
   file: path={{item}} state=directory owner='{{ pdf_user }}' group='{{ pdf_user }}'
@@ -76,7 +78,7 @@
   tags:
     - service
     - pdf-service
-  when: not use_docker
+  when: not use_docker and pdf_on_vm
 
 - name: "Create {{service_name}} config file"
   template:
@@ -94,7 +96,7 @@
   register: service
   tags:
     - service
-  when: not use_docker
+  when: not use_docker and pdf_on_vm
 
 - name: "Reload services"
   systemd:
@@ -102,7 +104,7 @@
     daemon-reload: yes
   tags:
     - service
-  when: not use_docker
+  when: not use_docker and pdf_on_vm
 
 - name: "Enable service"
   systemd:
@@ -110,7 +112,7 @@
     enabled: true
   tags:
     - service
-  when: not use_docker
+  when: not use_docker and pdf_on_vm
 
 - name: Install dependencies
   apt:
@@ -119,7 +121,7 @@
     state: present
   tags:
     - service
-  when: not use_docker
+  when: not use_docker and pdf_on_vm
 
 
 - name: "Download {{service_name}} JAR"
@@ -139,7 +141,7 @@
   notify: "restart service"
   tags:
     - service
-  when: not use_docker
+  when: not use_docker and pdf_on_vm
 
 #
 # webserver virtual host configuration
@@ -154,7 +156,7 @@
     - pdf-service
     - deploy
     - apache_vhost
-  when: not webserver_nginx
+  when: not webserver_nginx and pdf_on_vm
 
 - name: add nginx vhost if configured
   include_role:
@@ -176,7 +178,7 @@
     - nginx_vhost
     - deploy
     - pdf-service
-  when: webserver_nginx | bool 
+  when: webserver_nginx | bool and pdf_on_vm
 
 
 # Manual setup required for docker not automated

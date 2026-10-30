@@ -7,6 +7,8 @@ ecodata_packaging: jar
 ecodata_classifier: exec
 ecodata_context_path: ""
 ecodata_tomcat_server_port: 8081
+ecodata_upstream_host: 127.0.0.1
+ecodata_on_vm: "{{ (deployment_type | default('vm')) == 'vm' }}"
 
 
 # GeoServer

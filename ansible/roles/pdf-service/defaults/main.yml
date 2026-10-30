@@ -1,3 +1,8 @@
 # Use this to add extra parameters to the service for JMX or heap configuration or other parameters
 extra_java_opts: ""
 pdf_path: /data/pdfs
+pdf_bind_host: 127.0.0.1
+pdf_htmltopdf_path: /usr/local/bin/wkhtmltopdf
+# In a container the image carries java, libreoffice and the jar, and pdfgen stays internal:
+# it fetches any URL it is given, so it gets no public vhost.
+pdf_on_vm: "{{ (deployment_type | default('vm')) == 'vm' }}"
