@@ -19,6 +19,8 @@ cas_oidc_scopes:
     - "doi/read"
     - "image-service/write"
     - "image-service/read"
+    - "ecodata/write"
+    - "ecodata/read"
 # For use in cas5 tasks file - location to copy .well-known file
 nginx_root: "/srv/{{ cas_host_name }}/www/"
 # mongo db version - 8.0 on Ubuntu 24, 4.2 to 8.0 on Ubuntu 22, 1.0 to 8.0 on Ubuntu 20
