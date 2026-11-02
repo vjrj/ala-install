@@ -1,6 +1,9 @@
 sofficePath: /usr/bin/soffice
 htmltopdfPath: {{ pdf_htmltopdf_path }}
 storageDir: {{ pdf_dir }}
+{% if pdf_host_regexp is defined %}
+hostRegexp: '{{ pdf_host_regexp }}'
+{% endif %}
 
 server:
   type: simple
