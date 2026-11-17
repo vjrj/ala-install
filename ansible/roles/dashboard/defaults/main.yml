@@ -1,0 +1,5 @@
+# In a container the image carries java and the war, and the webapp is served by the image's
+# own embedded tomcat: the VM-only steps (apache vhost, tomcat_deploy) must not run, and the
+# data dirs belong to the image's uid, not to tomcat_user.
+dashboard_on_vm: "{{ (deployment_type | default('vm')) == 'vm' }}"
+dashboard_user: "{{ tomcat_user | default('tomcat') }}"

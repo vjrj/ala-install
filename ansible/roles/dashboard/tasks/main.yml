@@ -4,7 +4,7 @@
     - properties
 
 - name: ensure target directories exist [data subdirectories etc.]
-  file: path={{item}} state=directory owner={{tomcat_user}} group={{tomcat_user}}
+  file: path={{item}} state=directory owner={{dashboard_user}} group={{dashboard_user}}
   with_items:
     - "{{data_dir}}/dashboard/config"
     - "{{data_dir}}/dashboard/zip"
@@ -29,13 +29,15 @@
     - properties
 
 - name: copy data.json
-  copy: src=data.json dest={{data_dir}}/dashboard/data.json
+  # The static counts CacheService reads are maintained per portal: seed the file, never
+  # overwrite it, or every redeploy puts ALA's sample figures back.
+  copy: src=data.json dest={{data_dir}}/dashboard/data.json force=false
   tags:
     - dashboard
     - properties
 
 - name: set data ownership
-  file: path={{data_dir}}/dashboard owner={{tomcat_user}} group={{tomcat_user}} recurse=true
+  file: path={{data_dir}}/dashboard owner={{dashboard_user}} group={{dashboard_user}} recurse=true
   tags:
     - dashboard
     - properties
@@ -48,7 +50,7 @@
     - dashboard
     - apache_vhost
     - deploy
-  when: not webserver_nginx
+  when: not webserver_nginx and dashboard_on_vm
 
 - name: add nginx vhost if configured
   include_role:
@@ -72,3 +74,4 @@
     - dashboard
     - tomcat_vhost
     - deploy
+  when: dashboard_on_vm
